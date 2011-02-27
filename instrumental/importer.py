@@ -3,6 +3,8 @@ import imp
 import os
 import sys
 
+from astkit.render import SourceCodeRenderer
+
 class ModuleLoader(object):
     
     def __init__(self, fullpath, visitor):
@@ -13,9 +15,13 @@ class ModuleLoader(object):
         ispkg = self.fullpath.endswith('__init__.py')
         code_str = file(self.fullpath, 'r').read()
         code_tree = ast.parse(code_str)
+        self.visitor.filepath = os.path.relpath(self.fullpath)
         new_code_tree = self.visitor.visit(code_tree)
+        #print ast.dump(new_code_tree, include_attributes=True)
+        #print SourceCodeRenderer.render(new_code_tree)
         print "Instrumented %s" % fullname
         code = compile(new_code_tree, self.fullpath, 'exec')
+        print "Compiled %s" % fullname
         return ispkg, code
     
     def load_module(self, fullname):

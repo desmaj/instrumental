@@ -1,3 +1,5 @@
+# This file is intended for use as a test of the instrumentation and coverage
+# generation facilities. The tests should always pass.
 import sys
 
 from instrumental.samples.boolean import and_3
