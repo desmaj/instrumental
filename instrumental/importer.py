@@ -1,6 +1,7 @@
 import ast
 import imp
 import os
+import re
 import sys
 
 from astkit.render import SourceCodeRenderer
@@ -15,10 +16,13 @@ class ModuleLoader(object):
         ispkg = self.fullpath.endswith('__init__.py')
         code_str = file(self.fullpath, 'r').read()
         code_tree = ast.parse(code_str)
-        self.visitor.filepath = os.path.relpath(self.fullpath)
+        self.visitor.modulename = fullname
         new_code_tree = self.visitor.visit(code_tree)
         #print ast.dump(new_code_tree, include_attributes=True)
-        #print SourceCodeRenderer.render(new_code_tree)
+        #with file('.source', 'w') as f:
+        #    f.write("************%s\n" % self.fullpath)
+        #    f.write(SourceCodeRenderer.render(new_code_tree) + "\n\n\n")
+        #SourceCodeRenderer.render(new_code_tree)
         #print "Instrumented %s" % fullname
         code = compile(new_code_tree, self.fullpath, 'exec')
         #print "Compiled %s" % fullname
@@ -36,24 +40,13 @@ class ModuleLoader(object):
 
 class ImportHook(object):
     
-    def __init__(self, target, visitor, reload_imported=False):
+    def __init__(self, target, visitor):
         self.target = target
         self.visitor = visitor
-        for module in sys.modules:
-            if module.split('.')[0] == target:
-                if sys.modules[module] and reload_imported:
-                    self._reload_module(sys.modules[module])
-        
-    def _reload_module(self, module):
-        fullpath = module.__file__
-        if fullpath.endswith('.pyc'):
-            fullpath = fullpath[:-1]
-        loader = ModuleLoader(fullpath, self.visitor)
-        loader.load_module(module.__name__)
     
     def find_module(self, fullname, path=[]):
         #print "find_module(%s, path=%r)" % (fullname, path)
-        if not fullname.split('.')[0] == self.target:
+        if not re.match(self.target, fullname):
             return None
         
         if path:

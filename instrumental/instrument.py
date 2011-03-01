@@ -25,7 +25,7 @@ def force_location(tree, lineno, col_offset=0):
 class CoverageAnnotator(ast.NodeTransformer):
     
     def __init__(self):
-        self.filepath = None
+        self.modulename = None
     
     def visit_Module(self, module):
         self.generic_visit(module)
@@ -37,6 +37,6 @@ class CoverageAnnotator(ast.NodeTransformer):
     
     def visit_BoolOp(self, boolop):
         execution_recorder = recorder.ExecutionRecorder.get()
-        result = execution_recorder.add_BoolOp(self.filepath, boolop)
+        result = execution_recorder.add_BoolOp(self.modulename, boolop)
         self.generic_visit(boolop)
         return result

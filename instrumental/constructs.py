@@ -1,4 +1,27 @@
-class LogicalAnd(object):
+from astkit.render import SourceCodeRenderer
+
+class LogicalBoolean(object):
+    
+    def __init__(self, modulename, node, pin_count):
+        self.modulename = modulename
+        self.lineno = node.lineno
+        self.source = SourceCodeRenderer.render(node)
+        self.pins = pin_count
+        self.conditions =\
+            dict((i, False) for i in range(self.pins + 1))
+    
+    def number_of_conditions(self):
+        return len(self.conditions)
+    
+    def number_of_conditions_hit(self):
+        return len(value 
+                   for value in self.conditions.values()
+                   if value)
+    
+    def conditions_missed(self):
+        return self.number_of_conditions - self.number_of_conditions_hit
+    
+class LogicalAnd(LogicalBoolean):
     """ Stores the execution information for a Logical And
         
         For an and condition with n inputs, there will be
@@ -10,12 +33,6 @@ class LogicalAnd(object):
         case, considered to be "don't care" since they will
         never be evaluated.
     """
-    
-    def __init__(self, pin_count, source):
-        self.source = source
-        self.pins = pin_count
-        self.conditions =\
-            dict((i, False) for i in range(self.pins + 2))
     
     def record(self, value, pin):
         if pin < (self.pins-1):
@@ -41,7 +58,7 @@ class LogicalAnd(object):
         elif n == (self.pins + 1):
             return "Other"
         
-class LogicalOr(object):
+class LogicalOr(LogicalBoolean):
     """ Stores the execution information for a Logical Or
         
         For an or condition with n inputs, there will be
@@ -50,12 +67,6 @@ class LogicalOr(object):
         True. Condition n indicates that all inputs are
         False. Condition n + 1 is "Other".
     """
-    
-    def __init__(self, pin_count, source):
-        self.source = source
-        self.pins = pin_count
-        self.conditions =\
-            dict((i, False) for i in range(self.pins + 2))
     
     def record(self, value, pin):
         if pin < (self.pins-1):

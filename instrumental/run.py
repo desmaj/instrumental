@@ -15,7 +15,9 @@ parser.add_option('-r', '--report', dest='report',
                   help='Print a summary coverage report')
 parser.add_option('-t', '--target', dest='targets',
                   action='append', default=[],
-                  help='Gather coverage for these targets')
+                  help=('A Python regular expression; modules with names'
+                        ' matching this regular expression will be'
+                        ' instrumented and have their coverage reported'))
 
 def main(argv=None):
     if argv is None:

@@ -4,8 +4,6 @@ from copy import deepcopy
 import inspect
 import sys
 
-from astkit.render import SourceCodeRenderer
-
 from instrumental.constructs import LogicalAnd
 from instrumental.constructs import LogicalOr
 
@@ -34,8 +32,10 @@ class ExecutionSummary(object):
         lines.append("Instrumental Coverage Summary")
         lines.append("-----------------------------")
         lines.append("")
-        for label, construct in sorted(self._recorder._constructs.items()):
-            lines.append("%s:" % (label,))
+        for label, construct in sorted(self._recorder._constructs.items(),
+                                       key=lambda (l, c): (c.modulename, c.lineno, l)):
+            construct_name = "%s:%s <%s>" % (construct.modulename, construct.lineno, construct.source)
+            lines.append("%s" % (construct_name,))
             lines.append("")
             for condition in sorted(construct.conditions):
                 lines.append(construct.description(condition) +\
@@ -66,28 +66,34 @@ class ExecutionRecorder(object):
         return cls._instance
     
     def __init__(self):
+        self._next_label = 1
         self._constructs = {}
+    
+    def next_label(self):
+        label = self._next_label
+        self._next_label += 1
+        return label
     
     def record(self, arg, label, *args, **kwargs):
         self._constructs[label].record(arg, *args, **kwargs)
         return arg
     
-    def add_BoolOp(self, filepath, node):
-        source = SourceCodeRenderer.render(node)
-        label = "%s [%s-%s] %s" %\
-            (filepath, node.lineno, node.col_offset, source)
+    def add_BoolOp(self, modulename, node):
         if isinstance(node.op, ast.And):
-            construct = LogicalAnd(len(node.values), source)
+            construct_klass = LogicalAnd
         elif isinstance(node.op, ast.Or):
-            construct = LogicalOr(len(node.values), source)
+            construct_klass = LogicalOr
         else:
             raise TypeError("Expected a BoolOp node with an op field of ast.And or ast.Or")
+        construct = construct_klass(modulename, node, len(node.values))
+        
+        label = self.next_label()
         self._constructs[label] = construct
         
         # Now wrap the individual values in recorder calls
         base_call = self.get_recorder_call()
         base_call.args = \
-            [ast.Str(s=label, lineno=node.lineno, col_offset=node.col_offset)]
+            [ast.Num(n=label, lineno=node.lineno, col_offset=node.col_offset)]
         for i, value in enumerate(node.values):
             recorder_call = deepcopy(base_call)
             recorder_call.args.insert(0, node.values[i])
