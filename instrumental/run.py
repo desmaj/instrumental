@@ -1,4 +1,5 @@
 import atexit
+from optparse import OptionParser
 from subprocess import PIPE
 from subprocess import Popen
 import sys
@@ -8,9 +9,18 @@ from instrumental.instrument import CoverageAnnotator
 from instrumental.recorder import ExecutionRecorder
 from instrumental.recorder import ExecutionSummary
 
-def main():
-    targets = sys.argv[1:]
-    for target in targets:
+parser = OptionParser()
+parser.add_option('-t', '--target', dest='targets',
+                  action='append', default=[],
+                  help='Gather coverage for these targets')
+
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
+    
+    opts, args = parser.parse_args(sys.argv)
+    
+    for target in opts.targets:
         sys.meta_path.append(ImportHook(target, CoverageAnnotator()))
     
     recorder = ExecutionRecorder.get()
@@ -19,10 +29,10 @@ def main():
         print str(summary)
     atexit.register(print_results)
     
-    nosetests = Popen(['which', 'nosetests'], 
-                      stdout=PIPE).communicate()[0][:-1]
-    
+    sourcefile = args[1]
+    print sourcefile
     environment = {'__name__': '__main__',
                    }
-    execfile(nosetests, environment)
-    
+    sys.argv = args[1:]
+    execfile(sourcefile, environment)
+
