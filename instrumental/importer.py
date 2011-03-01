@@ -19,9 +19,9 @@ class ModuleLoader(object):
         new_code_tree = self.visitor.visit(code_tree)
         #print ast.dump(new_code_tree, include_attributes=True)
         #print SourceCodeRenderer.render(new_code_tree)
-        print "Instrumented %s" % fullname
+        #print "Instrumented %s" % fullname
         code = compile(new_code_tree, self.fullpath, 'exec')
-        print "Compiled %s" % fullname
+        #print "Compiled %s" % fullname
         return ispkg, code
     
     def load_module(self, fullname):

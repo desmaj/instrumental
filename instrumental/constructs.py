@@ -11,7 +11,8 @@ class LogicalAnd(object):
         never be evaluated.
     """
     
-    def __init__(self, pin_count):
+    def __init__(self, pin_count, source):
+        self.source = source
         self.pins = pin_count
         self.conditions =\
             dict((i, False) for i in range(self.pins + 2))
@@ -50,7 +51,8 @@ class LogicalOr(object):
         False. Condition n + 1 is "Other".
     """
     
-    def __init__(self, pin_count):
+    def __init__(self, pin_count, source):
+        self.source = source
         self.pins = pin_count
         self.conditions =\
             dict((i, False) for i in range(self.pins + 2))

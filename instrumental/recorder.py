@@ -77,9 +77,9 @@ class ExecutionRecorder(object):
         label = "%s [%s-%s] %s" %\
             (filepath, node.lineno, node.col_offset, source)
         if isinstance(node.op, ast.And):
-            construct = LogicalAnd(len(node.values))
+            construct = LogicalAnd(len(node.values), source)
         elif isinstance(node.op, ast.Or):
-            construct = LogicalOr(len(node.values))
+            construct = LogicalOr(len(node.values), source)
         else:
             raise TypeError("Expected a BoolOp node with an op field of ast.And or ast.Or")
         self._constructs[label] = construct
