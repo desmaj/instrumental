@@ -9,23 +9,10 @@
     first non-False value will be returned from an or operation, (b) evaluation
     stops when the result of the operation has been determined.
     
-    Because our approach is to re-write the target code so that it is
-    functionally equivalent to the target code, we must take these properties
-    into consideration. So the proper transformation of a three value and
-    operation "a and b and c" is:
-    
-    >>> result = a
-    >>> if result:
-    >>>     result = result and b
-    >>>     if result:
-    >>>         result = result and c
-    
-    This is a series of statements and so it cannot replace the "a and b and c"
-    expression. Instead, we'll have to create a guaranteed-unique local variable
-    to use as the result, and we will have to preceed the statement that "owns"
-    the expression with the transformation we have given above.
 """
 import ast
+
+from astkit.render import SourceCodeRenderer
 
 from instrumental import recorder
 
@@ -49,6 +36,7 @@ class CoverageAnnotator(ast.NodeTransformer):
         return module
     
     def visit_BoolOp(self, boolop):
-        self.generic_visit(boolop)
         execution_recorder = recorder.ExecutionRecorder.get()
-        return execution_recorder.add_BoolOp(self.filepath, boolop)
+        result = execution_recorder.add_BoolOp(self.filepath, boolop)
+        self.generic_visit(boolop)
+        return result

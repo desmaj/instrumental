@@ -35,9 +35,7 @@ class ExecutionSummary(object):
         lines.append("-----------------------------")
         lines.append("")
         for label, construct in sorted(self._recorder._constructs.items()):
-            lines.append("%s: %s %s" % (label, 
-                                        construct.__class__.__name__,
-                                        construct.source))
+            lines.append("%s:" % (label,))
             lines.append("")
             for condition in sorted(construct.conditions):
                 lines.append(construct.description(condition) +\
@@ -75,11 +73,13 @@ class ExecutionRecorder(object):
         return arg
     
     def add_BoolOp(self, filepath, node):
-        label = "%s-%s-%s" % (filepath, node.lineno, node.col_offset)
+        source = SourceCodeRenderer.render(node)
+        label = "%s [%s-%s] %s" %\
+            (filepath, node.lineno, node.col_offset, source)
         if isinstance(node.op, ast.And):
-            construct = LogicalAnd(len(node.values), SourceCodeRenderer.render(node))
+            construct = LogicalAnd(len(node.values))
         elif isinstance(node.op, ast.Or):
-            construct = LogicalOr(len(node.values), SourceCodeRenderer.render(node))
+            construct = LogicalOr(len(node.values))
         else:
             raise TypeError("Expected a BoolOp node with an op field of ast.And or ast.Or")
         self._constructs[label] = construct
