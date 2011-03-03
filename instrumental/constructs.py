@@ -14,9 +14,9 @@ class LogicalBoolean(object):
         return len(self.conditions)
     
     def number_of_conditions_hit(self):
-        return len(value 
-                   for value in self.conditions.values()
-                   if value)
+        return len([value 
+                    for value in self.conditions.values()
+                    if value])
     
     def conditions_missed(self):
         return self.number_of_conditions - self.number_of_conditions_hit

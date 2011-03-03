@@ -44,6 +44,28 @@ class ExecutionSummary(object):
             lines.append("")
         return "\n".join(lines)
 
+class ExecutionReport(object):
+    
+    def __init__(self, recorder):
+        self._recorder = recorder
+    
+    def __str__(self):
+        modules = {}
+        for construct in self._recorder.constructs.values():
+            constructs = modules.setdefault(construct.modulename, [])
+            constructs.append(construct)
+        
+        lines = []
+        for modulename, constructs in sorted(modules.items()):
+            total_conditions = sum(construct.number_of_conditions()
+                                   for construct in constructs)
+            hit_conditions = sum(construct.number_of_conditions_hit()
+                                 for construct in constructs)
+            lines.append('%s: %s/%s hit (%.0f%%)' %\
+                             (modulename, hit_conditions, total_conditions,
+                              hit_conditions/float(total_conditions) * 100))
+        return '\n'.join(lines)
+
 class ExecutionRecorder(object):
     
     @staticmethod
@@ -68,6 +90,10 @@ class ExecutionRecorder(object):
     def __init__(self):
         self._next_label = 1
         self._constructs = {}
+    
+    @property
+    def constructs(self):
+        return self._constructs
     
     def next_label(self):
         label = self._next_label
