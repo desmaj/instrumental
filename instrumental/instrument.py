@@ -22,10 +22,28 @@ def force_location(tree, lineno, col_offset=0):
             node.lineno = lineno
             node.col_offset = col_offset
 
+class InstrumentedNodeFactory(object):
+    
+    def __init__(self, recorder):
+        self._recorder = recorder
+    
+    def instrument_node(self, modulename, node):
+        if isinstance(node, ast.BoolOp):
+            return self._recorder.add_BoolOp(modulename, node)
+        else:
+            print node
+            return node
+
 class CoverageAnnotator(ast.NodeTransformer):
     
-    def __init__(self):
-        self.modulename = None
+    @classmethod
+    def create(cls, modulename):
+        return cls(modulename)
+    
+    def __init__(self, modulename):
+        self.modulename = modulename
+        self.node_factory =\
+            InstrumentedNodeFactory(recorder.ExecutionRecorder.get())
     
     def visit_Module(self, module):
         self.generic_visit(module)
@@ -36,7 +54,7 @@ class CoverageAnnotator(ast.NodeTransformer):
         return module
     
     def visit_BoolOp(self, boolop):
-        execution_recorder = recorder.ExecutionRecorder.get()
-        result = execution_recorder.add_BoolOp(self.modulename, boolop)
+        instrumented_node =\
+            self.node_factory.instrument_node(self.modulename, boolop)
         self.generic_visit(boolop)
-        return result
+        return instrumented_node

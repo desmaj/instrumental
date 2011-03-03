@@ -35,7 +35,7 @@ def main(argv=None):
         sys.exit()
     
     for target in opts.targets:
-        sys.meta_path.append(ImportHook(target, CoverageAnnotator()))
+        sys.meta_path.append(ImportHook(target, CoverageAnnotator))
     
     recorder = ExecutionRecorder.get()
     

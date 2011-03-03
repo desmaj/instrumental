@@ -1,0 +1,16 @@
+Running Instrumental
+====================
+
+There isn't much to it, actually. Install it. If you're reading this then 
+you've gotten the source. A simple 'python setup.py install' or 'python 
+setup.py develop' will get you started.
+
+Most of the time, you'll want to invoke intrumental something like this:
+
+instrumental -r -s -t somename somepythonscript
+
+That says, "Please run the script 'somepythonscript', instrumenting any 
+module who's full dotted name starts with 'somename'. When you're done, 
+please show me a report containing coverage percentages as well as a summary 
+of all of the constructs you instrumented and the coverage results for those 
+constructs".
