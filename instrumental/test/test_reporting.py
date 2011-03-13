@@ -1,14 +1,4 @@
-from instrumental.recorder import ExecutionRecorder
-from instrumental.recorder import ExecutionReport
-from instrumental.recorder import ExecutionSummary
-
-class FakeRecorder(object):
-    
-    def __init__(self, constructs):
-        self._constructs = \
-            dict((label, construct)
-                 for label, construct in enumerate(constructs)
-                 )
+from instrumental.reporting import ExecutionReport
 
 class FakeConstruct(object):
     
@@ -24,7 +14,7 @@ class FakeConstruct(object):
     def result(self):
         return "ConstructResult(%s)" % self.label
     
-class TestExecutionSummary(object):
+class TestExecutionReport(object):
     
     def setup(self):
         self.T = FakeConstruct("True only", True)
@@ -32,10 +22,8 @@ class TestExecutionSummary(object):
         self.TF = FakeConstruct("Both", True, False)
         self.missed = FakeConstruct("Neither")
     
-    def _makeOne(self, constructs=[], showall=False):
-        recorder = FakeRecorder(constructs)
-        print recorder._constructs
-        return ExecutionSummary(recorder, showall)
+    def _makeOne(self, constructs={}):
+        return ExecutionReport(constructs)
         
     def test_header(self):
         expected_header = """
@@ -44,9 +32,9 @@ Instrumental Coverage Summary
 -----------------------------
 """
         
-        summary = self._makeOne()
-        assert expected_header in str(summary)
+        reporter = self._makeOne()
+        assert expected_header in reporter.report()
     
     def test_showall_true(self):
-        summary = self._makeOne([self.missed], True)
-        assert "ConstructResult(Neither)" in str(summary), str(summary)
+        reporter = self._makeOne({1: self.missed})
+        assert "ConstructResult(Neither)" in reporter.report(True)

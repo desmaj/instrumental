@@ -7,7 +7,7 @@ setup.py develop' will get you started.
 
 Most of the time, you'll want to invoke intrumental something like this:
 
-instrumental -r -s -t somename somepythonscript
+instrumental -r -s -a -t somename somepythonscript
 
 That says, "Please run the script 'somepythonscript', instrumenting any 
 module who's full dotted name starts with 'somename'. When you're done, 

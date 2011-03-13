@@ -1,0 +1,5 @@
+* ~100% test coverage
+* gather statement coverage
+* move coverage gathering out of process - maybe to disk?
+* serialize coverage results to enable coverage over multiple runs
+* pragma: no cover
