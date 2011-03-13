@@ -18,8 +18,11 @@ setup(name='instrumental',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-          'astkit',
-      ],
+        'astkit',
+        ],
+      tests_require=[
+        'fudge',
+        ],
       entry_points="""
       [console_scripts]
       instrumental = instrumental.run:main

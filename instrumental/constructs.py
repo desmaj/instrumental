@@ -2,11 +2,11 @@ from astkit.render import SourceCodeRenderer
 
 class LogicalBoolean(object):
     
-    def __init__(self, modulename, node, pin_count):
+    def __init__(self, modulename, node):
         self.modulename = modulename
         self.lineno = node.lineno
         self.source = SourceCodeRenderer.render(node)
-        self.pins = pin_count
+        self.pins = len(node.values)
         self.conditions =\
             dict((i, False) for i in range(self.pins + 1))
     
@@ -19,8 +19,19 @@ class LogicalBoolean(object):
                     if value])
     
     def conditions_missed(self):
-        return self.number_of_conditions - self.number_of_conditions_hit
+        return self.number_of_conditions() - self.number_of_conditions_hit()
     
+    def result(self):
+        lines = []
+        name = "%s:%s < %s >" % (self.modulename, self.lineno, self.source)
+        lines.append("%s" % (name,))
+        lines.append("")
+        for condition in sorted(self.conditions):
+            lines.append(self.description(condition) +\
+                             " ==> " +\
+                             str(self.conditions[condition]))
+        return "\n".join(lines)
+
 class LogicalAnd(LogicalBoolean):
     """ Stores the execution information for a Logical And
         
@@ -91,4 +102,37 @@ class LogicalOr(LogicalBoolean):
             return " ".join("F" * self.pins)
         elif n == (self.pins + 1):
             return "Other"
+    
+class BooleanDecision(object):
+    
+    def __init__(self, modulename, node):
+        self.modulename = modulename
+        self.lineno = node.lineno
+        self.source = SourceCodeRenderer.render(node)
+        self.conditions = {True: False,
+                           False: False}
+        
+    def record(self, expression):
+        result = bool(expression)
+        self.conditions[result] = True
+        return result
 
+    def number_of_conditions(self):
+        return len(self.conditions)
+    
+    def number_of_conditions_hit(self):
+        return len([value 
+                    for value in self.conditions.values()
+                    if value])
+    
+    def conditions_missed(self):
+        return self.number_of_conditions() - self.number_of_conditions_hit()
+    
+    def result(self):
+        lines = []
+        name = "%s:%s < %s >" % (self.modulename, self.lineno, self.source)
+        lines.append("%s" % (name,))
+        lines.append("")
+        lines.append("T ==> %r" % self.conditions[True])
+        lines.append("F ==> %r" % self.conditions[False])
+        return "\n".join(lines)

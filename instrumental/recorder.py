@@ -4,6 +4,7 @@ from copy import deepcopy
 import inspect
 import sys
 
+from instrumental.constructs import BooleanDecision
 from instrumental.constructs import LogicalAnd
 from instrumental.constructs import LogicalOr
 
@@ -22,8 +23,9 @@ def get_setup():
 
 class ExecutionSummary(object):
     
-    def __init__(self, recorder):
+    def __init__(self, recorder, showall):
         self._recorder = recorder
+        self._showall = showall
     
     def __str__(self):
         lines = []
@@ -34,15 +36,11 @@ class ExecutionSummary(object):
         lines.append("")
         for label, construct in sorted(self._recorder._constructs.items(),
                                        key=lambda (l, c): (c.modulename, c.lineno, l)):
-            construct_name = "%s:%s <%s>" % (construct.modulename, construct.lineno, construct.source)
-            lines.append("%s" % (construct_name,))
-            lines.append("")
-            for condition in sorted(construct.conditions):
-                lines.append(construct.description(condition) +\
-                                 " ==> " +\
-                                 str(construct.conditions[condition]))
-            lines.append("")
+            if self._showall or construct.conditions_missed():
+                lines.append(construct.result())
+                lines.append("")
         return "\n".join(lines)
+
 
 class ExecutionReport(object):
     
@@ -111,7 +109,7 @@ class ExecutionRecorder(object):
             construct_klass = LogicalOr
         else:
             raise TypeError("Expected a BoolOp node with an op field of ast.And or ast.Or")
-        construct = construct_klass(modulename, node, len(node.values))
+        construct = construct_klass(modulename, node)
         
         label = self.next_label()
         self._constructs[label] = construct
@@ -127,3 +125,15 @@ class ExecutionRecorder(object):
             node.values[i] = ast.copy_location(recorder_call, node.values[i])
         return node
     
+    def add_test(self, modulename, node):
+        label = self.next_label()
+        construct = BooleanDecision(modulename, node)
+        self._constructs[label] = construct
+        
+        base_call = ast.copy_location(self.get_recorder_call(),
+                                      node)
+        base_call.args = \
+            [node,
+             ast.Num(n=label, lineno=node.lineno, col_offset=node.col_offset)]
+        ast.fix_missing_locations(base_call)
+        return base_call

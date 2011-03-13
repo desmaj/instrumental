@@ -15,13 +15,19 @@ def load_module(func):
 
 class TestInstrumentation(object):
     
+    def setup(self):
+        # First clear out the recorder so that we'll create a new one
+        ExecutionRecorder._instance = None
+        self.recorder = ExecutionRecorder.get()
+    
     def _load_and_compile_module(self, module_func):
         module = load_module(module_func)
-        transformer = CoverageAnnotator()
+        transformer = CoverageAnnotator(module_func.__name__,
+                                        self.recorder)
         inst_module = transformer.visit(module)
         print renderer.render(inst_module)
-        for node in ast.walk(inst_module):
-            print node, node.__dict__
+        #for node in ast.walk(inst_module):
+        #    print node, node.__dict__
         code = compile(inst_module, '<string>', 'exec')
         return code
     
@@ -34,13 +40,12 @@ class TestInstrumentation(object):
         exec code in globals(), locals()
         assert False == result
         
-        recorder = ExecutionRecorder.get()
-        label = "3-9"
+        recorder = self.recorder
+        label = 1
         assert label in recorder._constructs
         assert not recorder._constructs[label].conditions[0]
         assert not recorder._constructs[label].conditions[1]
         assert recorder._constructs[label].conditions[2]
-        assert not recorder._constructs[label].conditions[3]
     
     def test_two_pin_or(self):
         def test_module():
@@ -51,10 +56,10 @@ class TestInstrumentation(object):
         exec code in globals(), locals()
         assert True == result
         
-        recorder = ExecutionRecorder.get()
-        label = "3-9"
+        recorder = self.recorder
+        label = 1
         assert label in recorder._constructs
+        print recorder._constructs[label].pins
         assert recorder._constructs[label].conditions[0]
         assert not recorder._constructs[label].conditions[1]
         assert not recorder._constructs[label].conditions[2]
-        assert not recorder._constructs[label].conditions[3]

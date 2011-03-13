@@ -33,17 +33,23 @@ class InstrumentedNodeFactory(object):
         else:
             print node
             return node
+    
+    def instrument_test(self, modulename, node):
+        return self._recorder.add_test(modulename, node)
+    
+class AnnotatorFactory(object):
+    
+    def __init__(self, recorder):
+        self._recorder = recorder
+    
+    def create(self, modulename):
+        return CoverageAnnotator(modulename, self._recorder)
 
 class CoverageAnnotator(ast.NodeTransformer):
     
-    @classmethod
-    def create(cls, modulename):
-        return cls(modulename)
-    
-    def __init__(self, modulename):
+    def __init__(self, modulename, recorder):
         self.modulename = modulename
-        self.node_factory =\
-            InstrumentedNodeFactory(recorder.ExecutionRecorder.get())
+        self.node_factory = InstrumentedNodeFactory(recorder)
     
     def visit_Module(self, module):
         self.generic_visit(module)
@@ -58,3 +64,8 @@ class CoverageAnnotator(ast.NodeTransformer):
             self.node_factory.instrument_node(self.modulename, boolop)
         self.generic_visit(boolop)
         return instrumented_node
+    
+    def visit_If(self, if_):
+        if_.test = self.node_factory.instrument_test(self.modulename, if_.test)
+        self.generic_visit(if_)
+        return if_

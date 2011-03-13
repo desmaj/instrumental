@@ -5,7 +5,7 @@ from subprocess import Popen
 import sys
 
 from instrumental.importer import ImportHook
-from instrumental.instrument import CoverageAnnotator
+from instrumental.instrument import AnnotatorFactory
 from instrumental.recorder import ExecutionRecorder
 from instrumental.recorder import ExecutionReport
 from instrumental.recorder import ExecutionSummary
@@ -18,6 +18,9 @@ parser.add_option('-r', '--report', dest='report',
 parser.add_option('-s', '--summary', dest='summary',
                   action='store_true',
                   help='Print a summary coverage report')
+parser.add_option('-a', '--all', dest='all',
+                  action='store_true', default=False,
+                  help='Show all constructs (not just those missing coverage')
 parser.add_option('-t', '--target', dest='targets',
                   action='append', default=[],
                   help=('A Python regular expression; modules with names'
@@ -34,13 +37,13 @@ def main(argv=None):
         parser.print_help()
         sys.exit()
     
-    for target in opts.targets:
-        sys.meta_path.append(ImportHook(target, CoverageAnnotator))
-    
     recorder = ExecutionRecorder.get()
+    for target in opts.targets:
+        annotator_factory = AnnotatorFactory(recorder)
+        sys.meta_path.append(ImportHook(target, annotator_factory))
     
     if opts.summary:
-        summary = ExecutionSummary(recorder)
+        summary = ExecutionSummary(recorder, opts.all)
         def print_results():
             print str(summary)
         atexit.register(print_results)
