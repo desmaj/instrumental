@@ -31,7 +31,6 @@ class InstrumentedNodeFactory(object):
         if isinstance(node, ast.BoolOp):
             return self._recorder.add_BoolOp(modulename, node)
         else:
-            print node
             return node
     
     def instrument_test(self, modulename, node):
@@ -69,3 +68,8 @@ class CoverageAnnotator(ast.NodeTransformer):
         if_.test = self.node_factory.instrument_test(self.modulename, if_.test)
         self.generic_visit(if_)
         return if_
+    
+    def visit_While(self, while_):
+        while_.test = self.node_factory.instrument_test(self.modulename, while_.test)
+        self.generic_visit(while_)
+        return while_
