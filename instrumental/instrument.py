@@ -81,8 +81,8 @@ class CoverageAnnotator(ast.NodeTransformer):
     def visit_Break(self, break_):
         return self._visit_stmt(break_)
     
-    def visit_ClassDef(self, defn):
-        return self._visit_stmt(defn)
+    # def visit_ClassDef(self, defn):
+    #     return self._visit_stmt(defn)
     
     def visit_Continue(self, continue_):
         return self._visit_stmt(continue_)
@@ -93,8 +93,8 @@ class CoverageAnnotator(ast.NodeTransformer):
     def visit_Exec(self, exec_):
         return self._visit_stmt(exec_)
     
-    def visit_Expr(self, expr):
-        return self._visit_stmt(expr)
+    # def visit_Expr(self, expr):
+    #     return self._visit_stmt(expr)
     
     def visit_FunctionDef(self, defn):
         return self._visit_stmt(defn)
@@ -111,8 +111,8 @@ class CoverageAnnotator(ast.NodeTransformer):
     # def visit_Import(self, import_):
     #     return self._visit_stmt(import_)
     
-    def visit_ImportFrom(self, import_):
-        return self._visit_stmt(import_)
+    # def visit_ImportFrom(self, import_):
+    #     return self._visit_stmt(import_)
     
     def visit_Pass(self, pass_):
         return self._visit_stmt(pass_)
@@ -126,8 +126,8 @@ class CoverageAnnotator(ast.NodeTransformer):
     def visit_Return(self, return_):
         return self._visit_stmt(return_)
     
-    def visit_TryExcept(self, try_):
-        return self._visit_stmt(try_)
+    # def visit_TryExcept(self, try_):
+    #     return self._visit_stmt(try_)
     
     def visit_TryFinally(self, try_):
         return self._visit_stmt(try_)
