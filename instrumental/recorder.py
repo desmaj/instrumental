@@ -45,6 +45,7 @@ class ExecutionRecorder(object):
     def __init__(self):
         self._next_label = 1
         self._constructs = {}
+        self._statements = {}
     
     @property
     def constructs(self):
@@ -101,3 +102,30 @@ class ExecutionRecorder(object):
              ast.Num(n=label, lineno=node.lineno, col_offset=node.col_offset)]
         ast.fix_missing_locations(base_call)
         return base_call
+    
+    @staticmethod
+    def get_statement_recorder_call(modulename, lineno):
+        kall = ast.Call()
+        kall.func = ast.Attribute(value=ast.Name(id="_xxx_recorder_xxx_",
+                                                 ctx=ast.Load(),
+                                                 lineno=2, col_offset=0),
+                                  attr="record_statement",
+                                  ctx=ast.Load(),
+                                  lineno=2, col_offset=0)
+        kall.args = [ast.Str(s=modulename),
+                     ast.Num(n=lineno),
+                     ]
+        kall.keywords = []
+        kall_stmt = ast.Expr(value=kall)
+        return kall_stmt
+    
+    def record_statement(self, modulename, lineno):
+        self._statements[modulename][lineno] = True
+    
+    def add_statement(self, modulename, node):
+        lines = self._statements.setdefault(modulename, {})
+        lines[node.lineno] = False
+        marker = self.get_statement_recorder_call(modulename, node.lineno)
+        marker = ast.copy_location(marker, node)
+        ast.fix_missing_locations(marker)
+        return marker

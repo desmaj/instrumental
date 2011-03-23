@@ -1,7 +1,8 @@
 class ExecutionReport(object):
     
-    def __init__(self, constructs):
+    def __init__(self, constructs, statements):
         self.constructs = constructs
+        self.statements = statements
     
     def report(self, showall=False):
         lines = []
@@ -33,3 +34,13 @@ class ExecutionReport(object):
                              (modulename, hit_conditions, total_conditions,
                               hit_conditions/float(total_conditions) * 100))
         return '\n'.join(lines)
+    
+    def statement_summary(self):
+        outlines = ["", "Statement coverage report", ""]
+        for modulename, lines in self.statements.items():
+            outlines.append(modulename)
+            outlines.append("\tTotal: %s" % len(lines))
+            outlines.append("\tMissing: %s" %\
+                             [line for line in sorted(lines)
+                              if not lines[line]])
+        return "\n".join(outlines)
