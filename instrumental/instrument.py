@@ -93,8 +93,8 @@ class CoverageAnnotator(ast.NodeTransformer):
     def visit_Exec(self, exec_):
         return self._visit_stmt(exec_)
     
-    # def visit_Expr(self, expr):
-    #     return self._visit_stmt(expr)
+    def visit_Expr(self, expr):
+        return self._visit_stmt(expr)
     
     def visit_FunctionDef(self, defn):
         return self._visit_stmt(defn)
