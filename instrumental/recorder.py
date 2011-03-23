@@ -76,6 +76,13 @@ class ExecutionRecorder(object):
         base_call.args = \
             [ast.Num(n=label, lineno=node.lineno, col_offset=node.col_offset)]
         for i, value in enumerate(node.values):
+            # Try to determine if the condition is a literal
+            # Maybe we can do something with this information?
+            try:
+                literal = ast.literal_eval(value)
+                construct.literals[i] = literal
+            except ValueError:
+                pass
             recorder_call = deepcopy(base_call)
             recorder_call.args.insert(0, node.values[i])
             recorder_call.args.append(ast.copy_location(ast.Num(n=i), node.values[i]))

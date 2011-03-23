@@ -9,6 +9,7 @@ class LogicalBoolean(object):
         self.pins = len(node.values)
         self.conditions =\
             dict((i, False) for i in range(self.pins + 1))
+        self.literals = {}
     
     def number_of_conditions(self):
         return len(self.conditions)
@@ -21,10 +22,17 @@ class LogicalBoolean(object):
     def conditions_missed(self):
         return self.number_of_conditions() - self.number_of_conditions_hit()
     
+    def _literal_warning(self):
+        return ("** One or more conditions maybe not be reachable due to"
+                " the presence of a literal in the decision")
+        
     def result(self):
         lines = []
         name = "%s:%s < %s >" % (self.modulename, self.lineno, self.source)
         lines.append("%s" % (name,))
+        if self.literals:
+            lines.append("")
+            lines.append(self._literal_warning())
         lines.append("")
         for condition in sorted(self.conditions):
             lines.append(self.description(condition) +\
