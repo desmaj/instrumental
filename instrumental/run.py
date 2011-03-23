@@ -41,7 +41,7 @@ def main(argv=None):
         annotator_factory = AnnotatorFactory(recorder)
         sys.meta_path.append(ImportHook(target, annotator_factory))
     
-    if opts.summary and opts.report:
+    if opts.summary or opts.report:
         def _display_reports():
             report = ExecutionReport(recorder._constructs)
             if opts.summary:
