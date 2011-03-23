@@ -82,7 +82,20 @@ class CoverageAnnotator(ast.NodeTransformer):
         return self._visit_stmt(break_)
     
     def visit_ClassDef(self, defn):
-        return self._visit_stmt(defn)
+        if not ast.get_docstring(defn):
+            return self._visit_stmt(defn)
+        
+        # grab the docstring so that it isn't visited generically
+        docstring = defn.body.pop(0)
+        # make a nide marker for it
+        docstring_marker =\
+            self.node_factory.instrument_statement(self.modulename, docstring)
+        self.generic_visit(defn)
+        
+        defn.body = [docstring, docstring_marker] + defn.body
+        
+        marker = self.node_factory.instrument_statement(self.modulename, defn)
+        return [marker, defn]
     
     def visit_Continue(self, continue_):
         return self._visit_stmt(continue_)
@@ -93,8 +106,8 @@ class CoverageAnnotator(ast.NodeTransformer):
     def visit_Exec(self, exec_):
         return self._visit_stmt(exec_)
     
-    # def visit_Expr(self, expr):
-    #     return self._visit_stmt(expr)
+    def visit_Expr(self, expr):
+        return self._visit_stmt(expr)
     
     def visit_FunctionDef(self, defn):
         return self._visit_stmt(defn)
