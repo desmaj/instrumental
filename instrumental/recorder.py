@@ -27,11 +27,9 @@ class ExecutionRecorder(object):
     def get_recorder_call():
         kall = ast.Call()
         kall.func = ast.Attribute(value=ast.Name(id="_xxx_recorder_xxx_",
-                                                 ctx=ast.Load(),
-                                                 lineno=2, col_offset=0),
+                                                 ctx=ast.Load()),
                                   attr="record",
-                                  ctx=ast.Load(),
-                                  lineno=2, col_offset=0)
+                                  ctx=ast.Load())
         kall.keywords = []
         return kall
     
@@ -88,6 +86,7 @@ class ExecutionRecorder(object):
             recorder_call.args.insert(0, node.values[i])
             recorder_call.args.append(ast.copy_location(ast.Num(n=i), node.values[i]))
             node.values[i] = ast.copy_location(recorder_call, node.values[i])
+        ast.fix_missing_locations(node)
         return node
     
     def add_test(self, modulename, node):
@@ -107,11 +106,9 @@ class ExecutionRecorder(object):
     def get_statement_recorder_call(modulename, lineno):
         kall = ast.Call()
         kall.func = ast.Attribute(value=ast.Name(id="_xxx_recorder_xxx_",
-                                                 ctx=ast.Load(),
-                                                 lineno=2, col_offset=0),
+                                                 ctx=ast.Load()),
                                   attr="record_statement",
-                                  ctx=ast.Load(),
-                                  lineno=2, col_offset=0)
+                                  ctx=ast.Load())
         kall.args = [ast.Str(s=modulename),
                      ast.Num(n=lineno),
                      ]
