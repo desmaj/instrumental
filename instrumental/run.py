@@ -52,6 +52,7 @@ def main(argv=None):
     
     sourcefile = args[0]
     environment = {'__name__': '__main__',
+                   '__file__': sourcefile,
                    }
     sys.argv = args[:]
     execfile(sourcefile, environment)
