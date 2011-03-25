@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.2dev'
+version = '0.2.1dev'
 
 setup(name='instrumental',
       version=version,
@@ -18,8 +18,6 @@ will also tell you if the conditions in boolean decisions (and, or) were ever
 executed both True and False.
 
 As an example: if you usually say
-
-::
 
 python setup.py nosetests
 
