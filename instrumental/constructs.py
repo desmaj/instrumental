@@ -54,9 +54,19 @@ class LogicalAnd(LogicalBoolean):
     """
     
     def record(self, value, pin):
+        """ Record that a value was seen for a particular pin """
+        
+        # If the pin is not the last pin in the decision and
+        # the value seen is False, then we've found the pin
+        # that has forced the decision False and we should
+        # record that.
         if pin < (self.pins-1):
             if not value:
                 self.conditions[pin+1] = True
+        
+        # If the pin is the last pin then we'll record that
+        # it either allowed the decision to be True or it
+        # is the pin that has forced the decision False.
         elif pin == (self.pins-1):
             if value:
                 self.conditions[0] = True
@@ -88,15 +98,25 @@ class LogicalOr(LogicalBoolean):
     """
     
     def record(self, value, pin):
+        """ Record that a value was seen for a particular pin """
+        
+        # If the pin is not the last pin in the decision
+        # and the value we see is True, then we've found the
+        # condition that forces the decision True in this case.
+        # If the value we see is False then we'll ignore it
+        # since this is not a significant case.
         if pin < (self.pins-1):
             if value:
                 self.conditions[pin] = True
+        
+        # If this is the last pin then it either allowed the
+        # decision to be False or forced the decision True.
         elif pin == (self.pins-1):
             if value:
                 self.conditions[pin] = True
             else:
                 self.conditions[self.pins] = True
-    
+        
     def description(self, n):
         acc = ""
         if n < self.pins:

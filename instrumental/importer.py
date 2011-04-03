@@ -18,6 +18,7 @@ class ModuleLoader(object):
     def _get_code(self, fullname):
         ispkg = self.fullpath.endswith('__init__.py')
         code_str = self._get_source(self.fullpath)
+        self.visitor_factory.recorder.add_source(fullname, code_str)
         code_tree = ast.parse(code_str)
         visitor = self.visitor_factory.create(fullname)
         new_code_tree = visitor.visit(code_tree)

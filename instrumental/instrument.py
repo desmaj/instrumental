@@ -39,10 +39,10 @@ class InstrumentedNodeFactory(object):
 class AnnotatorFactory(object):
     
     def __init__(self, recorder):
-        self._recorder = recorder
+        self.recorder = recorder
     
     def create(self, modulename):
-        return CoverageAnnotator(modulename, self._recorder)
+        return CoverageAnnotator(modulename, self.recorder)
 
 class CoverageAnnotator(ast.NodeTransformer):
     

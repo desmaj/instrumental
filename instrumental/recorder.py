@@ -45,6 +45,10 @@ class ExecutionRecorder(object):
     def __init__(self):
         self._next_label = 1
         self._constructs = {}
+        self._sources = {}
+    
+    def add_source(self, modulename, source):
+        self._sources[modulename] = source
     
     @property
     def constructs(self):
