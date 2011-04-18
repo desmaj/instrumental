@@ -7,9 +7,9 @@ class ExecutionReport(object):
     def report(self, showall=False):
         lines = []
         lines.append("")
-        lines.append("-----------------------------")
-        lines.append("Instrumental Coverage Summary")
-        lines.append("-----------------------------")
+        lines.append("===============================================")
+        lines.append("Instrumental Condition/Decision Coverage Report")
+        lines.append("===============================================")
         lines.append("")
         for label, construct in sorted(self.constructs.items(),
                                        key=lambda (l, c): (c.modulename, c.lineno, l)):
@@ -25,6 +25,11 @@ class ExecutionReport(object):
             constructs.append(construct)
         
         lines = []
+        lines.append("")
+        lines.append("================================================")
+        lines.append("Instrumental Condition/Decision Coverage Summary")
+        lines.append("================================================")
+        lines.append("")
         for modulename, constructs in sorted(modules.items()):
             total_conditions = sum(construct.number_of_conditions()
                                    for construct in constructs)
@@ -36,7 +41,11 @@ class ExecutionReport(object):
         return '\n'.join(lines)
     
     def statement_summary(self):
-        outlines = ["", "Statement coverage report", ""]
+        outlines = ["=======================================", 
+                    "Instrumental Statement Coverage Summary", 
+                    "=======================================",
+                    "",
+                    ]
         
         formatter = StatementCoverageFormatter()
         return "\n".join(outlines + [formatter.format(self.statements)])
