@@ -58,6 +58,8 @@ class CoverageAnnotator(ast.NodeTransformer):
         recorder_setup = recorder.get_setup()
         for node in recorder_setup:
             force_location(node, 1)
+        if ast.get_docstring(module):
+            recorder_setup = [module.body.pop(0) + recorder_setup]
         module.body = recorder_setup + module.body
         return module
     
@@ -110,7 +112,20 @@ class CoverageAnnotator(ast.NodeTransformer):
         return self._visit_stmt(expr)
     
     def visit_FunctionDef(self, defn):
-        return self._visit_stmt(defn)
+        if not ast.get_docstring(defn):
+            return self._visit_stmt(defn)
+        
+        # grab the docstring so that it isn't visited generically
+        docstring = defn.body.pop(0)
+        # make a node marker for it
+        docstring_marker =\
+            self.node_factory.instrument_statement(self.modulename, docstring)
+        self.generic_visit(defn)
+        
+        defn.body = [docstring, docstring_marker] + defn.body
+        
+        marker = self.node_factory.instrument_statement(self.modulename, defn)
+        return [marker, defn]
     
     def visit_Global(self, global_):
         return self._visit_stmt(global_)
