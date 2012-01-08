@@ -17,6 +17,9 @@ parser.add_option('-r', '--report', dest='report',
 parser.add_option('-s', '--summary', dest='summary',
                   action='store_true',
                   help='Print a summary coverage report')
+parser.add_option('-S', '--statements', dest='statements',
+                  action='store_true',
+                  help='Print a summary statement coverage report')
 parser.add_option('-a', '--all', dest='all',
                   action='store_true', default=False,
                   help='Show all constructs (not just those missing coverage')
@@ -41,13 +44,15 @@ def main(argv=None):
         annotator_factory = AnnotatorFactory(recorder)
         sys.meta_path.append(ImportHook(target, annotator_factory))
     
-    if opts.summary or opts.report:
+    if opts.summary or opts.report or opts.statements:
         def _display_reports():
-            report = ExecutionReport(recorder._constructs)
+            report = ExecutionReport(recorder._constructs, recorder._statements)
             if opts.summary:
                 print report.summary()
             if opts.report:
                 print report.report(opts.all)
+            if opts.statements:
+                print report.statement_summary()
         atexit.register(_display_reports)
     
     sourcefile = args[0]

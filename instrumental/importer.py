@@ -22,7 +22,7 @@ class ModuleLoader(object):
         code_tree = ast.parse(code_str)
         visitor = self.visitor_factory.create(fullname)
         new_code_tree = visitor.visit(code_tree)
-        #print SourceCodeRenderer.render(new_code_tree)
+        # print SourceCodeRenderer.render(new_code_tree)
         code = compile(new_code_tree, self.fullpath, 'exec')
         return ispkg, code
     
