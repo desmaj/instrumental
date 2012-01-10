@@ -44,30 +44,6 @@ class PragmaApplier(ast.NodeVisitor):
         self._source = source
         self._statement_end_linenos = []
     
-    def is_stmt(self, node):
-        return any([isinstance(node, ast.FunctionDef),
-                    isinstance(node, ast.ClassDef),
-                    isinstance(node, ast.Return),
-                    isinstance(node, ast.Delete),
-                    isinstance(node, ast.Assign),
-                    isinstance(node, ast.AugAssign),
-                    isinstance(node, ast.Print),
-                    isinstance(node, ast.For),
-                    isinstance(node, ast.While),
-                    isinstance(node, ast.If),
-                    isinstance(node, ast.With),
-                    isinstance(node, ast.Raise),
-                    isinstance(node, ast.TryExcept),
-                    isinstance(node, ast.TryFinally),
-                    isinstance(node, ast.Assert),
-                    isinstance(node, ast.Import),
-                    isinstance(node, ast.ImportFrom),
-                    isinstance(node, ast.Exec),
-                    isinstance(node, ast.Global),
-                    isinstance(node, ast.Expr),
-                    isinstance(node, ast.Pass),
-                    isinstance(node, ast.excepthandler),
-                    ])
     def apply(self):
         self._pragmas = self._base_pragmas.copy()
         
@@ -76,41 +52,17 @@ class PragmaApplier(ast.NodeVisitor):
         # fix the else cases
         self.visit(node)
         
-        # fix pragmas floating across multiline statements
-        statements = []
-        for node in ast.walk(node):
-            if self.is_stmt(node):
-                statements.append(node)
-        if statements:
-            statements.sort(key=lambda node: node.lineno)
-            
-            for index, statement in enumerate(statements[:-1]):
-                for lineno in self._pragmas:
-                    if index < len(statements)-1:
-                        next_line = statements[index+1].lineno
-                    else:
-                        next_line = len(self._source.splitlines())
-                    if statement.lineno <= lineno < next_line:
-                        self._pragmas[statement.lineno] = self._pragmas[lineno]
-                        if lineno != statement.lineno:
-                            self._pragmas[lineno] = []
-        
         return self._pragmas
     
-    def _visit_ElseHavingNode(self, node):
-        if node.orelse:
-            else_range = range(node.body[-1].lineno+1,
-                               node.orelse[0].lineno)
+    def visit_If(self, if_):
+        self.generic_visit(if_)
+        if if_.orelse:
             for lineno in self._pragmas:
-                if lineno in else_range:
-                    for else_lineno in [elsenode.lineno
-                                        for elsenode
-                                        in node.orelse]:
-                        self._pragmas[else_lineno] = self._pragmas[lineno]
-                    self._pragmas[lineno] = []
-        self.generic_visit(node)
-    
-    visit_If = visit_For = visit_TryExcept = visit_While = _visit_ElseHavingNode
+                if not self._pragmas[lineno]:
+                    continue
+                if if_.body[-1].lineno < lineno <= if_.orelse[0].lineno:
+                    for orelse_stmt in if_.orelse:
+                        self._pragmas[orelse_stmt.lineno] = self._pragmas[lineno]
     
 class PragmaFinder(object):
     
@@ -129,7 +81,7 @@ class PragmaFinder(object):
                     if pragma_label in pragma_text:
                         pragmas[lineno].append(pragma)
         
-        # applier = PragmaApplier(pragmas, source)
-        # pragmas = applier.apply()
+        applier = PragmaApplier(pragmas, source)
+        pragmas = applier.apply()
         
         return pragmas
