@@ -15,6 +15,7 @@ import ast
 from astkit.render import SourceCodeRenderer
 
 from instrumental import recorder
+from instrumental.pragmas import PragmaNoCover
 
 def force_location(tree, lineno, col_offset=0):
     for node in ast.walk(tree):
@@ -51,7 +52,9 @@ class CoverageAnnotator(ast.NodeTransformer):
     
     def __init__(self, modulename, recorder):
         self.modulename = modulename
+        self.pragmas = recorder.pragmas[modulename]
         self.node_factory = InstrumentedNodeFactory(recorder)
+        self.modifiers = []
     
     def visit_Module(self, module):
         self.generic_visit(module)
@@ -64,16 +67,27 @@ class CoverageAnnotator(ast.NodeTransformer):
         return module
     
     def visit_BoolOp(self, boolop):
-        instrumented_node =\
-            self.node_factory.instrument_node(self.modulename, boolop)
+        if PragmaNoCover in self.modifiers:
+            result = boolop
+        else:
+            result =\
+                self.node_factory.instrument_node(self.modulename, boolop)
         self.generic_visit(boolop)
-        return instrumented_node
+        return result
     
     def _visit_stmt(self, node):
+        if PragmaNoCover in self.pragmas[node.lineno]:
+            self.modifiers.append(PragmaNoCover)
         self.generic_visit(node)
-        marker = self.node_factory.instrument_statement(self.modulename, node)
-        return [marker, node]
-        
+        if PragmaNoCover in self.modifiers:
+            result = node
+        else:
+            marker = self.node_factory.instrument_statement(self.modulename, node)
+            result = [marker, node]
+        if PragmaNoCover in self.pragmas[node.lineno]:
+            self.modifiers.pop(-1)
+        return result
+    
     def visit_AugAssign(self, augassign):
         return self._visit_stmt(augassign)
     
@@ -83,21 +97,37 @@ class CoverageAnnotator(ast.NodeTransformer):
     def visit_Break(self, break_):
         return self._visit_stmt(break_)
     
+    def visit_defn_with_docstring(self, defn):
+        if PragmaNoCover in self.modifiers:
+            self.generic_visit(defn)
+            result = defn
+        else:
+            # grab the docstring so that it isn't visited generically
+            docstring = defn.body.pop(0)
+            # make a node marker for it
+            docstring_marker =\
+                self.node_factory.instrument_statement(self.modulename, docstring)
+            self.generic_visit(defn)
+            
+            defn.body = [docstring, docstring_marker] + defn.body
+            
+            marker = self.node_factory.instrument_statement(self.modulename, defn)
+            result = [marker, defn]
+        return result
+    
     def visit_ClassDef(self, defn):
         if not ast.get_docstring(defn):
             return self._visit_stmt(defn)
         
-        # grab the docstring so that it isn't visited generically
-        docstring = defn.body.pop(0)
-        # make a nide marker for it
-        docstring_marker =\
-            self.node_factory.instrument_statement(self.modulename, docstring)
-        self.generic_visit(defn)
+        if PragmaNoCover in self.pragmas[defn.lineno]:
+            self.modifiers.append(PragmaNoCover)
         
-        defn.body = [docstring, docstring_marker] + defn.body
+        result = self.visit_defn_with_docstring(defn)
         
-        marker = self.node_factory.instrument_statement(self.modulename, defn)
-        return [marker, defn]
+        if PragmaNoCover in self.pragmas[defn.lineno]:
+            self.modifiers.pop(-1)
+        
+        return result
     
     def visit_Continue(self, continue_):
         return self._visit_stmt(continue_)
@@ -111,31 +141,48 @@ class CoverageAnnotator(ast.NodeTransformer):
     def visit_Expr(self, expr):
         return self._visit_stmt(expr)
     
+    def visit_ExceptHandler(self, excepthandler):
+        print self.modulename, excepthandler.lineno
+        if PragmaNoCover in self.pragmas[excepthandler.lineno]:
+            self.modifiers.append(PragmaNoCover)
+        
+        self.generic_visit(excepthandler)
+        
+        if PragmaNoCover in self.pragmas[excepthandler.lineno]:
+            self.modifiers.pop(-1)
+        
+        return excepthandler
+    
     def visit_FunctionDef(self, defn):
         if not ast.get_docstring(defn):
             return self._visit_stmt(defn)
         
-        # grab the docstring so that it isn't visited generically
-        docstring = defn.body.pop(0)
-        # make a node marker for it
-        docstring_marker =\
-            self.node_factory.instrument_statement(self.modulename, docstring)
-        self.generic_visit(defn)
+        if PragmaNoCover in self.pragmas[defn.lineno]:
+            self.modifiers.append(PragmaNoCover)
         
-        defn.body = [docstring, docstring_marker] + defn.body
+        result = self.visit_defn_with_docstring(defn)
         
-        marker = self.node_factory.instrument_statement(self.modulename, defn)
-        return [marker, defn]
+        if PragmaNoCover in self.pragmas[defn.lineno]:
+            self.modifiers.pop(-1)
+        
+        return result
     
     def visit_Global(self, global_):
         return self._visit_stmt(global_)
     
     def visit_If(self, if_):
-        if_.test = self.node_factory.instrument_test(self.modulename, if_.test)
-        self.generic_visit(if_)
-        marker = self.node_factory.instrument_statement(self.modulename, if_)
-        return [marker, if_]
-    
+        if PragmaNoCover in self.pragmas[if_.lineno]:
+            self.modifiers.append(PragmaNoCover)
+        if PragmaNoCover in self.modifiers:
+            result = if_
+        else:
+            if_.test = self.node_factory.instrument_test(self.modulename, if_.test)
+            self.generic_visit(if_)
+            marker = self.node_factory.instrument_statement(self.modulename, if_)
+            result = [marker, if_]
+        if PragmaNoCover in self.pragmas[if_.lineno]:
+            self.modifiers.pop(-1)
+        return result
     def visit_Import(self, import_):
         return self._visit_stmt(import_)
     
@@ -161,10 +208,18 @@ class CoverageAnnotator(ast.NodeTransformer):
         return self._visit_stmt(try_)
     
     def visit_While(self, while_):
-        while_.test = self.node_factory.instrument_test(self.modulename, while_.test)
-        self.generic_visit(while_)
-        marker = self.node_factory.instrument_statement(self.modulename, while_)
-        return [marker, while_]
+        if PragmaNoCover in self.pragmas[while_.lineno]:
+            self.modifiers.append(PragmaNoCover)
+        if PragmaNoCover in self.modifiers:
+            result = while_
+        else:
+            while_.test = self.node_factory.instrument_test(self.modulename, while_.test)
+            self.generic_visit(while_)
+            marker = self.node_factory.instrument_statement(self.modulename, while_)
+            result = [marker, while_]
+        if PragmaNoCover in self.pragmas[while_.lineno]:
+            self.modifiers.pop(-1)
+        return result
 
     def visit_With(self, with_):
         return self._visit_stmt(with_)

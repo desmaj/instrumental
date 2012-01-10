@@ -7,6 +7,7 @@ import sys
 from instrumental.constructs import BooleanDecision
 from instrumental.constructs import LogicalAnd
 from instrumental.constructs import LogicalOr
+from instrumental.pragmas import PragmaFinder
 
 def __setup_recorder():
     from instrumental.recorder import ExecutionRecorder
@@ -45,9 +46,15 @@ class ExecutionRecorder(object):
         self._constructs = {}
         self._sources = {}
         self._statements = {}
+        self.pragmas = {}
     
     def add_source(self, modulename, source):
         self._sources[modulename] = source
+        self.pragmas[modulename] = self._find_pragmas(source)
+    
+    def _find_pragmas(self, source):
+        finder = PragmaFinder()
+        return finder.find_pragmas(source)
     
     @property
     def constructs(self):
