@@ -23,6 +23,9 @@ def force_location(tree, lineno, col_offset=0):
             node.lineno = lineno
             node.col_offset = col_offset
 
+def has_docstring(defn):
+    return ast.get_docstring(defn) is not None
+
 class InstrumentedNodeFactory(object):
     
     def __init__(self, recorder):
@@ -61,7 +64,7 @@ class CoverageAnnotator(ast.NodeTransformer):
         recorder_setup = recorder.get_setup()
         for node in recorder_setup:
             force_location(node, 1)
-        if ast.get_docstring(module):
+        if has_docstring(module):
             recorder_setup = [module.body.pop(0) + recorder_setup]
         module.body = recorder_setup + module.body
         return module
@@ -97,32 +100,32 @@ class CoverageAnnotator(ast.NodeTransformer):
     def visit_Break(self, break_):
         return self._visit_stmt(break_)
     
-    def visit_defn_with_docstring(self, defn):
+    def _visit_defn_with_docstring(self, defn):
         if PragmaNoCover in self.modifiers:
             self.generic_visit(defn)
             result = defn
         else:
             # grab the docstring so that it isn't visited generically
+            # docstrings don't seem to ever be 'executed', so we shouldn't
+            # count them
             docstring = defn.body.pop(0)
-            # make a node marker for it
-            docstring_marker =\
-                self.node_factory.instrument_statement(self.modulename, docstring)
             self.generic_visit(defn)
             
-            defn.body = [docstring, docstring_marker] + defn.body
+            # and put the docstring back
+            defn.body = [docstring] + defn.body
             
             marker = self.node_factory.instrument_statement(self.modulename, defn)
             result = [marker, defn]
         return result
     
     def visit_ClassDef(self, defn):
-        if not ast.get_docstring(defn):
+        if not has_docstring(defn):
             return self._visit_stmt(defn)
         
         if PragmaNoCover in self.pragmas[defn.lineno]:
             self.modifiers.append(PragmaNoCover)
         
-        result = self.visit_defn_with_docstring(defn)
+        result = self._visit_defn_with_docstring(defn)
         
         if PragmaNoCover in self.pragmas[defn.lineno]:
             self.modifiers.pop(-1)
@@ -152,14 +155,31 @@ class CoverageAnnotator(ast.NodeTransformer):
         
         return excepthandler
     
+    def visit_For(self, for_):
+        if PragmaNoCover in self.pragmas[for_.lineno]:
+            self.modifiers.append(PragmaNoCover)
+        
+        if PragmaNoCover in self.modifiers:
+            result = for_
+        else:
+            self.generic_visit(for_)
+            marker = self.node_factory.instrument_statement(self.modulename, for_)
+            result = [marker, for_]
+        self.generic_visit(for_)
+        
+        if PragmaNoCover in self.pragmas[for_.lineno]:
+            self.modifiers.pop(-1)
+        
+        return result
+        
     def visit_FunctionDef(self, defn):
-        if not ast.get_docstring(defn):
+        if not has_docstring(defn):
             return self._visit_stmt(defn)
         
         if PragmaNoCover in self.pragmas[defn.lineno]:
             self.modifiers.append(PragmaNoCover)
         
-        result = self.visit_defn_with_docstring(defn)
+        result = self._visit_defn_with_docstring(defn)
         
         if PragmaNoCover in self.pragmas[defn.lineno]:
             self.modifiers.pop(-1)
@@ -182,6 +202,7 @@ class CoverageAnnotator(ast.NodeTransformer):
         if PragmaNoCover in self.pragmas[if_.lineno]:
             self.modifiers.pop(-1)
         return result
+    
     def visit_Import(self, import_):
         return self._visit_stmt(import_)
     
