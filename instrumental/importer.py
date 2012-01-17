@@ -32,35 +32,43 @@ class ModuleLoader(object):
         mod.__file__ = self.fullpath
         mod.__loader__ = self
         if ispkg:
-            mod.__path__ = []
+            mod.__path__ = [os.path.dirname(self.fullpath)]
         exec code in mod.__dict__
         return mod
 
 class ImportHook(object):
     
-    def __init__(self, target, visitor_factory):
+    def __init__(self, target, ignores, visitor_factory):
         self.target = target
+        self.ignores = ignores
         self.visitor_factory = visitor_factory
     
     def find_module(self, fullname, path=[]):
-        #print "find_module(%s, path=%r)" % (fullname, path)
-        if not re.match(self.target, fullname):
+        # print "find_module(%s, path=%r)" % (fullname, path), 'pyramid' in sys.modules
+        if ((not re.match(self.target, fullname)) 
+            or
+            any([re.match(ignore, fullname) for ignore in self.ignores])):
             return None
         
         if not path:
             path = sys.path
         
         for directory in path:
-            return self._loader_for_path(directory, fullname)
+            loader = self._loader_for_path(directory, fullname)
+            if loader:
+                return loader
     
     def _loader_for_path(self, directory, fullname):
+        # print "loader_for_path", directory, fullname
         module_path = os.path.join(directory, fullname.split('.')[-1]) + ".py"
         if os.path.exists(module_path):
+            # print "loading module", module_path
             loader = ModuleLoader(module_path, self.visitor_factory)
             return loader
         
         package_path = os.path.join(directory, fullname.split('.')[-1], '__init__.py')
         if os.path.exists(package_path):
+            print "loading package", package_path
             loader = ModuleLoader(package_path, self.visitor_factory)
             return loader
         

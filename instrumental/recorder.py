@@ -24,16 +24,6 @@ def get_setup():
 
 class ExecutionRecorder(object):
     
-    @staticmethod
-    def get_recorder_call():
-        kall = ast.Call()
-        kall.func = ast.Attribute(value=ast.Name(id="_xxx_recorder_xxx_",
-                                                 ctx=ast.Load()),
-                                  attr="record",
-                                  ctx=ast.Load())
-        kall.keywords = []
-        return kall
-    
     _instance = None
     @classmethod
     def get(cls):
@@ -60,10 +50,24 @@ class ExecutionRecorder(object):
     def constructs(self):
         return self._constructs
     
+    @property
+    def statements(self):
+        return self._statements
+    
     def next_label(self):
         label = self._next_label
         self._next_label += 1
         return label
+    
+    @staticmethod
+    def get_recorder_call():
+        kall = ast.Call()
+        kall.func = ast.Attribute(value=ast.Name(id="_xxx_recorder_xxx_",
+                                                 ctx=ast.Load()),
+                                  attr="record",
+                                  ctx=ast.Load())
+        kall.keywords = []
+        return kall
     
     def record(self, arg, label, *args, **kwargs):
         self._constructs[label].record(arg, *args, **kwargs)

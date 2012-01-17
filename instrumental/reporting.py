@@ -1,6 +1,9 @@
+from instrumental.xmlreport import XMLCoverageReport
+
 class ExecutionReport(object):
     
-    def __init__(self, constructs, statements):
+    def __init__(self, working_directory, constructs, statements):
+        self.working_directory = working_directory
         self.constructs = constructs
         self.statements = statements
     
@@ -49,6 +52,10 @@ class ExecutionReport(object):
         
         formatter = StatementCoverageFormatter()
         return "\n".join(outlines + [formatter.format(self.statements)])
+
+    def write_xml_coverage_report(self, filename):
+        xml_report = XMLCoverageReport(self)
+        xml_report.write(filename)
 
 class Chunk(object):
     

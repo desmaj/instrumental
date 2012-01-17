@@ -1,11 +1,13 @@
 import atexit
 from optparse import OptionParser
+import os
 from subprocess import PIPE
 from subprocess import Popen
 import sys
 
 from instrumental.importer import ImportHook
 from instrumental.instrument import AnnotatorFactory
+from instrumental.monkey import monkey_patch_imp
 from instrumental.recorder import ExecutionRecorder
 from instrumental.reporting import ExecutionReport
 
@@ -20,6 +22,9 @@ parser.add_option('-s', '--summary', dest='summary',
 parser.add_option('-S', '--statements', dest='statements',
                   action='store_true',
                   help='Print a summary statement coverage report')
+parser.add_option('-x', '--xml', dest='xml',
+                  action='store_true',
+                  help='Create a cobertura-compatible xml coverage report')
 parser.add_option('-a', '--all', dest='all',
                   action='store_true', default=False,
                   help='Show all constructs (not just those missing coverage')
@@ -28,6 +33,11 @@ parser.add_option('-t', '--target', dest='targets',
                   help=('A Python regular expression; modules with names'
                         ' matching this regular expression will be'
                         ' instrumented and have their coverage reported'))
+parser.add_option('-i', '--ignore', dest='ignores',
+                  action='append', default=[],
+                  help=('A Python regular expression; modules with names'
+                        ' matching this regular expression will be'
+                        ' ignored and not have their coverage reported'))
 
 def main(argv=None):
     if argv is None:
@@ -40,24 +50,34 @@ def main(argv=None):
         sys.exit()
     
     recorder = ExecutionRecorder.get()
+    annotator_factory = AnnotatorFactory(recorder)
+    monkey_patch_imp(opts.targets, opts.ignores, annotator_factory)
     for target in opts.targets:
-        annotator_factory = AnnotatorFactory(recorder)
-        sys.meta_path.append(ImportHook(target, annotator_factory))
+        sys.meta_path.append(ImportHook(target, opts.ignores, annotator_factory))
     
-    if opts.summary or opts.report or opts.statements:
-        def _display_reports():
-            report = ExecutionReport(recorder._constructs, recorder._statements)
-            if opts.summary:
-                print report.summary()
-            if opts.report:
-                print report.report(opts.all)
-            if opts.statements:
-                print report.statement_summary()
-        atexit.register(_display_reports)
+    xml_filename = os.path.abspath('instrumental.xml')
     
     sourcefile = args[0]
     environment = {'__name__': '__main__',
                    '__file__': sourcefile,
                    }
     sys.argv = args[:]
-    execfile(sourcefile, environment)
+    try:
+        here = os.getcwd()
+        execfile(sourcefile, environment)
+    finally:
+        if any([opts.summary,
+                opts.report,
+                opts.statements,
+                opts.xml]):
+            print
+            report = ExecutionReport(here, recorder.constructs, recorder.statements)
+            if opts.summary:
+                print report.summary()
+            if opts.report:
+                print report.report(opts.all)
+            if opts.statements:
+                print report.statement_summary()
+            if opts.xml:
+                report.write_xml_coverage_report(xml_filename)
+            print

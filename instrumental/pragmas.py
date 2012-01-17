@@ -84,7 +84,8 @@ class PragmaApplier(ast.NodeVisitor):
             for stmt in node.orelse:
                 self._pragmas.setdefault(stmt.lineno, set())\
                     .update(else_pragmas)
-    visit_For = visit_If = visit_While = _visit_node_with_body_and_else
+    visit_For = visit_If = _visit_node_with_body_and_else
+    visit_While = _visit_node_with_body_and_else
     
     def _visit_node_with_body(self, node):
         self.generic_visit(node)
@@ -94,8 +95,25 @@ class PragmaApplier(ast.NodeVisitor):
         if stmt_pragmas:
             self._add_pragmas_to_body(stmt_pragmas, node.body)
     visit_FunctionDef = visit_ClassDef = visit_With = _visit_node_with_body
-    visit_ExceptHandler = _visit_node_with_body
+    visit_ExceptHandler = visit_TryFinally = _visit_node_with_body
     
+    def visit_TryExcept(self, node):
+        self.generic_visit(node)
+        
+        stmt_pragmas = self._pragmas_for_range(node.lineno, 
+                                               node.body[0].lineno)
+        if stmt_pragmas:
+            for stmt in node.body:
+                self._pragmas.setdefault(stmt.lineno, set())\
+                    .update(stmt_pragmas)
+        if node.orelse:
+            else_pragmas = self._pragmas_for_range(node.handlers[-1].body[-1].lineno+1, 
+                                                   node.orelse[0].lineno)
+            else_pragmas.update(stmt_pragmas)
+            for stmt in node.orelse:
+                self._pragmas.setdefault(stmt.lineno, set())\
+                    .update(else_pragmas)
+        
 class PragmaFinder(object):
     
     def __init__(self):
@@ -106,7 +124,7 @@ class PragmaFinder(object):
         for lineno, line in enumerate(source.splitlines()):
             lineno += 1
             pragmas[lineno] = set()
-            pragma_match = re.search(r'# pragma:(.+)$', line)
+            pragma_match = re.search(r'#\s*pragma:(.+)$', line)
             if pragma_match:
                 pragma_text = pragma_match.group(1)
                 for pragma_label, pragma in valid_pragmas.items():
