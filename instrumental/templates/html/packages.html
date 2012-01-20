@@ -1,0 +1,32 @@
+<%inherit file="/html/_base.html" />
+<table>
+  <tbody>
+    <tr>
+      <th>Package name</th>
+      <th>Module name</th>
+      <th>Statement coverage</th>
+      <th>Decision coverage</th>
+      <th>Condition coverage</th>
+    </tr>
+  </tbody>
+  <tbody>
+% for package, package_summary in summary.packages.items():
+    <tr id="package-row-${ package }" class="package-row">
+      <td>${ package }</td>
+      <td> - </td>
+      <td>${ package_summary.statement_rate() }</td>
+      <td>${ package_summary.decision_rate() }</td>
+      <td>${ package_summary.condition_rate() }</td>
+    </tr>
+%   for module, module_summary in package_summary.modules.items():
+    <tr class="module-row">
+      <td>${ package }</td>
+      <td><a href="${ module }.html">${ module }</a></td>
+      <td>${ module_summary.statement_rate() }</td>
+      <td>${ module_summary.decision_rate() }</td>
+      <td>${ module_summary.condition_rate() }</td>
+    </tr>
+%   endfor
+% endfor
+  </tbody>
+</table>

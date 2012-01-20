@@ -5,6 +5,7 @@ import time
 from xml.etree import ElementTree
 
 import instrumental
+from instrumental.constructs import BooleanDecision
 
 class CoverageObject(object):
     
@@ -19,13 +20,24 @@ class CoverageObject(object):
         else:
             return 1.0
     
+    @property
+    def branch_rate(self):
+        decisions = self.decisions
+        if decisions:
+            total_conditions = 2 * len(decisions)
+            total_conditions_hit = sum(construct.number_of_conditions_hit()
+                                       for construct in decisions)
+            return total_conditions_hit / total_conditions
+        else:
+            return 1.0
+    
     def to_element(self):
         element = ElementTree.Element(self.tag)
         if hasattr(self, 'name'):
             element.attrib['name']  = self.name
         element.attrib['complexity'] = '0.0'
-        element.attrib['branch-rate'] = '0.0'
         element.attrib['line-rate'] = "%f" % self.line_rate
+        element.attrib['branch-rate'] = "%f" % self.branch_rate
         return element
 
 class Coverage(CoverageObject):
@@ -41,6 +53,11 @@ class Coverage(CoverageObject):
             _statements += self._report.statements[modulename].values()
         return _statements
     
+    @property
+    def decisions(self):
+        return [construct for construct in self._report.constructs.values()
+                if isinstance(construct, BooleanDecision)]
+        
     def to_element(self):
         coverage_element = super(Coverage, self).to_element()
         del coverage_element.attrib['complexity']
@@ -61,7 +78,8 @@ class Coverage(CoverageObject):
         for packagename, modulenames in packages.items():
             package_coverage = PackageCoverage(packagename,
                                                packages[packagename],
-                                               self._report.statements)
+                                               self._report.statements,
+                                               self._report.constructs)
             package_element = package_coverage.to_element()
             packages_element.append(package_element)
         
@@ -72,17 +90,28 @@ class Coverage(CoverageObject):
 class PackageCoverage(CoverageObject):
     tag = 'package'
     
-    def __init__(self, name, modules, statements):
+    def __init__(self, name, modules, statements, constructs):
         self.name = name
         self._modules = modules
         self._statements = statements
-        
+        self._constructs = constructs
+    
     @property
     def statements(self):
-        statements = []
+        _statements = []
         for modulename, modulefile in self._modules:
-            statements += self._statements[modulename].values()
-        return statements
+            _statements += self._statements[modulename].values()
+        return _statements
+    
+    @property
+    def decisions(self):
+        _decisions = []
+        for modulename, modulefile in self._modules:
+            _decisions += [construct 
+                           for construct in self._constructs.values()
+                           if (isinstance(construct, BooleanDecision)
+                               and construct.modulename==modulename)]
+        return _decisions
     
     def to_element(self):
         element = super(PackageCoverage, self).to_element()
@@ -91,9 +120,12 @@ class PackageCoverage(CoverageObject):
         element.append(modules)
         
         for modulename, modulefile in self._modules:
+            module_constructs = [construct for construct in self._constructs.values()
+                                 if construct.modulename==modulename]
             module_coverage = ModuleCoverage(modulename,
                                              modulefile,
-                                             self._statements[modulename])
+                                             self._statements[modulename],
+                                             module_constructs)
             modules.append(module_coverage.to_element())
         
         return element
@@ -101,14 +133,23 @@ class PackageCoverage(CoverageObject):
 class ModuleCoverage(CoverageObject):
     tag = 'class'
     
-    def __init__(self, name, filename, statements):
+    def __init__(self, name, filename, statements, constructs):
         self.name = name
         self.filename = filename
         self._statements = statements
+        self._constructs = constructs
     
     @property
     def statements(self):
         return self._statements.values()
+    
+    @property
+    def decisions(self):
+        _decisions = []
+        for construct in self._constructs:
+            if isinstance(construct, BooleanDecision):
+                _decisions.append(construct)
+        return _decisions
     
     def to_element(self):
         element = super(ModuleCoverage, self).to_element()

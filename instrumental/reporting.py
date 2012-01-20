@@ -1,11 +1,16 @@
+import os
+
+from instrumental.htmlreport import HTMLCoverageReport
+from instrumental.summary import ExecutionSummary
 from instrumental.xmlreport import XMLCoverageReport
 
 class ExecutionReport(object):
     
-    def __init__(self, working_directory, constructs, statements):
+    def __init__(self, working_directory, constructs, statements, sources):
         self.working_directory = working_directory
         self.constructs = constructs
         self.statements = statements
+        self.sources = sources
     
     def report(self, showall=False):
         lines = []
@@ -56,7 +61,12 @@ class ExecutionReport(object):
     def write_xml_coverage_report(self, filename):
         xml_report = XMLCoverageReport(self)
         xml_report.write(filename)
-
+    
+    def write_html_coverage_report(self, directory='instrumental'):
+        summary = ExecutionSummary(self.constructs, self.statements)
+        html_report = HTMLCoverageReport(summary, self.sources)
+        html_report.write(os.path.join(self.working_directory, directory))
+    
 class Chunk(object):
     
     def __init__(self, start):

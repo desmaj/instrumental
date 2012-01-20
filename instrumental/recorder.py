@@ -36,6 +36,7 @@ class ExecutionRecorder(object):
         self._constructs = {}
         self._sources = {}
         self._statements = {}
+        self._branches = {}
         self.pragmas = {}
     
     def add_source(self, modulename, source):
@@ -47,12 +48,20 @@ class ExecutionRecorder(object):
         return finder.find_pragmas(source)
     
     @property
+    def sources(self):
+        return self._sources
+    
+    @property
     def constructs(self):
         return self._constructs
     
     @property
     def statements(self):
         return self._statements
+    
+    @property
+    def branches(self):
+        return self._branches
     
     def next_label(self):
         label = self._next_label

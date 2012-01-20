@@ -1,0 +1,28 @@
+div.source table {
+    border-collapse: collapse;
+}
+
+div.source tr {
+    padding: 0px;
+    margin: 0px;
+    background: lightred;
+}
+
+div.source tr.hit{
+    background: lightgreen;
+}
+
+div.source td {
+    padding: 0px;
+    margin: 0px;
+}
+
+div.source td.lineno {
+    background: lightgray;
+}
+
+div.source pre {
+    padding: 0px;
+    margin: 0px;
+}
+

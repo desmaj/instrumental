@@ -25,6 +25,9 @@ parser.add_option('-S', '--statements', dest='statements',
 parser.add_option('-x', '--xml', dest='xml',
                   action='store_true',
                   help='Create a cobertura-compatible xml coverage report')
+parser.add_option('--html', dest='html',
+                  action='store_true',
+                  help='Create an html coverage report')
 parser.add_option('-a', '--all', dest='all',
                   action='store_true', default=False,
                   help='Show all constructs (not just those missing coverage')
@@ -69,9 +72,10 @@ def main(argv=None):
         if any([opts.summary,
                 opts.report,
                 opts.statements,
-                opts.xml]):
+                opts.xml,
+                opts.html]):
             print
-            report = ExecutionReport(here, recorder.constructs, recorder.statements)
+            report = ExecutionReport(here, recorder.constructs, recorder.statements, recorder.sources)
             if opts.summary:
                 print report.summary()
             if opts.report:
@@ -80,4 +84,6 @@ def main(argv=None):
                 print report.statement_summary()
             if opts.xml:
                 report.write_xml_coverage_report(xml_filename)
+            if opts.html:
+                report.write_html_coverage_report()
             print

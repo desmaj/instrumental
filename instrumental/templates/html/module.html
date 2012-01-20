@@ -1,0 +1,13 @@
+<%inherit file="/html/_base.html" />
+<div>${ module.name }</div>
+<div class="source" >
+  <table>
+% for lineno, line in enumerate(source.splitlines()):
+    <% lineno += 1 %>
+    <tr ${ 'class="%s" ' % ("hit" if module.statements.get(lineno, True) else "miss") }>
+      <td class="lineno" >${ lineno }</td>
+      <td ><pre>${ line }</pre></td>
+    </tr>
+% endfor
+</table>
+</div>
