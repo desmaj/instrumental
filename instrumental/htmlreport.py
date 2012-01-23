@@ -18,7 +18,8 @@ class HTMLCoverageReport(object):
         
         resource_directory = os.path.join(os.path.dirname(__file__), 
                                           'resources')
-        shutil.copy(os.path.join(resource_directory, 'jquery-1.7.1.min.js'), directory)
+        shutil.copy(os.path.join(resource_directory, 'jquery-1.7.1.min.js'), 
+                    directory)
         shutil.copy(os.path.join(resource_directory, 'styles.css'), directory)
         
         template_directory = os.path.join(os.path.dirname(__file__), 
@@ -34,10 +35,20 @@ class HTMLCoverageReport(object):
         
         for package, package_summary in self.summary.packages.items():
             for module, module_summary in package_summary.modules.items():
-                module_template = template_lookup.get_template('/html/module.html')
+                module_template = \
+                    template_lookup.get_template('/html/module.html')
+                conditions_by_line = {}
+                for condition in module_summary.conditions.values():
+                    conditions_by_col = \
+                        conditions_by_line.setdefault(condition.lineno, {})
+                    condition_list = conditions_by_col.setdefault(condition.node.col_offset, [])
+                    condition_list.append(condition)
                 try:
-                    module_html = module_template.render(module=module_summary,
-                                                         source=self.sources[module].decode('utf-8'))
+                    source = self.sources[module].decode('utf-8')
+                    module_html = \
+                        module_template.render(module=module_summary,
+                                               source=source,
+                                               conditions=conditions_by_line)
                 except:
                     print text_error_template().render()
                     raise

@@ -1,5 +1,5 @@
 <%inherit file="/html/_base.html" />
-<table>
+<table class="result-overview">
   <tbody>
     <tr>
       <th>Package name</th>
@@ -10,21 +10,21 @@
     </tr>
   </tbody>
   <tbody>
-% for package, package_summary in summary.packages.items():
+% for package, package_summary in sorted(summary.packages.items()):
     <tr id="package-row-${ package }" class="package-row">
       <td>${ package }</td>
       <td> - </td>
-      <td>${ package_summary.statement_rate() }</td>
-      <td>${ package_summary.decision_rate() }</td>
-      <td>${ package_summary.condition_rate() }</td>
+      <td class="percent" >${ self.percent(package_summary.statement_rate()) }</td>
+      <td class="percent" >${ self.percent(package_summary.decision_rate()) }</td>
+      <td class="percent" >${ self.percent(package_summary.condition_rate()) }</td>
     </tr>
-%   for module, module_summary in package_summary.modules.items():
+%   for module, module_summary in sorted(package_summary.modules.items()):
     <tr class="module-row">
       <td>${ package }</td>
       <td><a href="${ module }.html">${ module }</a></td>
-      <td>${ module_summary.statement_rate() }</td>
-      <td>${ module_summary.decision_rate() }</td>
-      <td>${ module_summary.condition_rate() }</td>
+      <td class="percent" >${ self.percent(module_summary.statement_rate()) }</td>
+      <td class="percent" >${ self.percent(module_summary.decision_rate()) }</td>
+      <td class="percent" >${ self.percent(module_summary.condition_rate()) }</td>
     </tr>
 %   endfor
 % endfor

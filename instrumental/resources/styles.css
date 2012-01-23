@@ -21,8 +21,16 @@ div.source td.lineno {
     background: lightgray;
 }
 
+div.source td.missed-conditions {
+    background: red;
+}
+
 div.source pre {
     padding: 0px;
     margin: 0px;
+}
+
+table.result-overview td.percent {
+    text-align: right;
 }
 

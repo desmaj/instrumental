@@ -1,9 +1,12 @@
+from copy import deepcopy
+
 from astkit.render import SourceCodeRenderer
 
 class LogicalBoolean(object):
     
     def __init__(self, modulename, node):
         self.modulename = modulename
+        self.node = deepcopy(node)
         self.lineno = node.lineno
         self.source = SourceCodeRenderer.render(node)
         self.pins = len(node.values)
@@ -135,6 +138,7 @@ class BooleanDecision(object):
     
     def __init__(self, modulename, node):
         self.modulename = modulename
+        self.node = deepcopy(node)
         self.lineno = node.lineno
         self.source = SourceCodeRenderer.render(node)
         self.conditions = {True: False,

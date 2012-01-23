@@ -17,19 +17,19 @@ class BaseExecutionSummary(object):
         total_conditions = sum(condition.number_of_conditions()
                                for label, condition in self.conditions.items())
         if not total_conditions:
-            return 1
+            return 1.0
         hit_conditions = sum(condition.number_of_conditions_hit()
                              for label, condition in self.conditions.items())
-        return hit_conditions / total_conditions
+        return hit_conditions / float(total_conditions)
     
     def decision_rate(self):
         total_conditions = sum(decision.number_of_conditions()
                                for label, decision in self.decisions.items())
         if not total_conditions:
-            return 1
+            return 1.0
         hit_conditions = sum(decision.number_of_conditions_hit()
                              for label, decision in self.decisions.items())
-        return hit_conditions / total_conditions
+        return hit_conditions / float(total_conditions)
     
     def statement_rate(self):
         all_statements = []
@@ -38,9 +38,9 @@ class BaseExecutionSummary(object):
         
         total_statements = len(all_statements)
         if not total_statements:
-            return 1
+            return 1.0
         hit_statements = sum(hit for (lineno, hit) in all_statements)
-        return hit_statements / total_statements
+        return hit_statements / float(total_statements)
 
 
 class ExecutionSummary(BaseExecutionSummary):
@@ -108,5 +108,5 @@ class ModuleExecutionSummary(BaseExecutionSummary):
     def statement_rate(self):
         total_statements = len(self.statements)
         hit_statements = sum(hit for (lineno, hit) in self.statements.items())
-        return hit_statements / total_statements
+        return hit_statements / float(total_statements)
 

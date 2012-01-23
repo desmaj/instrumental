@@ -7,7 +7,27 @@
     <tr ${ 'class="%s" ' % ("hit" if module.statements.get(lineno, True) else "miss") }>
       <td class="lineno" >${ lineno }</td>
       <td ><pre>${ line }</pre></td>
+%   if conditions.get(lineno):
+%     if any(condition.conditions_missed() \
+             for col, condition_list in conditions.get(lineno).items() \
+             for condition in condition_list):
+      <td class="missed-conditions">${ decorate_line(lineno, line, conditions)}</td>
+%     endif
+%   endif
     </tr>
 % endfor
 </table>
 </div>
+<%def name="decorate_line(lineno, line, conditions)">
+<%
+    decoration = ""
+    for col_offset in conditions.get(lineno, {}):
+        conditions_for_col_offset = \
+            conditions[lineno][col_offset]
+        for condition in conditions_for_col_offset:
+            if not condition.conditions_missed():
+                continue
+            decoration += condition.result().replace("\n", "<br>") + "<br><br>"
+%>
+${ decoration }
+</%def>
