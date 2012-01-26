@@ -26,6 +26,10 @@ def force_location(tree, lineno, col_offset=0):
 def has_docstring(defn):
     return ast.get_docstring(defn) is not None
 
+def has_future_import(module):
+    return (isinstance(module.body[0], ast.ImportFrom)
+            and module.body[0].module == '__future__')
+
 class InstrumentedNodeFactory(object):
     
     def __init__(self, recorder):
@@ -66,7 +70,14 @@ class CoverageAnnotator(ast.NodeTransformer):
             force_location(node, 1)
         if has_docstring(module):
             recorder_setup = [module.body.pop(0) + recorder_setup]
+        if has_future_import(module):
+            future_import = module.body.pop(0)
+            if has_docstring(module):
+                recorder_setup.insert(1, future_import)
+            else:
+                recorder_setup.insert(0, future_import)
         module.body = recorder_setup + module.body
+        
         return module
     
     def visit_BoolOp(self, boolop):
@@ -207,7 +218,20 @@ class CoverageAnnotator(ast.NodeTransformer):
         return self._visit_stmt(import_)
     
     def visit_ImportFrom(self, import_):
-        return self._visit_stmt(import_)
+        if PragmaNoCover in self.pragmas[import_.lineno]:
+            self.modifiers.append(PragmaNoCover)
+        self.generic_visit(import_)
+        if PragmaNoCover in self.modifiers:
+            result = import_
+        else:
+            marker = self.node_factory.instrument_statement(self.modulename, import_)
+            if import_.module == '__future__':
+                result = [import_, marker]
+            else:
+                result = [marker, import_]
+        if PragmaNoCover in self.pragmas[import_.lineno]:
+            self.modifiers.pop(-1)
+        return result
     
     def visit_Pass(self, pass_):
         return self._visit_stmt(pass_)

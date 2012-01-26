@@ -5,7 +5,7 @@ class PragmaNoCover(object):
     pass
 
 valid_pragmas = {
-    'no cover': PragmaNoCover,
+    'no\s+cover': PragmaNoCover,
     }
 
 class PragmaApplier(ast.NodeVisitor):
@@ -128,7 +128,7 @@ class PragmaFinder(object):
             if pragma_match:
                 pragma_text = pragma_match.group(1)
                 for pragma_label, pragma in valid_pragmas.items():
-                    if pragma_label in pragma_text:
+                    if re.search(pragma_label, pragma_text):
                         pragmas[lineno].add(pragma)
         
         applier = PragmaApplier(pragmas, source)
