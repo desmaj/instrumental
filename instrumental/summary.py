@@ -8,7 +8,7 @@ def _package(modulename):
 class BaseExecutionSummary(object):
     
     def __init__(self, conditions, statements):
-        self.decisions = dict((label, condition) for condition in conditions
+        self.decisions = dict((label, condition) for label, condition in conditions.items()
                               if isinstance(condition, BooleanDecision))
         self.conditions = conditions
         self.statements = statements

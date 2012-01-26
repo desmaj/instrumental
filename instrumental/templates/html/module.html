@@ -4,9 +4,17 @@
   <table>
 % for lineno, line in enumerate(source.splitlines()):
     <% lineno += 1 %>
-    <tr ${ 'class="%s" ' % ("hit" if module.statements.get(lineno, True) else "miss") }>
+    <tr 
+% if lineno in module.statements:
+%   if module.statements[lineno]:
+        class="hit"
+%   else:
+        class="miss"
+%   endif
+% endif
+        >
       <td class="lineno" >${ lineno }</td>
-      <td ><pre>${ line }</pre></td>
+      <td><pre>${ line }</pre></td>
 %   if conditions.get(lineno):
 %     if any(condition.conditions_missed() \
              for col, condition_list in conditions.get(lineno).items() \

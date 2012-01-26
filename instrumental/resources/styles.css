@@ -5,11 +5,14 @@ div.source table {
 div.source tr {
     padding: 0px;
     margin: 0px;
-    background: lightred;
 }
 
 div.source tr.hit{
     background: lightgreen;
+}
+
+div.source tr.miss{
+    background: red;
 }
 
 div.source td {
