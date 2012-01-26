@@ -11,6 +11,7 @@
     
 """
 import ast
+import sys
 
 from astkit.render import SourceCodeRenderer
 
@@ -86,17 +87,17 @@ class CoverageAnnotator(ast.NodeTransformer):
         else:
             result =\
                 self.node_factory.instrument_node(self.modulename, boolop)
-        self.generic_visit(boolop)
+            result = self.generic_visit(result)
         return result
     
     def _visit_stmt(self, node):
         if PragmaNoCover in self.pragmas[node.lineno]:
             self.modifiers.append(PragmaNoCover)
-        self.generic_visit(node)
         if PragmaNoCover in self.modifiers:
             result = node
         else:
             marker = self.node_factory.instrument_statement(self.modulename, node)
+            self.generic_visit(node)
             result = [marker, node]
         if PragmaNoCover in self.pragmas[node.lineno]:
             self.modifiers.pop(-1)
@@ -176,7 +177,6 @@ class CoverageAnnotator(ast.NodeTransformer):
             self.generic_visit(for_)
             marker = self.node_factory.instrument_statement(self.modulename, for_)
             result = [marker, for_]
-        self.generic_visit(for_)
         
         if PragmaNoCover in self.pragmas[for_.lineno]:
             self.modifiers.pop(-1)
@@ -207,7 +207,7 @@ class CoverageAnnotator(ast.NodeTransformer):
             result = if_
         else:
             if_.test = self.node_factory.instrument_test(self.modulename, if_.test)
-            self.generic_visit(if_)
+            if_ = self.generic_visit(if_)
             marker = self.node_factory.instrument_statement(self.modulename, if_)
             result = [marker, if_]
         if PragmaNoCover in self.pragmas[if_.lineno]:

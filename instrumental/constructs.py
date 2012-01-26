@@ -31,7 +31,7 @@ class LogicalBoolean(object):
         
     def result(self):
         lines = []
-        name = "%s:%s < %s >" % (self.modulename, self.lineno, self.source)
+        name = "%s -> %s:%s < %s >" % (self.__class__.__name__, self.modulename, self.lineno, self.source)
         lines.append("%s" % (name,))
         if self.literals:
             lines.append("")
@@ -162,7 +162,7 @@ class BooleanDecision(object):
     
     def result(self):
         lines = []
-        name = "%s:%s < %s >" % (self.modulename, self.lineno, self.source)
+        name = "Decision -> %s:%s < %s >" % (self.modulename, self.lineno, self.source)
         lines.append("%s" % (name,))
         lines.append("")
         lines.append("T ==> %r" % self.conditions[True])
