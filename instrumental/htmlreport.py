@@ -20,7 +20,13 @@ class HTMLCoverageReport(object):
                                           'resources')
         shutil.copy(os.path.join(resource_directory, 'jquery-1.7.1.min.js'), 
                     directory)
-        shutil.copy(os.path.join(resource_directory, 'styles.css'), directory)
+        shutil.copy(os.path.join(resource_directory, 
+                                 'jquery-ui-1.8.17.custom.min.js'), 
+                    directory)
+        shutil.copy(os.path.join(resource_directory, 'styles.css'), 
+                    directory)
+        shutil.copytree(os.path.join(resource_directory, 'ui-lightness'), 
+                        os.path.join(directory, 'ui-lightness'))
         
         template_directory = os.path.join(os.path.dirname(__file__), 
                                           'templates')
