@@ -11,7 +11,7 @@ def load_module(func):
     normal_source =\
         "\n".join(line[12:] for line in source.splitlines(False)[1:])
     module = ast.parse(normal_source)
-    return module
+    return module, normal_source
 
 class TestInstrumentation(object):
     
@@ -21,7 +21,8 @@ class TestInstrumentation(object):
         self.recorder = ExecutionRecorder.get()
     
     def _load_and_compile_module(self, module_func):
-        module = load_module(module_func)
+        module, source = load_module(module_func)
+        self.recorder.add_source(module_func.__name__, source)
         transformer = CoverageAnnotator(module_func.__name__,
                                         self.recorder)
         inst_module = transformer.visit(module)

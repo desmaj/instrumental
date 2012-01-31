@@ -1,15 +1,15 @@
-import ast
 from copy import copy
 from copy import deepcopy
 import inspect
 import sys
 
+from instrumental.compat import ast
 from instrumental.constructs import BooleanDecision
 from instrumental.constructs import LogicalAnd
 from instrumental.constructs import LogicalOr
 from instrumental.pragmas import PragmaFinder
 
-def __setup_recorder():
+def __setup_recorder(): # pragma: no cover
     from instrumental.recorder import ExecutionRecorder
     _xxx_recorder_xxx_ = ExecutionRecorder.get()
 
@@ -58,10 +58,6 @@ class ExecutionRecorder(object):
     @property
     def statements(self):
         return self._statements
-    
-    @property
-    def branches(self):
-        return self._branches
     
     def next_label(self):
         label = self._next_label

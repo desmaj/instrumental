@@ -6,8 +6,8 @@ class TestImportHook(object):
         self.visitor_factory = object()
         self.recorder = object()
     
-    def _makeOne(self, target):
-        return ImportHook(target, self.visitor_factory)
+    def _makeOne(self, target, ignores=[]):
+        return ImportHook(target, ignores, self.visitor_factory)
     
     def test_exactly_matching_target(self):
         hook = self._makeOne('pyramid')

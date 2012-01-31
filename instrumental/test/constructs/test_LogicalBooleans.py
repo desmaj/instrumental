@@ -3,6 +3,7 @@ import ast
 from instrumental.constructs import LogicalAnd
 from instrumental.constructs import LogicalBoolean
 from instrumental.constructs import LogicalOr
+from instrumental.recorder import ExecutionRecorder
 
 class ThreePinTestCase(object):
     
@@ -66,7 +67,7 @@ class TestLogicalAnd(ThreePinTestCase):
         assert "T T F" == and_.description(3), and_.description(3)
     
     def _expect_result(self, *set_conditions):
-        expected_result = "\n".join(["somename:6 < (a and b and c) >",
+        expected_result = "\n".join(["LogicalAnd -> somename:6 < (a and b and c) >",
                                      "",
                                      "T T T ==> %s" % ("T T T" in set_conditions),
                                      "F * * ==> %s" % ("F * *" in set_conditions),
@@ -172,7 +173,7 @@ class TestLogicalOr(ThreePinTestCase):
         assert "Other" == or_.description(4)
     
     def _expect_result(self, *set_conditions):
-        expected_result = "\n".join(["somename:6 < (a or b or c) >",
+        expected_result = "\n".join(["LogicalOr -> somename:6 < (a or b or c) >",
                                      "",
                                      "T * * ==> %s" % ("T * *" in set_conditions),
                                      "F T * ==> %s" % ("F T *" in set_conditions),
@@ -185,7 +186,7 @@ class TestLogicalOr(ThreePinTestCase):
         or_ = self._makeOne()
         or_.record(True, 0)
         expected_result = self._expect_result('T * *')
-        assert expected_result == or_.result()
+        assert expected_result == or_.result(), or_.result()
         
     def test_F_T_F(self):
         or_ = self._makeOne()
@@ -286,10 +287,27 @@ class TestLogicalBoolean(object):
     
     def test_initial_result(self):
         construct = self._makeOne()
-        expected_result = "\n".join(["somename.subname:17 < (a and b) >",
+        expected_result = "\n".join(["LogicalAnd -> somename.subname:17 < (a and b) >",
                                      "",
                                      "T T ==> False",
                                      "F * ==> False",
                                      "T F ==> False",
                                      ])
         assert expected_result == construct.result()
+
+class TestLiteralInConstruct(object):
+    
+    def setup(self):
+        self.modulename = 'somename'
+        self.node = ast.BoolOp(op=ast.Or(),
+                               values=[ast.Name(id='a'),
+                                       ast.Str(s='None'),
+                                       ],
+                               lineno=6,
+                               col_offset=4)
+    
+    def test_presence_of_a_literal(self):
+        recorder = ExecutionRecorder.get()
+        recorder.add_BoolOp(self.modulename, self.node)
+        construct = recorder.constructs.values()[0]
+        assert "literal" in construct.result(), construct.result()

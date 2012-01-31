@@ -10,12 +10,12 @@
     stops when the result of the operation has been determined.
     
 """
-import ast
 import sys
 
 from astkit.render import SourceCodeRenderer
 
 from instrumental import recorder
+from instrumental.compat import ast
 from instrumental.pragmas import PragmaNoCover
 
 def force_location(tree, lineno, col_offset=0):
@@ -28,6 +28,8 @@ def has_docstring(defn):
     return ast.get_docstring(defn) is not None
 
 def has_future_import(module):
+    if not module.body:
+        return False
     return (isinstance(module.body[0], ast.ImportFrom)
             and module.body[0].module == '__future__')
 

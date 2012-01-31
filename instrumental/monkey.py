@@ -1,8 +1,9 @@
-import ast
 import imp
 import os
 import re
 import sys
+
+from instrumental.compat import ast
 
 _imp_load_module = imp.load_module
 def monkey_patch_imp(targets, ignores, visitor_factory):

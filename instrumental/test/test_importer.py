@@ -1,6 +1,13 @@
 import sys
 
 from instrumental import importer
+from instrumental import importer
+
+class FakeRecorder(object):
+    pragmas = {}
+    
+    def add_source(self, name, source):
+        pass
 
 class FakeSys(object):
     modules = {}
@@ -11,9 +18,11 @@ class FakeVisitor(object):
         return node
 
 class FakeVisitorFactory(object):
+    recorder = FakeRecorder()
     
     def create(self, name):
-        return FakeVisitor()
+        visitor = FakeVisitor()
+        return visitor
 
 class TestModuleLoader(object):
     

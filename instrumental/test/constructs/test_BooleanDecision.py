@@ -52,9 +52,9 @@ class TestBooleanDecision(object):
     def _make_expected_result(self, decision, *conditions_hit):
         node_source = SourceCodeRenderer.render(self.node)
         result_lines = []
-        result_lines.append("%s:%s < %s >" % (self.modulename,
-                                              self.node.lineno,
-                                              node_source)
+        result_lines.append("Decision -> %s:%s < %s >" % (self.modulename,
+                                                          self.node.lineno,
+                                                          node_source)
                             )
         result_lines.append("")
         for condition in ("T", "F"):

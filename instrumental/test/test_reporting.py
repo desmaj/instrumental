@@ -22,19 +22,19 @@ class TestExecutionReport(object):
         self.TF = FakeConstruct("Both", True, False)
         self.missed = FakeConstruct("Neither")
     
-    def _makeOne(self, constructs={}):
-        return ExecutionReport(constructs)
+    def _makeOne(self, working_directory='.', constructs={}, statements={}, sources={}):
+        return ExecutionReport(working_directory, constructs, statements, sources)
         
     def test_header(self):
         expected_header = """
------------------------------
-Instrumental Coverage Summary
------------------------------
+===============================================
+Instrumental Condition/Decision Coverage Report
+===============================================
 """
         
         reporter = self._makeOne()
-        assert expected_header in reporter.report()
+        assert expected_header in reporter.report(), reporter.report()
     
     def test_showall_true(self):
-        reporter = self._makeOne({1: self.missed})
-        assert "ConstructResult(Neither)" in reporter.report(True)
+        reporter = self._makeOne('.', {1: self.missed})
+        assert "ConstructResult(Neither)" in reporter.report(True), reporter.report(True)

@@ -1,10 +1,11 @@
-import ast
 import imp
 import os
 import re
 import sys
 
 from astkit.render import SourceCodeRenderer
+
+from instrumental.compat import ast
 
 class ModuleLoader(object):
     

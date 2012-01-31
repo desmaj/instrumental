@@ -1,5 +1,6 @@
-import ast
 import re
+
+from instrumental.compat import ast
 
 class PragmaNoCover(object):
     pass
