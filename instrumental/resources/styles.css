@@ -28,6 +28,10 @@ div.source td.missed-conditions {
     background: red;
 }
 
+div.source td.hoverable {
+    background: red;
+}
+
 div.source pre {
     padding: 0px;
     margin: 0px;

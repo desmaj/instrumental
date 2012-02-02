@@ -1,0 +1,18 @@
+Next release
+============
+
+Features
+--------
+
+- Statement coverage: Added the ability to gather and report on statement coverage.
+- HTML output: Added an option to produce an html coverage report detailing statement
+  and decision/condition coverage.
+- XML output: Added an option to produce a Cobertura-compatible XML coverage report that
+  can be used by Jenkins to track coverage metrics.
+- Test coverage: Added a bunch of new tests around instrumentation. Not enough, but some
+
+Bug Fixes
+---------
+
+- Package coverage reporting: fixed package coverage reporting when running nosetests;
+  we now instrument __init__.py files.

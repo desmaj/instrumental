@@ -106,6 +106,5 @@ executed.
 What doesn't Instrumental do?
 -----------------------------
 
-Instrumental doesn't currently provide statement or branch coverage. We may
-provide statement coverage in the future, but we are unlikely to provide
-branch coverage any time soon.
+Instrumental doesn't currently provide branch coverage. We are unlikely to provide
+branch coverage any time soon since we provide decision coverage, a superset of branch coverage.

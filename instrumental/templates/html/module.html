@@ -42,6 +42,7 @@ ${ decoration }
 <script type="text/javascript">
   $(function () {
     $('td.missed-conditions').each( function(index, element) {
+      $(element).siblings('.lineno').addClass('hoverable');
       $(element).siblings().hover(function (event) {
         $(element).dialog('open');
       }, function (event) {

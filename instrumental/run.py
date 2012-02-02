@@ -52,6 +52,10 @@ def main(argv=None):
         parser.print_help()
         sys.exit()
     
+    if not opts.targets:
+        print "No targets specified. Use the '-t' option to specify packages to cover"
+        sys.exit()
+    
     recorder = ExecutionRecorder.get()
     annotator_factory = AnnotatorFactory(recorder)
     monkey_patch_imp(opts.targets, opts.ignores, annotator_factory)

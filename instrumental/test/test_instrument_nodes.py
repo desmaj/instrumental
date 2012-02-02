@@ -229,4 +229,29 @@ class TestInstrumentNodesPython2(object):
         assert isinstance(inst_module.body[3].orelse[1],ast.Print)
 
     def test_If(self):
-        pass
+        def test_module():
+            if i:
+                print i
+            else:
+                print 'else'
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.If)
+        assert isinstance(inst_module.body[3].test, ast.Call)
+        assert isinstance(inst_module.body[3].test.func, ast.Attribute)
+        assert isinstance(inst_module.body[3].test.func.value, ast.Name)
+        assert inst_module.body[3].test.func.value.id == '_xxx_recorder_xxx_'
+        assert inst_module.body[3].test.func.attr == 'record'
+        assert isinstance(inst_module.body[3].test.args[0], ast.Name)
+        assert inst_module.body[3].test.args[0].id == 'i'
+        assert isinstance(inst_module.body[3].test.args[1], ast.Num)
+        assert inst_module.body[3].test.args[1].n == 1
+        assert not inst_module.body[3].test.keywords
+        assert not hasattr(inst_module.body[3].test, 'starargs')
+        assert not hasattr(inst_module.body[3].test, 'kwargs')
+        self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
+        assert isinstance(inst_module.body[3].body[1],ast.Print)
+        self._assert_record_statement(inst_module.body[3].orelse[0], 'test_module', 4)
+        assert isinstance(inst_module.body[3].orelse[1],ast.Print)
