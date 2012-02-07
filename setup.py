@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-import sys, os
 
 version = '0.3dev'
 
@@ -23,7 +22,7 @@ python setup.py nosetests
 
 you can say
 
-instrumental -rs -t <packagename> setup.py nosetests
+instrumental -rS -t <packagename> setup.py nosetests
 
 where packagename is the name of your project's top-level package.
 """,

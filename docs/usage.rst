@@ -8,7 +8,12 @@ instrumental provides a command that will run your Python code in an environment
 
   instrumental <path to your python script>
 
-When you run your code this way, it should run and exit as normal. instrumental will have gathered coverage information, but because you haven't asked for a report it won't tell you anything about it. Try this::
+When you run your code this way, it should run and exit as normal. instrumental will have gathered coverage information, but because you haven't asked for a report it won't tell you anything about it. 
+
+Statement coverage
+------------------
+
+Try this::
 
   instrumental -S -t <packagename> <path to your python script>
 
@@ -35,3 +40,50 @@ There I'm telling instrumental to run nosetests targetting the 'pyramid' package
   -----------------------------------------------------------
   TOTAL                          6419      0   100%
 
+Condition / decision coverage
+-----------------------------
+
+instrumental also aims to provide more rigorous forms of code coverage. Try running instrumental like this::
+
+  instrumental -r -t pyramid -i pyramid.tests `which nosetests`
+
+Invoking instrumental this way executes your code and provides you with a condition/decision coverage report
+when execution is complete. The output should look something like this::
+
+  ===============================================
+  Instrumental Condition/Decision Coverage Report
+  ===============================================
+  
+  Decision -> pyramid.authentication:43 < logger >
+  
+  T ==> True
+  F ==> False
+  
+  ...
+  
+  Decision -> pyramid.view:31 < (package_name is None) >
+  
+  T ==> True
+  F ==> False
+  
+  LogicalOr -> pyramid.view:281 < (getattr(request, 'exception', None) or context) >
+  
+  T * ==> True
+  F T ==> False
+  F F ==> False
+
+The preceeding output is formatted like this::
+
+  <construct type> -> <modulename>.<line number> < <source code> >
+  
+  <description of result>
+
+So in the example report above, the first chunk tells us that for the decision on line 43 of pyramid.authentication, 
+the False case was never executed. So we can say that test, evaluating "logger", never ran when "logger" evaluated
+not-True. Likewise, the second chunk tells us that the code at line 31 in pyramid.view was never executed when
+package_name was not None.
+
+The third chunk in the example report describes the condition coverage for the logical or on line 281 of
+pyramid.view. The result there says that every time the or decision was executed, the expression on the left side
+always evaluated True as a boolean expression. So the expression on the right side of the or, context, was never
+tested!

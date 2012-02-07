@@ -1,10 +1,10 @@
 Introduction
 ============
 
-What is Instrumental?
+What is instrumental?
 ---------------------
 
-Instrumental is a structural coverage reporting tool. Instrumental can tell you 
+instrumental is a structural coverage reporting tool. instrumental can tell you 
 which parts of your program have been executed after it has been run. You can 
 use this information to verify that your tests have executed your code and to
 determine which code has not been tested.
@@ -94,17 +94,17 @@ condition forces the parent decision False.
 This is a simple case, but you can see that the kind of analysis involved
 here is non-trivial. When you extrapolate this to a realistic program, the
 analysis quickly becomes prohibitively time-consuming and tedious. This is
-where Instrumental can help.
+where instrumental can help.
 
-What does Instrumental do?
+What does instrumental do?
 --------------------------
 
-Instrumental executes your program for you. Upon completion, it can produce
+instrumental executes your program for you. Upon completion, it can produce
 a report indicating whether or not the significant cases for a decision were
 executed.
 
-What doesn't Instrumental do?
+What doesn't instrumental do?
 -----------------------------
 
-Instrumental doesn't currently provide branch coverage. We are unlikely to provide
+instrumental doesn't currently provide branch coverage. We are unlikely to provide
 branch coverage any time soon since we provide decision coverage, a superset of branch coverage.

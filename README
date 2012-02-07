@@ -14,3 +14,8 @@ module who's full dotted name starts with 'somename'. When you're done,
 please show me a report containing coverage percentages as well as a summary 
 of all of the constructs you instrumented and the coverage results for those 
 constructs".
+
+Documentation
+=============
+
+More documentation is available at `Read the Docs <http://readthedocs.org/docs/instrumental>`.
