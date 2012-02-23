@@ -24,7 +24,7 @@ class TestRecorder(object):
                           col_offset=0)
         try:
             recorder.add_BoolOp('somemodule', node)
-        except TypeError, exc:
+        except TypeError as exc:
             assert "BoolOp" in str(exc), exc
     
     def test_constructs_accessor(self):

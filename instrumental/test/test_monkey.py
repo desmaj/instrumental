@@ -42,7 +42,7 @@ class TestLoadModule(object):
         samples_directory = os.path.dirname(instrumental.test.samples.__file__)
         simple_name = 'instrumental.test.samples.simple'
         simple_path = os.path.join(samples_directory, 'simple.py')
-        simple_fh = file(simple_path, 'r')
+        simple_fh = open(simple_path, 'r')
         load_module(simple_name,
                     simple_fh,
                     simple_path,
@@ -66,7 +66,7 @@ class TestLoadModule(object):
         samples_directory = os.path.dirname(instrumental.test.samples.__file__)
         simple_name = 'instrumental.test.samples.simple'
         simple_path = os.path.join(samples_directory, 'simple.py')
-        simple_fh = file(simple_path, 'r')
+        simple_fh = open(simple_path, 'r')
         load_module(simple_name,
                     simple_fh,
                     simple_path,

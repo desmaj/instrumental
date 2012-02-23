@@ -1,4 +1,5 @@
 import inspect
+import sys
 
 from astkit.render import SourceCodeRenderer as renderer
 
@@ -26,7 +27,7 @@ class TestInstrumentNodesPython2(object):
         transformer = CoverageAnnotator(module_func.__name__,
                                         self.recorder)
         inst_module = transformer.visit(module)
-        print renderer.render(inst_module)
+        # print renderer.render(inst_module)
         return inst_module
     
     def _assert_recorder_setup(self, module):
@@ -168,25 +169,28 @@ class TestInstrumentNodesPython2(object):
         assert isinstance(inst_module.body[3].value, ast.Num)
         assert inst_module.body[3].value.n == 4
     
-    def test_Print(self):
-        def test_module():
-            print bar
-        inst_module = self._instrument_module(test_module)
-        self._assert_recorder_setup(inst_module)
-        
-        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
-        assert isinstance(inst_module.body[3], ast.Print)
-        assert not inst_module.body[3].dest
-        assert isinstance(inst_module.body[3].values[0], ast.Name)
-        assert inst_module.body[3].values[0].id == 'bar'
-        assert inst_module.body[3].nl
+    if sys.version_info[0] < 3:
+        def test_Print(self):
+            exec(
+                "def test_module():"
+                "    print bar"
+            )
+            inst_module = self._instrument_module(test_module)
+            self._assert_recorder_setup(inst_module)
+            
+            self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+            assert isinstance(inst_module.body[3], ast.Print)
+            assert not inst_module.body[3].dest
+            assert isinstance(inst_module.body[3].values[0], ast.Name)
+            assert inst_module.body[3].values[0].id == 'bar'
+            assert inst_module.body[3].nl
     
     def test_For(self):
         def test_module():
             for i in [1,2,3,5]:
-                print i
+                return i
             else:
-                print 'else'
+                return 'else'
         inst_module = self._instrument_module(test_module)
         self._assert_recorder_setup(inst_module)
         
@@ -196,16 +200,16 @@ class TestInstrumentNodesPython2(object):
         assert inst_module.body[3].target.id == 'i'
         assert isinstance(inst_module.body[3].iter, ast.List)
         self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
-        assert isinstance(inst_module.body[3].body[1],ast.Print)
+        assert isinstance(inst_module.body[3].body[1],ast.Return)
         self._assert_record_statement(inst_module.body[3].orelse[0], 'test_module', 4)
-        assert isinstance(inst_module.body[3].orelse[1],ast.Print)
+        assert isinstance(inst_module.body[3].orelse[1],ast.Return)
     
     def test_While(self):
         def test_module():
             while i:
-                print i
+                return i
             else:
-                print 'else'
+                return 'else'
         inst_module = self._instrument_module(test_module)
         self._assert_recorder_setup(inst_module)
         
@@ -224,16 +228,16 @@ class TestInstrumentNodesPython2(object):
         assert not hasattr(inst_module.body[3].test, 'starargs')
         assert not hasattr(inst_module.body[3].test, 'kwargs')
         self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
-        assert isinstance(inst_module.body[3].body[1],ast.Print)
+        assert isinstance(inst_module.body[3].body[1],ast.Return)
         self._assert_record_statement(inst_module.body[3].orelse[0], 'test_module', 4)
-        assert isinstance(inst_module.body[3].orelse[1],ast.Print)
+        assert isinstance(inst_module.body[3].orelse[1],ast.Return)
 
     def test_If(self):
         def test_module():
             if i:
-                print i
+                return i
             else:
-                print 'else'
+                return 'else'
         inst_module = self._instrument_module(test_module)
         self._assert_recorder_setup(inst_module)
         
@@ -252,6 +256,6 @@ class TestInstrumentNodesPython2(object):
         assert not hasattr(inst_module.body[3].test, 'starargs')
         assert not hasattr(inst_module.body[3].test, 'kwargs')
         self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
-        assert isinstance(inst_module.body[3].body[1],ast.Print)
+        assert isinstance(inst_module.body[3].body[1],ast.Return)
         self._assert_record_statement(inst_module.body[3].orelse[0], 'test_module', 4)
-        assert isinstance(inst_module.body[3].orelse[1],ast.Print)
+        assert isinstance(inst_module.body[3].orelse[1],ast.Return)

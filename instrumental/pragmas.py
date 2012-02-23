@@ -56,7 +56,7 @@ class PragmaApplier(ast.NodeVisitor):
         return self._pragmas
     
     def _pragmas_for_range(self, start, end):
-        line_range = xrange(start, end)
+        line_range = range(start, end)
         pragma_lines = [lineno for lineno in self._pragmas
                         if self._pragmas[lineno]]
         pragmas = set()

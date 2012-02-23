@@ -309,5 +309,5 @@ class TestLiteralInConstruct(object):
     def test_presence_of_a_literal(self):
         recorder = ExecutionRecorder.get()
         recorder.add_BoolOp(self.modulename, self.node)
-        construct = recorder.constructs.values()[0]
+        construct = list(recorder.constructs.values())[0]
         assert "literal" in construct.result(), construct.result()

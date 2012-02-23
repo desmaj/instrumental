@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.3b2'
+version = '0.4dev'
 
 setup(name='instrumental',
       version=version,

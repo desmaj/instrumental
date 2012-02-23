@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 
 from mako.exceptions import text_error_template
 from mako.lookup import TemplateLookup
@@ -11,7 +12,7 @@ class HTMLCoverageReport(object):
         self.sources = sources
     
     def write(self, directory):
-        print "writing html coverage report to", directory
+        sys.stdout.write("writing html coverage report to %s\n" % directory)
         if os.path.isdir(directory):
             shutil.rmtree(directory)
         os.mkdir(directory)
@@ -36,7 +37,7 @@ class HTMLCoverageReport(object):
         packages_template = template_lookup.get_template('/html/packages.html')
         packages_html = packages_template.render(summary=self.summary)
         packages_path = os.path.join(directory, 'packages.html')
-        with file(packages_path, 'w') as f:
+        with open(packages_path, 'w') as f:
             f.write(packages_html)
         
         for package, package_summary in self.summary.packages.items():
@@ -56,7 +57,7 @@ class HTMLCoverageReport(object):
                                                source=source,
                                                conditions=conditions_by_line)
                 except:
-                    print text_error_template().render()
+                    sys.stdout.write(text_error_template().render())
                     raise
                 module_path = os.path.join(directory, module + '.html')
                 with file(module_path, 'w') as f:

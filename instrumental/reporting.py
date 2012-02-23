@@ -19,8 +19,11 @@ class ExecutionReport(object):
         lines.append("Instrumental Condition/Decision Coverage Report")
         lines.append("===============================================")
         lines.append("")
+        def _key_func(pair):
+            line, construct = pair
+            return (construct.modulename, construct.lineno, line)
         for label, construct in sorted(self.constructs.items(),
-                                       key=lambda (l, c): (c.modulename, c.lineno, l)):
+                                       key=_key_func):
             if showall or construct.conditions_missed():
                 lines.append(construct.result())
                 lines.append("")
@@ -140,7 +143,7 @@ class StatementCoverageFormatter(object):
         return [self._make_line(modulename, lines, longest_name_length + 4)
                 for modulename, lines 
                 in sorted(statements.items(),
-                          key=lambda (name, _): name)]
+                          key=lambda pair: pair[0])]
     
     def _make_summary(self, statements):
         longest_name_length = max(len(modulename) for modulename in statements)

@@ -5,6 +5,7 @@ from subprocess import PIPE
 from subprocess import Popen
 import sys
 
+from instrumental.compat import execfile
 from instrumental.importer import ImportHook
 from instrumental.instrument import AnnotatorFactory
 from instrumental.monkey import monkey_patch_imp
@@ -53,7 +54,7 @@ def main(argv=None):
         sys.exit()
     
     if not opts.targets:
-        print "No targets specified. Use the '-t' option to specify packages to cover"
+        sys.stdout.write("No targets specified. Use the '-t' option to specify packages to cover")
         sys.exit()
     
     recorder = ExecutionRecorder.get()
@@ -78,14 +79,14 @@ def main(argv=None):
                 opts.statements,
                 opts.xml,
                 opts.html]):
-            print
+            sys.stdout.write("\n")
             report = ExecutionReport(here, recorder.constructs, recorder.statements, recorder.sources)
             if opts.summary:
-                print report.summary()
+                sys.stdout.write(report.summary() + "\n")
             if opts.report:
-                print report.report(opts.all)
+                sys.stdout.write(report.report(opts.all) + "\n")
             if opts.statements:
-                print report.statement_summary()
+                sys.stdout.write(report.statement_summary() + "\n")
             if opts.xml:
                 report.write_xml_coverage_report(xml_filename)
             if opts.html:

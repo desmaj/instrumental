@@ -1,8 +1,10 @@
 import ast
 import inspect
+import sys
 
 from astkit.render import SourceCodeRenderer as renderer
 
+from instrumental.compat import exec_f
 from instrumental.instrument import CoverageAnnotator
 from instrumental.recorder import ExecutionRecorder
 
@@ -26,7 +28,7 @@ class TestInstrumentation(object):
         transformer = CoverageAnnotator(module_func.__name__,
                                         self.recorder)
         inst_module = transformer.visit(module)
-        print renderer.render(inst_module)
+        sys.stdout.write(renderer.render(inst_module) + "\n")
         #for node in ast.walk(inst_module):
         #    print node, node.__dict__
         code = compile(inst_module, '<string>', 'exec')
@@ -38,7 +40,7 @@ class TestInstrumentation(object):
             b = True
             result = a and b
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert True == result
         
         recorder = self.recorder
@@ -54,7 +56,7 @@ class TestInstrumentation(object):
             b = False
             result = a and b
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert False == result
         
         recorder = self.recorder
@@ -70,7 +72,7 @@ class TestInstrumentation(object):
             b = True
             result = a and b
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert False == result
         
         recorder = self.recorder
@@ -86,7 +88,7 @@ class TestInstrumentation(object):
             b = False
             result = a and b
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert False == result
         
         recorder = self.recorder
@@ -102,13 +104,12 @@ class TestInstrumentation(object):
             b = True
             result = a or b
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert True == result
         
         recorder = self.recorder
         label = 1
         assert label in recorder._constructs
-        print recorder._constructs[label].pins
         assert recorder._constructs[label].conditions[0]
         assert not recorder._constructs[label].conditions[1]
         assert not recorder._constructs[label].conditions[2]
@@ -119,13 +120,12 @@ class TestInstrumentation(object):
             b = False
             result = a or b
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert True == result
         
         recorder = self.recorder
         label = 1
         assert label in recorder._constructs
-        print recorder._constructs[label].pins
         assert recorder._constructs[label].conditions[0]
         assert not recorder._constructs[label].conditions[1]
         assert not recorder._constructs[label].conditions[2]
@@ -136,13 +136,12 @@ class TestInstrumentation(object):
             b = True
             result = a or b
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert True == result
         
         recorder = self.recorder
         label = 1
         assert label in recorder._constructs
-        print recorder._constructs[label].pins
         assert not recorder._constructs[label].conditions[0]
         assert recorder._constructs[label].conditions[1]
         assert not recorder._constructs[label].conditions[2]
@@ -153,13 +152,12 @@ class TestInstrumentation(object):
             b = False
             result = a or b
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert False == result
         
         recorder = self.recorder
         label = 1
         assert label in recorder._constructs
-        print recorder._constructs[label].pins
         assert not recorder._constructs[label].conditions[0]
         assert not recorder._constructs[label].conditions[1]
         assert recorder._constructs[label].conditions[2]
@@ -171,7 +169,7 @@ class TestInstrumentation(object):
             c = True
             result = a and b and c
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert True == result
         
         recorder = self.recorder
@@ -189,7 +187,7 @@ class TestInstrumentation(object):
             c = True
             result = a and b and c
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert False == result
         
         recorder = self.recorder
@@ -207,7 +205,7 @@ class TestInstrumentation(object):
             c = True
             result = a and b and c
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert False == result
         
         recorder = self.recorder
@@ -225,7 +223,7 @@ class TestInstrumentation(object):
             c = False
             result = a and b and c
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert False == result
         
         recorder = self.recorder
@@ -243,7 +241,7 @@ class TestInstrumentation(object):
             c = False
             result = a and b and c
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert False == result
         
         recorder = self.recorder
@@ -262,7 +260,7 @@ class TestInstrumentation(object):
             else:
                 result = 7
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert result is 1
         
         recorder = self.recorder
@@ -279,7 +277,7 @@ class TestInstrumentation(object):
             else:
                 result = 7
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert result is 7
         
         recorder = self.recorder
@@ -296,7 +294,7 @@ class TestInstrumentation(object):
                 a -= 1
                 result += 1
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert result is 0
         
         recorder = self.recorder
@@ -313,7 +311,7 @@ class TestInstrumentation(object):
                 a -= 1
                 result += 1
         code = self._load_and_compile_module(test_module)
-        exec code in globals(), locals()
+        exec_f(code, globals())
         assert result is 3
         
         recorder = self.recorder

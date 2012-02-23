@@ -4,6 +4,7 @@ import re
 import sys
 
 from instrumental.compat import ast
+from instrumental.compat import exec_f
 
 _imp_load_module = imp.load_module
 def monkey_patch_imp(targets, ignores, visitor_factory):
@@ -19,7 +20,7 @@ def load_module_factory(targets, ignores, visitor_factory):
             suffix, mode, type = description
             ispkg = type == imp.PKG_DIRECTORY
             if ispkg:
-                source = file(os.path.join(pathname, '__init__.py'), 'r').read()
+                source = open(os.path.join(pathname, '__init__.py'), 'r').read()
             else:
                 source = fh.read()
             visitor_factory.recorder.add_source(name, source)
@@ -34,6 +35,6 @@ def load_module_factory(targets, ignores, visitor_factory):
             else:
                 mod.__file__ = pathname
             mod.__loader__ = None
-            exec code in mod.__dict__
+            exec_f(code, mod.__dict__)
             return mod
     return load_module

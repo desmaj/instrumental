@@ -6,6 +6,7 @@ import sys
 from astkit.render import SourceCodeRenderer
 
 from instrumental.compat import ast
+from instrumental.compat import exec_f
 
 class ModuleLoader(object):
     
@@ -14,7 +15,9 @@ class ModuleLoader(object):
         self.visitor_factory = visitor_factory
     
     def _get_source(self, path):
-        return file(path, 'r').read()
+        with open(path, 'r') as f:
+            source = f.read()
+        return source
     
     def _get_code(self, fullname):
         ispkg = self.fullpath.endswith('__init__.py')
@@ -34,7 +37,7 @@ class ModuleLoader(object):
         mod.__loader__ = self
         if ispkg:
             mod.__path__ = [os.path.dirname(self.fullpath)]
-        exec code in mod.__dict__
+        exec_f(code, mod.__dict__)
         return mod
 
 class ImportHook(object):
@@ -69,7 +72,6 @@ class ImportHook(object):
         
         package_path = os.path.join(directory, fullname.split('.')[-1], '__init__.py')
         if os.path.exists(package_path):
-            print "loading package", package_path
             loader = ModuleLoader(package_path, self.visitor_factory)
             return loader
         
