@@ -9,8 +9,14 @@ from instrumental.recorder import ExecutionRecorder
 
 def load_module(func):
     source = inspect.getsource(func)
+    lines = source.splitlines(False)[1:]
+    leading_space_count = 0
+    for ch in lines[0]:
+        if ch != ' ':
+            break
+        leading_space_count += 1
     normal_source =\
-        "\n".join(line[12:] for line in source.splitlines(False)[1:])
+        "\n".join(line[leading_space_count:] for line in lines)
     module = ast.parse(normal_source)
     return module, normal_source
 
@@ -170,20 +176,7 @@ class TestInstrumentNodesPython2(object):
         assert inst_module.body[3].value.n == 4
     
     if sys.version_info[0] < 3:
-        def test_Print(self):
-            exec(
-                "def test_module():"
-                "    print bar"
-            )
-            inst_module = self._instrument_module(test_module)
-            self._assert_recorder_setup(inst_module)
-            
-            self._assert_record_statement(inst_module.body[2], 'test_module', 1)
-            assert isinstance(inst_module.body[3], ast.Print)
-            assert not inst_module.body[3].dest
-            assert isinstance(inst_module.body[3].values[0], ast.Name)
-            assert inst_module.body[3].values[0].id == 'bar'
-            assert inst_module.body[3].nl
+        from instrumental.test.py2_only import test_Print
     
     def test_For(self):
         def test_module():
