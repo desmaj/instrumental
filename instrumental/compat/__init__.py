@@ -23,8 +23,8 @@ if sys.version_info[0] < 3:
 else:
     eval(
         compile(
-            """exec_f = exec
-                def execfile(path, globals_=None, locals_=None):
+            "exec_f = exec\n"
+            """def execfile(path, globals_=None, locals_=None):
                     if globals_ is None:
                         globals_ = {}
                     if locals_ is None:
