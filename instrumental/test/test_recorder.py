@@ -5,6 +5,9 @@ class KnownValue(object):
     pass
 
 class TestRecorder(object):
+    def setup(self):
+        # Reset recorder
+        ExecutionRecorder._instance = None
     
     def test_construct_with_literal(self):
         recorder = ExecutionRecorder.get()

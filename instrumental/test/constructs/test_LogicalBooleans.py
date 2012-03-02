@@ -298,6 +298,8 @@ class TestLogicalBoolean(object):
 class TestLiteralInConstruct(object):
     
     def setup(self):
+        # Reset recorder
+        ExecutionRecorder._instance = None
         self.modulename = 'somename'
         self.node = ast.BoolOp(op=ast.Or(),
                                values=[ast.Name(id='a'),
