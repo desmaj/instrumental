@@ -29,10 +29,10 @@
 """
 import sys
 
+from astkit import ast
 from astkit.render import SourceCodeRenderer
 
 from instrumental import recorder
-from instrumental.compat import ast
 from instrumental.pragmas import PragmaNoCover
 
 def force_location(tree, lineno, col_offset=0):

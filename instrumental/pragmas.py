@@ -17,7 +17,7 @@
 #
 import re
 
-from instrumental.compat import ast
+from astkit import ast
 
 class PragmaNoCover(object):
     pass

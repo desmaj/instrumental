@@ -1,4 +1,5 @@
-from instrumental.compat import ast
+from astkit import ast
+
 from instrumental.recorder import ExecutionRecorder
 
 class KnownValue(object):

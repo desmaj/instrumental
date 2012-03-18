@@ -20,9 +20,9 @@ import os
 import re
 import sys
 
+from astkit import ast
 from astkit.render import SourceCodeRenderer
 
-from instrumental.compat import ast
 from instrumental.compat import exec_f
 
 class ModuleLoader(object):

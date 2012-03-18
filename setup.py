@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.4dev'
+version = '0.3.1'
 
 setup(name='instrumental',
       version=version,
@@ -36,7 +36,7 @@ where packagename is the name of your project's top-level package.
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-        'astkit',
+        'astkit>=0.4',
         'mako',
         ],
       tests_require=[

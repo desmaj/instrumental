@@ -1,4 +1,4 @@
-from instrumental.compat import ast
+from astkit import ast
 
 #test_instrument_nodes.py
 def test_Print(self):

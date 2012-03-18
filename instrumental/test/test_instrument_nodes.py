@@ -1,9 +1,9 @@
 import inspect
 import sys
 
+from astkit import ast
 from astkit.render import SourceCodeRenderer as renderer
 
-from instrumental.compat import ast
 from instrumental.instrument import CoverageAnnotator
 from instrumental.recorder import ExecutionRecorder
 

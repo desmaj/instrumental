@@ -20,7 +20,8 @@ from copy import deepcopy
 import inspect
 import sys
 
-from instrumental.compat import ast
+from astkit import ast
+
 from instrumental.constructs import BooleanDecision
 from instrumental.constructs import LogicalAnd
 from instrumental.constructs import LogicalOr

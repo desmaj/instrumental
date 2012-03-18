@@ -20,7 +20,8 @@ import os
 import re
 import sys
 
-from instrumental.compat import ast
+from astkit import ast
+
 from instrumental.compat import exec_f
 
 _imp_load_module = imp.load_module
