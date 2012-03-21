@@ -25,3 +25,5 @@ def exec_f(object_, globals_=None, locals_=None):
     elif globals_ and not locals_:
         locals_ = globals_
     exec object_ in globals_, locals_
+
+execfile = execfile
