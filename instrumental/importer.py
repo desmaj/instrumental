@@ -16,6 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import imp
+import logging
 import os
 import re
 import sys
@@ -25,6 +26,8 @@ from astkit.render import SourceCodeRenderer
 
 from instrumental.compat import exec_f
 
+log = logging.getLogger(__name__)
+
 class ModuleLoader(object):
     
     def __init__(self, fullpath, visitor_factory):
@@ -32,20 +35,26 @@ class ModuleLoader(object):
         self.visitor_factory = visitor_factory
     
     def _get_source(self, path):
+        """ Get the source code from a file path """
         with open(path, 'r') as f:
             source = f.read()
         return source
     
     def _get_code(self, fullname):
+        """ Get the instrumented code for a module
+            
+            Given a dotted module name, return a tuple that looks like
+            (<is the module a package>, <module's code object instrumented>)
+        """
+        # packages are loaded from __init__.py files
         ispkg = self.fullpath.endswith('__init__.py')
         code_str = self._get_source(self.fullpath)
-        self.visitor_factory.recorder.add_source(fullname, code_str)
+        visitor = self.visitor_factory.create(fullname, code_str)
         code_tree = ast.parse(code_str)
-        visitor = self.visitor_factory.create(fullname)
         new_code_tree = visitor.visit(code_tree)
-        # print SourceCodeRenderer.render(new_code_tree)
+        log.debug(SourceCodeRenderer.render(new_code_tree))
         code = compile(new_code_tree, self.fullpath, 'exec')
-        return ispkg, code
+        return (ispkg, code)
     
     def load_module(self, fullname):
         ispkg, code = self._get_code(fullname)
@@ -58,6 +67,8 @@ class ModuleLoader(object):
         return mod
 
 class ImportHook(object):
+    """ An implementation of an import hook per PEP 302
+    """
     
     def __init__(self, target, ignores, visitor_factory):
         self.target = target
@@ -65,7 +76,7 @@ class ImportHook(object):
         self.visitor_factory = visitor_factory
     
     def find_module(self, fullname, path=[]):
-        # print "find_module(%s, path=%r)" % (fullname, path), 'pyramid' in sys.modules
+        log.debug("find_module(%s, path=%r)",fullname, path)
         if ((not re.match(self.target, fullname)) 
             or
             any([re.match(ignore, fullname) for ignore in self.ignores])):
@@ -80,10 +91,11 @@ class ImportHook(object):
                 return loader
     
     def _loader_for_path(self, directory, fullname):
-        # print "loader_for_path", directory, fullname
+        log.debug("[loader for path] directory: %s; fullname: %s",
+                  directory, fullname)
         module_path = os.path.join(directory, fullname.split('.')[-1]) + ".py"
         if os.path.exists(module_path):
-            # print "loading module", module_path
+            log.debug("loading module from %s", module_path)
             loader = ModuleLoader(module_path, self.visitor_factory)
             return loader
         

@@ -55,14 +55,17 @@ class InstrumentedNodeFactory(object):
     def __init__(self, recorder):
         self._recorder = recorder
     
-    def instrument_node(self, modulename, node):
+    def instrument_node(self, modulename, node, pragmas, parent):
         if isinstance(node, ast.BoolOp):
-            return self._recorder.add_BoolOp(modulename, node)
+            return self._recorder.add_BoolOp(modulename, node, pragmas, parent)
         else:
             return node
     
     def instrument_test(self, modulename, node):
-        return self._recorder.add_test(modulename, node)
+        if not isinstance(node, ast.BoolOp):
+            return self._recorder.add_test(modulename, node)
+        else:
+            return node
     
     def instrument_statement(self, modulename, node):
         return self._recorder.add_statement(modulename, node)
@@ -72,7 +75,8 @@ class AnnotatorFactory(object):
     def __init__(self, recorder):
         self.recorder = recorder
     
-    def create(self, modulename):
+    def create(self, modulename, module_source):
+        self.recorder.add_source(modulename, module_source)
         return CoverageAnnotator(modulename, self.recorder)
 
 class CoverageAnnotator(ast.NodeTransformer):
@@ -82,6 +86,7 @@ class CoverageAnnotator(ast.NodeTransformer):
         self.pragmas = recorder.pragmas[modulename]
         self.node_factory = InstrumentedNodeFactory(recorder)
         self.modifiers = []
+        self.expression_context = []
     
     def visit_Module(self, module):
         self.generic_visit(module)
@@ -104,9 +109,16 @@ class CoverageAnnotator(ast.NodeTransformer):
         if PragmaNoCover in self.modifiers:
             result = boolop
         else:
+            pragmas = self.pragmas.get(boolop.lineno, [])
+            if self.expression_context:
+                parent = self.expression_context[-1]
+            else:
+                parent = None
             result =\
-                self.node_factory.instrument_node(self.modulename, boolop)
+                self.node_factory.instrument_node(self.modulename, boolop, pragmas, parent)
+            self.expression_context.append(result)
             result = self.generic_visit(result)
+            self.expression_context.pop(-1)
         return result
     
     def _visit_stmt(self, node):

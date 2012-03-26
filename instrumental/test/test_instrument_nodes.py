@@ -24,7 +24,7 @@ class TestInstrumentNodesPython2(object):
     
     def setup(self):
         # First clear out the recorder so that we'll create a new one
-        ExecutionRecorder._instance = None
+        ExecutionRecorder.reset()
         self.recorder = ExecutionRecorder.get()
     
     def _instrument_module(self, module_func):

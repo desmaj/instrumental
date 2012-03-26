@@ -1,7 +1,6 @@
 import sys
 
 from instrumental import importer
-from instrumental import importer
 
 class FakeRecorder(object):
     pragmas = {}
@@ -20,7 +19,7 @@ class FakeVisitor(object):
 class FakeVisitorFactory(object):
     recorder = FakeRecorder()
     
-    def create(self, name):
+    def create(self, name, source):
         visitor = FakeVisitor()
         return visitor
 

@@ -20,10 +20,20 @@ import re
 from astkit import ast
 
 class PragmaNoCover(object):
-    pass
+    block = True
+    
+    def __init__(self, match):
+        pass
 
+class PragmaNoCondition(object):
+    block = False
+    
+    def __init__(self, match):
+        self.conditions = match.group(1).split(',')
+        
 valid_pragmas = {
-    'no\s+cover': PragmaNoCover,
+    r'no\s+cover': PragmaNoCover,
+    r'no\s+cond\(([TF](\s+[TF])*(,[TF](\s+[TF]))*)\)': PragmaNoCondition,
     }
 
 class PragmaApplier(ast.NodeVisitor):
@@ -72,14 +82,18 @@ class PragmaApplier(ast.NodeVisitor):
         
         return self._pragmas
     
-    def _pragmas_for_range(self, start, end):
+    def _block_pragmas(self, pragmas):
+        return [pragma for pragma in pragmas
+                if pragma.block]
+    
+    def _block_pragmas_for_range(self, start, end):
         line_range = range(start, end)
         pragma_lines = [lineno for lineno in self._pragmas
-                        if self._pragmas[lineno]]
+                        if self._block_pragmas(self._pragmas[lineno])]
         pragmas = set()
         for lineno in line_range:
             if lineno in pragma_lines:
-                pragmas.update(self._pragmas[lineno])
+                pragmas.update(self._block_pragmas(self._pragmas[lineno]))
         return pragmas
     
     def _add_pragmas_to_body(self, pragmas, body):
@@ -89,15 +103,15 @@ class PragmaApplier(ast.NodeVisitor):
     def _visit_node_with_body_and_else(self, node):
         self.generic_visit(node)
         
-        stmt_pragmas = self._pragmas_for_range(node.lineno, 
-                                               node.body[0].lineno)
+        stmt_pragmas = self._block_pragmas_for_range(node.lineno, 
+                                                     node.body[0].lineno)
         if stmt_pragmas:
             for stmt in node.body:
                 self._pragmas.setdefault(stmt.lineno, set())\
                     .update(stmt_pragmas)
         if node.orelse:
-            else_pragmas = self._pragmas_for_range(node.body[-1].lineno+1, 
-                                                   node.orelse[0].lineno)
+            else_pragmas = self._block_pragmas_for_range(node.body[-1].lineno+1, 
+                                                         node.orelse[0].lineno)
             else_pragmas.update(stmt_pragmas)
             for stmt in node.orelse:
                 self._pragmas.setdefault(stmt.lineno, set())\
@@ -108,8 +122,8 @@ class PragmaApplier(ast.NodeVisitor):
     def _visit_node_with_body(self, node):
         self.generic_visit(node)
         
-        stmt_pragmas = self._pragmas_for_range(node.lineno, 
-                                               node.body[0].lineno)
+        stmt_pragmas = self._block_pragmas_for_range(node.lineno, 
+                                                     node.body[0].lineno)
         if stmt_pragmas:
             self._add_pragmas_to_body(stmt_pragmas, node.body)
     visit_FunctionDef = visit_ClassDef = visit_With = _visit_node_with_body
@@ -118,15 +132,15 @@ class PragmaApplier(ast.NodeVisitor):
     def visit_TryExcept(self, node):
         self.generic_visit(node)
         
-        stmt_pragmas = self._pragmas_for_range(node.lineno, 
-                                               node.body[0].lineno)
+        stmt_pragmas = self._block_pragmas_for_range(node.lineno, 
+                                                     node.body[0].lineno)
         if stmt_pragmas:
             for stmt in node.body:
                 self._pragmas.setdefault(stmt.lineno, set())\
                     .update(stmt_pragmas)
         if node.orelse:
-            else_pragmas = self._pragmas_for_range(node.handlers[-1].body[-1].lineno+1, 
-                                                   node.orelse[0].lineno)
+            else_pragmas = self._block_pragmas_for_range(node.handlers[-1].body[-1].lineno+1, 
+                                                         node.orelse[0].lineno)
             else_pragmas.update(stmt_pragmas)
             for stmt in node.orelse:
                 self._pragmas.setdefault(stmt.lineno, set())\
@@ -146,8 +160,9 @@ class PragmaFinder(object):
             if pragma_match:
                 pragma_text = pragma_match.group(1)
                 for pragma_label, pragma in valid_pragmas.items():
-                    if re.search(pragma_label, pragma_text):
-                        pragmas[lineno].add(pragma)
+                    pragma_match = re.search(pragma_label, pragma_text)
+                    if pragma_match:
+                        pragmas[lineno].add(pragma(pragma_match))
         
         applier = PragmaApplier(pragmas, source)
         pragmas = applier.apply()

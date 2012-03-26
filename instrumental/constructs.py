@@ -21,7 +21,7 @@ from astkit.render import SourceCodeRenderer
 
 class LogicalBoolean(object):
     
-    def __init__(self, modulename, node):
+    def __init__(self, modulename, node, parent):
         self.modulename = modulename
         self.node = deepcopy(node)
         self.lineno = node.lineno
@@ -30,6 +30,10 @@ class LogicalBoolean(object):
         self.conditions =\
             dict((i, False) for i in range(self.pins + 1))
         self.literals = {}
+        self.parent = parent
+    
+    def is_decision(self):
+        return bool(self.parent)
     
     def number_of_conditions(self):
         return len(self.conditions)
@@ -59,6 +63,16 @@ class LogicalBoolean(object):
                              " ==> " +\
                              str(self.conditions[condition]))
         return "\n".join(lines)
+    
+    def decision_result(self):
+        lines = []
+        name = "Decision -> %s:%s < %s >" % (self.modulename, self.lineno, self.source)
+        lines.append("%s" % (name,))
+        lines.append("")
+        lines.append("T ==> %r" % self.was_true())
+        lines.append("F ==> %r" % self.was_false())
+        return "\n".join(lines)
+    
 
 class LogicalAnd(LogicalBoolean):
     """ Stores the execution information for a Logical And
@@ -106,7 +120,13 @@ class LogicalAnd(LogicalBoolean):
             return acc
         elif n == (self.pins + 1):
             return "Other"
-        
+    
+    def was_true(self):
+        return self.conditions[0]
+    
+    def was_false(self):
+        return any(self.conditions[n] for n in range(1, self.pins+1))
+    
 class LogicalOr(LogicalBoolean):
     """ Stores the execution information for a Logical Or
         
@@ -150,6 +170,12 @@ class LogicalOr(LogicalBoolean):
             return " ".join("F" * self.pins)
         elif n == (self.pins + 1):
             return "Other"
+    
+    def was_true(self):
+        return any(self.conditions[n] for n in range(0, self.pins))
+    
+    def was_false(self):
+        return self.conditions[self.pins]
     
 class BooleanDecision(object):
     

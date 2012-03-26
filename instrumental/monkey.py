@@ -41,9 +41,8 @@ def load_module_factory(targets, ignores, visitor_factory):
                 source = open(os.path.join(pathname, '__init__.py'), 'r').read()
             else:
                 source = fh.read()
-            visitor_factory.recorder.add_source(name, source)
+            visitor = visitor_factory.create(name, source)
             code_tree = ast.parse(source)
-            visitor = visitor_factory.create(name)
             new_code_tree = visitor.visit(code_tree)
             code = compile(new_code_tree, pathname, 'exec')
             mod = sys.modules.setdefault(name, imp.new_module(name))

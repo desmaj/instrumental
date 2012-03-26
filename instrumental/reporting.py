@@ -17,6 +17,7 @@
 #
 import os
 
+from instrumental.constructs import LogicalBoolean
 from instrumental.htmlreport import HTMLCoverageReport
 from instrumental.summary import ExecutionSummary
 from instrumental.xmlreport import XMLCoverageReport
@@ -42,6 +43,10 @@ class ExecutionReport(object):
         for label, construct in sorted(self.constructs.items(),
                                        key=_key_func):
             if showall or construct.conditions_missed():
+                if (isinstance(construct, LogicalBoolean) 
+                    and construct.is_decision()):
+                    lines.append(construct.decision_result())
+                    lines.append("")
                 lines.append(construct.result())
                 lines.append("")
         return "\n".join(lines)

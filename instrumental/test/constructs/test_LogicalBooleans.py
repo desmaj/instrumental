@@ -33,10 +33,10 @@ class TestLogicalAnd(ThreePinTestCase):
         self.node.op = ast.And()
     
     def _makeOne(self):
-        return LogicalAnd(self.modulename, self.node)
+        return LogicalAnd(self.modulename, self.node, None)
     
     def test_constructor(self):
-        assert LogicalAnd(self.modulename, self.node)
+        assert LogicalAnd(self.modulename, self.node, None)
     
     def test_has_conditions(self):
         assert hasattr(self._makeOne(), 'conditions')
@@ -112,7 +112,7 @@ class TestLogicalAnd2Pin(TwoPinTestCase):
         self.node.op = ast.And()
     
     def _makeOne(self):
-        return LogicalAnd(self.modulename, self.node)
+        return LogicalAnd(self.modulename, self.node, None)
     
     def test_2_pin_and_condition_0(self):
         and_ = self._makeOne()
@@ -137,7 +137,7 @@ class TestLogicalOr(ThreePinTestCase):
         self.node.op = ast.Or()
     
     def _makeOne(self):
-        return LogicalOr(self.modulename, self.node)
+        return LogicalOr(self.modulename, self.node, None)
     
     def test_has_conditions(self):
         or_ = self._makeOne()
@@ -218,7 +218,7 @@ class TestLogicalOr2Pin(TwoPinTestCase):
         self.node.op = ast.Or()
     
     def _makeOne(self):
-        return LogicalOr(self.modulename, self.node)
+        return LogicalOr(self.modulename, self.node, None)
     
     def test_2_pin_or_condition_0(self):
         or_ = self._makeOne()
@@ -248,7 +248,7 @@ class TestLogicalBoolean(object):
                                )
     
     def _makeOne(self):
-        return LogicalAnd(self.modulename, self.node)
+        return LogicalAnd(self.modulename, self.node, None)
     
     def test_modulename(self):
         construct = self._makeOne()
@@ -299,7 +299,7 @@ class TestLiteralInConstruct(object):
     
     def setup(self):
         # Reset recorder
-        ExecutionRecorder._instance = None
+        ExecutionRecorder.reset()
         self.modulename = 'somename'
         self.node = ast.BoolOp(op=ast.Or(),
                                values=[ast.Name(id='a'),
@@ -310,6 +310,6 @@ class TestLiteralInConstruct(object):
     
     def test_presence_of_a_literal(self):
         recorder = ExecutionRecorder.get()
-        recorder.add_BoolOp(self.modulename, self.node)
+        recorder.add_BoolOp(self.modulename, self.node, [], None)
         construct = list(recorder.constructs.values())[0]
         assert "literal" in construct.result(), construct.result()

@@ -8,7 +8,7 @@ class KnownValue(object):
 class TestRecorder(object):
     def setup(self):
         # Reset recorder
-        ExecutionRecorder._instance = None
+        ExecutionRecorder.reset()
     
     def test_construct_with_literal(self):
         recorder = ExecutionRecorder.get()
@@ -17,7 +17,7 @@ class TestRecorder(object):
                                   ast.Str(s='""')],
                           lineno=1,
                           col_offset=0)
-        recorder.add_BoolOp('somemodule', node)
+        recorder.add_BoolOp('somemodule', node, [], None)
     
     def test_add_a_non_BoolOp(self):
         recorder = ExecutionRecorder.get()
@@ -27,7 +27,7 @@ class TestRecorder(object):
                           lineno=1,
                           col_offset=0)
         try:
-            recorder.add_BoolOp('somemodule', node)
+            recorder.add_BoolOp('somemodule', node, [], None)
         except TypeError as exc:
             assert "BoolOp" in str(exc), exc
     

@@ -42,6 +42,10 @@ def get_setup():
 
 class ExecutionRecorder(object):
     
+    @classmethod
+    def reset(cls):
+        cls._instance = None
+    
     _instance = None
     @classmethod
     def get(cls):
@@ -96,14 +100,14 @@ class ExecutionRecorder(object):
         self._constructs[label].record(arg, *args, **kwargs)
         return arg
     
-    def add_BoolOp(self, modulename, node):
+    def add_BoolOp(self, modulename, node, pragmas, parent):
         if isinstance(node.op, ast.And):
             construct_klass = LogicalAnd
         elif isinstance(node.op, ast.Or):
             construct_klass = LogicalOr
         else:
             raise TypeError("Expected a BoolOp node with an op field of ast.And or ast.Or")
-        construct = construct_klass(modulename, node)
+        construct = construct_klass(modulename, node, parent)
         
         label = self.next_label()
         self._constructs[label] = construct

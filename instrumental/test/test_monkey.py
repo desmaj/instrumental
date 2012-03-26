@@ -17,7 +17,7 @@ class TestLoadModule(object):
     
     def setup(self):
         from instrumental.recorder import ExecutionRecorder
-        ExecutionRecorder._instance = None
+        ExecutionRecorder.reset()
         self._pre_test_modules = sys.modules.keys()
     
     def teardown(self):
