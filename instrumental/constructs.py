@@ -21,7 +21,7 @@ from astkit.render import SourceCodeRenderer
 
 class LogicalBoolean(object):
     
-    def __init__(self, modulename, node, parent):
+    def __init__(self, modulename, node, parent=None):
         self.modulename = modulename
         self.node = deepcopy(node)
         self.lineno = node.lineno

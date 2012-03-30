@@ -108,6 +108,8 @@ class ExecutionRecorder(object):
         else:
             raise TypeError("Expected a BoolOp node with an op field of ast.And or ast.Or")
         construct = construct_klass(modulename, node, parent)
+        for pragma in pragmas:
+            construct = pragma(construct)
         
         label = self.next_label()
         self._constructs[label] = construct

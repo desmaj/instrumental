@@ -19,21 +19,49 @@ import re
 
 from astkit import ast
 
-class PragmaNoCover(object):
-    block = True
+class Pragma(object):
+    block = False
     
     def __init__(self, match):
         pass
 
-class PragmaNoCondition(object):
+    def __call__(self, construct):
+        return ConstructWrapper(construct, self)
+    
+    def apply(self, construct):
+        return construct
+
+class PragmaNoCover(Pragma):
+    block = True
+    
+class PragmaNoCondition(Pragma):
     block = False
     
     def __init__(self, match):
         self.conditions = match.group(1).split(',')
         
+    def __call__(self, construct):
+        return ConstructWrapper(construct, self)
+    
+    def apply(self, construct):
+        for condition in construct.conditions:
+            if construct.description(condition) in self.conditions:
+                construct.conditions[condition] = True
+        return construct
+
+class ConstructWrapper(object):
+    
+    def __init__(self, construct, pragma):
+        self.construct = pragma.apply(construct)
+    
+    def __getattr__(self, attr):
+        if hasattr(self.construct, attr):
+            return getattr(self.construct, attr)
+        raise AttributeError(attr)
+
 valid_pragmas = {
     r'no\s+cover': PragmaNoCover,
-    r'no\s+cond\(([TF](\s+[TF])*(,[TF](\s+[TF]))*)\)': PragmaNoCondition,
+    r'no\s+cond\(([TF\*](\s+[TF\*])*(,[TF\*](\s+[TF\*]))*)\)': PragmaNoCondition,
     }
 
 class PragmaApplier(ast.NodeVisitor):
