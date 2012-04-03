@@ -21,6 +21,10 @@ class TestInstrumentation(object):
         # First clear out the recorder so that we'll create a new one
         ExecutionRecorder.reset()
         self.recorder = ExecutionRecorder.get()
+        self.recorder.start()
+    
+    def teardown(self):
+        self.recorder.stop()
     
     def _load_and_compile_module(self, module_func):
         module, source = load_module(module_func)

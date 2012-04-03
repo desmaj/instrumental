@@ -60,6 +60,13 @@ class ExecutionRecorder(object):
         self._statements = {}
         self._branches = {}
         self.pragmas = {}
+        self.recording = False
+        
+    def start(self):
+        self.recording = True
+    
+    def stop(self):
+        self.recording = False
     
     def add_source(self, modulename, source):
         self._sources[modulename] = source
@@ -97,7 +104,8 @@ class ExecutionRecorder(object):
         return kall
     
     def record(self, arg, label, *args, **kwargs):
-        self._constructs[label].record(arg, *args, **kwargs)
+        if self.recording:
+            self._constructs[label].record(arg, *args, **kwargs)
         return arg
     
     def add_BoolOp(self, modulename, node, pragmas, parent):
@@ -161,7 +169,8 @@ class ExecutionRecorder(object):
         return kall_stmt
     
     def record_statement(self, modulename, lineno):
-        self._statements[modulename][lineno] = True
+        if self.recording:
+            self._statements[modulename][lineno] = True
     
     def add_statement(self, modulename, node):
         lines = self._statements.setdefault(modulename, {})

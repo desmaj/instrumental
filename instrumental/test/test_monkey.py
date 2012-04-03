@@ -7,10 +7,10 @@ class TestMonkeyPatch(object):
     def test_monkeypatch(self):
         import imp
         from instrumental.instrument import AnnotatorFactory
-        from instrumental.monkey import monkey_patch_imp
+        from instrumental.monkey import monkeypatch_imp
         
         original_load_module = imp.load_module
-        monkey_patch_imp([], [], AnnotatorFactory(None))
+        monkeypatch_imp([], [], AnnotatorFactory(None))
         assert original_load_module != imp.load_module
 
 class TestLoadModule(object):

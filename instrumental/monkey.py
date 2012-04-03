@@ -25,8 +25,11 @@ from astkit import ast
 from instrumental.compat import exec_f
 
 _imp_load_module = imp.load_module
-def monkey_patch_imp(targets, ignores, visitor_factory):
+def monkeypatch_imp(targets, ignores, visitor_factory):
     imp.load_module = load_module_factory(targets, ignores, visitor_factory)
+
+def unmonkeypatch_imp():
+    imp.load_module = _imp_load_module
 
 def load_module_factory(targets, ignores, visitor_factory):
     def load_module(name, fh, pathname, description):

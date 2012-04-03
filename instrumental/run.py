@@ -22,10 +22,8 @@ from subprocess import PIPE
 from subprocess import Popen
 import sys
 
+from instrumental.api import Coverage
 from instrumental.compat import execfile
-from instrumental.importer import ImportHook
-from instrumental.instrument import AnnotatorFactory
-from instrumental.monkey import monkey_patch_imp
 from instrumental.recorder import ExecutionRecorder
 from instrumental.reporting import ExecutionReport
 
@@ -74,11 +72,8 @@ def main(argv=None):
         sys.stdout.write("No targets specified. Use the '-t' option to specify packages to cover")
         sys.exit()
     
-    recorder = ExecutionRecorder.get()
-    annotator_factory = AnnotatorFactory(recorder)
-    monkey_patch_imp(opts.targets, opts.ignores, annotator_factory)
-    for target in opts.targets:
-        sys.meta_path.append(ImportHook(target, opts.ignores, annotator_factory))
+    coverage = Coverage()
+    coverage.start(opts.targets, opts.ignores)
     
     xml_filename = os.path.abspath('instrumental.xml')
     
@@ -96,7 +91,9 @@ def main(argv=None):
                 opts.statements,
                 opts.xml,
                 opts.html]):
+            coverage.stop()
             sys.stdout.write("\n")
+            recorder = coverage.recorder
             report = ExecutionReport(here, recorder.constructs, recorder.statements, recorder.sources)
             if opts.summary:
                 sys.stdout.write(report.summary() + "\n")
