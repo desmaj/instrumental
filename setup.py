@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.3.1'
+version = '0.3.2'
 
 setup(name='instrumental',
       version=version,
@@ -25,6 +25,9 @@ you can say
 instrumental -rS -t <packagename> setup.py nosetests
 
 where packagename is the name of your project's top-level package.
+
+Announcements and discussion about instrumental can be found on the
+"python-instrumental-discuss" google group.
 """,
       classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       keywords='ast condition decision coverage',

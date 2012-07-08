@@ -111,5 +111,4 @@ class TestPragmaNoCondition(object):
         construct.record(True, 0)
         construct.record(True, 1)
         
-        print construct.conditions
         assert not construct.conditions_missed()

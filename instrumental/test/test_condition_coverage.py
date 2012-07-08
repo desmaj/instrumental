@@ -324,3 +324,61 @@ class TestInstrumentation(object):
         assert recorder._constructs[label].conditions[True]
         assert recorder._constructs[label].conditions[False]
     
+    def test_instrument_ifexp_true(self):
+        def test_module():
+            a = 3
+            result = 1 if a == 3 else 4
+        code = self._load_and_compile_module(test_module)
+        exec_f(code, globals())
+        assert result is 1
+        
+        recorder = self.recorder
+        label = 1
+        assert label in recorder._constructs
+        assert recorder._constructs[label].conditions[True]
+        assert not recorder._constructs[label].conditions[False]
+    
+    def test_instrument_ifexp_false(self):
+        def test_module():
+            a = 3
+            result = 1 if a != 3 else 4
+        code = self._load_and_compile_module(test_module)
+        exec_f(code, globals())
+        assert result is 4
+        
+        recorder = self.recorder
+        label = 1
+        assert label in recorder._constructs
+        assert not recorder._constructs[label].conditions[True]
+        assert recorder._constructs[label].conditions[False]
+
+    def test_instrument_ifexp_true_and_false(self):
+        def test_module():
+            def test_func(arg):
+                return 1 if arg == 3 else 4
+            test_func(3)
+            test_func(2)
+        code = self._load_and_compile_module(test_module)
+        exec_f(code, globals())
+        
+        recorder = self.recorder
+        label = 1
+        assert label in recorder._constructs
+        assert recorder._constructs[label].conditions[True]
+        assert recorder._constructs[label].conditions[False]
+    
+    def test_instrument_ifexp_with_boolop(self):
+        def test_module():
+            def test_func(a, b):
+                return 1 if a and b else 4
+            test_func(True, False)
+    
+        code = self._load_and_compile_module(test_module)
+        exec_f(code, globals())
+        
+        recorder = self.recorder
+        label = 1
+        assert label in recorder._constructs
+        assert not recorder._constructs[label].conditions[0] # TT
+        assert not recorder._constructs[label].conditions[1] # FT
+        assert recorder._constructs[label].conditions[2]     # TF

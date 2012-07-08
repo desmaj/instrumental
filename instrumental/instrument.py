@@ -121,6 +121,14 @@ class CoverageAnnotator(ast.NodeTransformer):
             self.expression_context.pop(-1)
         return result
     
+    def visit_IfExp(self, ifexp):
+        if PragmaNoCover in self.modifiers:
+            result = ifexp
+        else:
+            ifexp.test = self.node_factory.instrument_test(self.modulename, ifexp.test)
+            result = self.generic_visit(ifexp)
+        return result
+    
     def _visit_stmt(self, node):
         if PragmaNoCover in self.pragmas[node.lineno]:
             self.modifiers.append(PragmaNoCover)

@@ -1,13 +1,15 @@
 Next Release
 ============
 
-Features
---------
+0.3.2
+============
 
 Bug Fixes
 ---------
 
-3.1
+- The IfExp node (a if bool else b) is now instrumented and coverage is reported.
+
+0.3.1
 ===
 
 Features

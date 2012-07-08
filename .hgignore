@@ -5,3 +5,4 @@ egg-info
 docs/_build
 env3
 dist
+.tox
