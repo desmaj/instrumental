@@ -21,16 +21,14 @@ from astkit.render import SourceCodeRenderer
 
 class LogicalBoolean(object):
     
-    def __init__(self, modulename, node, parent=None):
-        self.modulename = modulename
+    def __init__(self, node, pragmas):
         self.node = deepcopy(node)
-        self.lineno = node.lineno
+        self.pragmas = pragmas
         self.source = SourceCodeRenderer.render(node)
         self.pins = len(node.values)
         self.conditions =\
             dict((i, False) for i in range(self.pins + 1))
         self.literals = {}
-        self.parent = parent
     
     def is_decision(self):
         return bool(self.parent)
@@ -52,7 +50,7 @@ class LogicalBoolean(object):
         
     def result(self):
         lines = []
-        name = "%s -> %s:%s < %s >" % (self.__class__.__name__, self.modulename, self.lineno, self.source)
+        name = "%s -> < %s >" % (self.__class__.__name__, self.source)
         lines.append("%s" % (name,))
         if self.literals:
             lines.append("")
@@ -66,7 +64,7 @@ class LogicalBoolean(object):
     
     def decision_result(self):
         lines = []
-        name = "Decision -> %s:%s < %s >" % (self.modulename, self.lineno, self.source)
+        name = "Decision -> < %s >" % (self.source,)
         lines.append("%s" % (name,))
         lines.append("")
         lines.append("T ==> %r" % self.was_true())
@@ -179,9 +177,9 @@ class LogicalOr(LogicalBoolean):
     
 class BooleanDecision(object):
     
-    def __init__(self, modulename, node):
-        self.modulename = modulename
+    def __init__(self, node, pragmas):
         self.node = deepcopy(node)
+        self.pragmas = pragmas
         self.lineno = node.lineno
         self.source = SourceCodeRenderer.render(node)
         self.conditions = {True: False,

@@ -1,5 +1,3 @@
-import ast
-import inspect
 import sys
 
 from astkit.render import SourceCodeRenderer as renderer
@@ -7,13 +5,7 @@ from astkit.render import SourceCodeRenderer as renderer
 from instrumental.compat import exec_f
 from instrumental.instrument import CoverageAnnotator
 from instrumental.recorder import ExecutionRecorder
-
-def load_module(func):
-    source = inspect.getsource(func)
-    normal_source =\
-        "\n".join(line[12:] for line in source.splitlines(False)[1:])
-    module = ast.parse(normal_source)
-    return module, normal_source
+from instrumental.test import load_module
 
 class TestInstrumentation(object):
     
@@ -33,8 +25,6 @@ class TestInstrumentation(object):
                                         self.recorder)
         inst_module = transformer.visit(module)
         sys.stdout.write(renderer.render(inst_module) + "\n")
-        #for node in ast.walk(inst_module):
-        #    print node, node.__dict__
         code = compile(inst_module, '<string>', 'exec')
         return code
     
