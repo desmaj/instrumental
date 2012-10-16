@@ -47,7 +47,7 @@ class LogicalBoolean(object):
         return self.number_of_conditions() - self.number_of_conditions_hit()
     
     def _literal_warning(self):
-        return ("** One or more conditions maybe not be reachable due to"
+        return ("** One or more conditions may not be reachable due to"
                 " the presence of a literal in the decision")
         
     def result(self):

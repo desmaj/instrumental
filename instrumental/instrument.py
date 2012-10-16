@@ -88,6 +88,10 @@ class CoverageAnnotator(ast.NodeTransformer):
         self.modifiers = []
         self.expression_context = []
     
+    def _has_pragma(self, lineno, pragma_klass):
+        return any(isinstance(pragma, pragma_klass)
+                   for pragma in self.pragmas[lineno])
+    
     def visit_Module(self, module):
         self.generic_visit(module)
         recorder_setup = recorder.get_setup()
@@ -130,15 +134,17 @@ class CoverageAnnotator(ast.NodeTransformer):
         return result
     
     def _visit_stmt(self, node):
-        if PragmaNoCover in self.pragmas[node.lineno]:
+        if self._has_pragma(node.lineno, PragmaNoCover):
             self.modifiers.append(PragmaNoCover)
+        
         if PragmaNoCover in self.modifiers:
             result = node
         else:
             marker = self.node_factory.instrument_statement(self.modulename, node)
             self.generic_visit(node)
             result = [marker, node]
-        if PragmaNoCover in self.pragmas[node.lineno]:
+        
+        if self._has_pragma(node.lineno, PragmaNoCover):
             self.modifiers.pop(-1)
         return result
     
@@ -171,14 +177,19 @@ class CoverageAnnotator(ast.NodeTransformer):
     
     def visit_ClassDef(self, defn):
         if not has_docstring(defn):
-            return self._visit_stmt(defn)
-        
-        if PragmaNoCover in self.pragmas[defn.lineno]:
+            visitor = self._visit_stmt
+        else:
+            visitor = self._visit_defn_with_docstring
+            
+        if self._has_pragma(defn.lineno, PragmaNoCover):
             self.modifiers.append(PragmaNoCover)
         
-        result = self._visit_defn_with_docstring(defn)
+        if PragmaNoCover in self.modifiers:
+            result = defn
+        else:
+            result = visitor(defn)
         
-        if PragmaNoCover in self.pragmas[defn.lineno]:
+        if self._has_pragma(defn.lineno, PragmaNoCover):
             self.modifiers.pop(-1)
         
         return result
@@ -196,18 +207,18 @@ class CoverageAnnotator(ast.NodeTransformer):
         return self._visit_stmt(expr)
     
     def visit_ExceptHandler(self, excepthandler):
-        if PragmaNoCover in self.pragmas[excepthandler.lineno]:
+        if self._has_pragma(excepthandler.lineno, PragmaNoCover):
             self.modifiers.append(PragmaNoCover)
         
         self.generic_visit(excepthandler)
         
-        if PragmaNoCover in self.pragmas[excepthandler.lineno]:
+        if self._has_pragma(excepthandler.lineno, PragmaNoCover):
             self.modifiers.pop(-1)
         
         return excepthandler
     
     def visit_For(self, for_):
-        if PragmaNoCover in self.pragmas[for_.lineno]:
+        if self._has_pragma(for_.lineno, PragmaNoCover):
             self.modifiers.append(PragmaNoCover)
         
         if PragmaNoCover in self.modifiers:
@@ -217,7 +228,7 @@ class CoverageAnnotator(ast.NodeTransformer):
             marker = self.node_factory.instrument_statement(self.modulename, for_)
             result = [marker, for_]
         
-        if PragmaNoCover in self.pragmas[for_.lineno]:
+        if self._has_pragma(for_.lineno, PragmaNoCover):
             self.modifiers.pop(-1)
         
         return result
@@ -226,12 +237,12 @@ class CoverageAnnotator(ast.NodeTransformer):
         if not has_docstring(defn):
             return self._visit_stmt(defn)
         
-        if PragmaNoCover in self.pragmas[defn.lineno]:
+        if self._has_pragma(defn.lineno, PragmaNoCover):
             self.modifiers.append(PragmaNoCover)
         
         result = self._visit_defn_with_docstring(defn)
         
-        if PragmaNoCover in self.pragmas[defn.lineno]:
+        if self._has_pragma(defn.lineno, PragmaNoCover):
             self.modifiers.pop(-1)
         
         return result
@@ -240,8 +251,9 @@ class CoverageAnnotator(ast.NodeTransformer):
         return self._visit_stmt(global_)
     
     def visit_If(self, if_):
-        if PragmaNoCover in self.pragmas[if_.lineno]:
+        if self._has_pragma(if_.lineno, PragmaNoCover):
             self.modifiers.append(PragmaNoCover)
+        
         if PragmaNoCover in self.modifiers:
             result = if_
         else:
@@ -249,7 +261,8 @@ class CoverageAnnotator(ast.NodeTransformer):
             if_ = self.generic_visit(if_)
             marker = self.node_factory.instrument_statement(self.modulename, if_)
             result = [marker, if_]
-        if PragmaNoCover in self.pragmas[if_.lineno]:
+        
+        if self._has_pragma(if_.lineno, PragmaNoCover):
             self.modifiers.pop(-1)
         return result
     
@@ -257,8 +270,9 @@ class CoverageAnnotator(ast.NodeTransformer):
         return self._visit_stmt(import_)
     
     def visit_ImportFrom(self, import_):
-        if PragmaNoCover in self.pragmas[import_.lineno]:
+        if self._has_pragma(import_.lineno, PragmaNoCover):
             self.modifiers.append(PragmaNoCover)
+        
         self.generic_visit(import_)
         if PragmaNoCover in self.modifiers:
             result = import_
@@ -268,7 +282,8 @@ class CoverageAnnotator(ast.NodeTransformer):
                 result = [import_, marker]
             else:
                 result = [marker, import_]
-        if PragmaNoCover in self.pragmas[import_.lineno]:
+        
+        if self._has_pragma(import_.lineno, PragmaNoCover):
             self.modifiers.pop(-1)
         return result
     
@@ -291,8 +306,9 @@ class CoverageAnnotator(ast.NodeTransformer):
         return self._visit_stmt(try_)
     
     def visit_While(self, while_):
-        if PragmaNoCover in self.pragmas[while_.lineno]:
+        if self._has_pragma(while_.lineno, PragmaNoCover):
             self.modifiers.append(PragmaNoCover)
+        
         if PragmaNoCover in self.modifiers:
             result = while_
         else:
@@ -300,7 +316,8 @@ class CoverageAnnotator(ast.NodeTransformer):
             self.generic_visit(while_)
             marker = self.node_factory.instrument_statement(self.modulename, while_)
             result = [marker, while_]
-        if PragmaNoCover in self.pragmas[while_.lineno]:
+        
+        if self._has_pragma(while_.lineno, PragmaNoCover):
             self.modifiers.pop(-1)
         return result
 
