@@ -79,7 +79,7 @@ class ExecutionSummary(BaseExecutionSummary):
                     _conditions.setdefault(_package(modulename), {})
                 _package_conditions.update(\
                     dict((label, condition) 
-                         for label, condition in self.conditions.items()
+                         for label, condition in self.conditions[modulename].items()
                          if condition.modulename == modulename)
                     )
                     

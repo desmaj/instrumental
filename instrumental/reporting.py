@@ -87,8 +87,16 @@ class ExecutionReport(object):
         xml_report = XMLCoverageReport(self.working_directory, self.metadata)
         xml_report.write(filename)
     
-    def write_html_coverage_report(self, directory='instrumental'):
-        html_report = HTMLCoverageReport(self.metadata)
+    def write_html_coverage_report(self, directory='instrumental-result-html'):
+        conditions = {}
+        statements = {}
+        sources = {}
+        for modulename in self.metadata:
+            conditions[modulename] = self.metadata[modulename].constructs
+            statements[modulename] = self.metadata[modulename].lines
+            sources[modulename] = self.metadata[modulename].source
+        summary = ExecutionSummary(conditions, statements)
+        html_report = HTMLCoverageReport(summary, sources)
         html_report.write(os.path.join(self.working_directory, directory))
     
 class Chunk(object):

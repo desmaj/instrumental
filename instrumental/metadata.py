@@ -22,18 +22,23 @@ def gather_metadata(recorder, targets, ignores):
             source = open(filepath, "r").read()
             pragmas = PragmaFinder().find_pragmas(source)
             metadata = MetadataGatheringVisitor.analyze(modulename,
+                                                        filepath,
                                                         source,
                                                         pragmas)
             recorder.add_metadata(metadata)
 
 class ModuleMetadata(object):
     
-    def __init__(self, modulename, source, pragmas):
+    def __init__(self, modulename, filepath, source, pragmas):
         self.modulename = modulename
+        self.filepath = filepath
         self.source = source
         self.lines = {}
         self.constructs = {}
         self.pragmas = pragmas
+    
+    def is_package(self):
+        return self.filepath.endswith('__init__.py')
     
     def next_label(self, lineno):
         i = 1
@@ -44,9 +49,9 @@ class ModuleMetadata(object):
 class MetadataGatheringVisitor(ast.NodeVisitor):
     
     @classmethod
-    def analyze(cls, modulename, source, pragmas):
+    def analyze(cls, modulename, filepath, source, pragmas):
         module_ast = ast.parse(source)
-        metadata = ModuleMetadata(modulename, source, pragmas)
+        metadata = ModuleMetadata(modulename, filepath, source, pragmas)
         visitor = cls(metadata, pragmas)
         visitor.visit(module_ast)
         return visitor.metadata
