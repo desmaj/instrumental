@@ -192,7 +192,10 @@ class BooleanDecision(object):
         self.source = SourceCodeRenderer.render(node)
         self.conditions = {True: False,
                            False: False}
-        
+    
+    def is_decision(self):
+        return True
+    
     def record(self, expression):
         result = bool(expression)
         self.conditions[result] = True

@@ -52,25 +52,23 @@ class ExecutionReport(object):
         return "\n".join(lines)
     
     def summary(self):
-        modules = {}
-        for construct in self.constructs.values():
-            constructs = modules.setdefault(construct.modulename, [])
-            constructs.append(construct)
-        
         lines = []
         lines.append("")
         lines.append("================================================")
         lines.append("Instrumental Condition/Decision Coverage Summary")
         lines.append("================================================")
         lines.append("")
-        for modulename, constructs in sorted(modules.items()):
+        for modulename, metadata in sorted(self.metadata.items()):
             total_conditions = sum(construct.number_of_conditions()
-                                   for construct in constructs)
+                                   for construct in metadata.constructs.values())
             hit_conditions = sum(construct.number_of_conditions_hit()
-                                 for construct in constructs)
-            lines.append('%s: %s/%s hit (%.0f%%)' %\
-                             (modulename, hit_conditions, total_conditions,
-                              hit_conditions/float(total_conditions) * 100))
+                                 for construct in metadata.constructs.values())
+            if not total_conditions:
+                lines.append('%s: 0/0 hit (---)' % modulename)
+            else:
+                lines.append('%s: %s/%s hit (%.0f%%)' %\
+                                 (modulename, hit_conditions, total_conditions,
+                                  hit_conditions/float(total_conditions) * 100))
         return '\n'.join(lines)
     
     def statement_summary(self):
@@ -81,15 +79,16 @@ class ExecutionReport(object):
                     ]
         
         formatter = StatementCoverageFormatter()
-        return "\n".join(outlines + [formatter.format(self.statements)])
+        statements = dict((modulename, self.metadata[modulename].lines)
+                          for modulename in self.metadata)
+        return "\n".join(outlines + [formatter.format(statements)])
 
     def write_xml_coverage_report(self, filename):
-        xml_report = XMLCoverageReport(self)
+        xml_report = XMLCoverageReport(self.working_directory, self.metadata)
         xml_report.write(filename)
     
     def write_html_coverage_report(self, directory='instrumental'):
-        summary = ExecutionSummary(self.constructs, self.statements)
-        html_report = HTMLCoverageReport(summary, self.sources)
+        html_report = HTMLCoverageReport(self.metadata)
         html_report.write(os.path.join(self.working_directory, directory))
     
 class Chunk(object):

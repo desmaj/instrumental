@@ -176,6 +176,10 @@ class SourceFinder(object):
     def _is_python_source(self, filename):
         return filename == '__init__.py' or filename.endswith('.py')
     
+    def _is_package_directory(self, dirname):
+        return (os.path.isdir(dirname) and
+                os.path.exists(os.path.join(dirname, '__init__.py')))
+    
     def _find_target(self, path, target, ignores):
         if '.' in target:
             prefix, suffix = target.split('.', 1)
@@ -187,7 +191,7 @@ class SourceFinder(object):
             filepath = os.path.join(path, filename)
             if self._is_python_source(filename):
                 yield filepath
-            elif os.path.isdir(filepath):
+            elif self._is_package_directory(filepath):
                 for filepath in self._find_target(filepath, suffix, ignores):
                     yield filepath
 
