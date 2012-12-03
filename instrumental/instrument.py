@@ -134,8 +134,9 @@ class CoverageAnnotator(ast.NodeTransformer):
         if PragmaNoCover in self.modifiers:
             result = ifexp
         else:
-            label = self._next_label(ifexp.lineno)
-            ifexp.test = self.node_factory.instrument_test(self.modulename, label, ifexp.test)
+            if not isinstance(ifexp.test, ast.BoolOp):
+                label = self._next_label(ifexp.lineno)
+                ifexp.test = self.node_factory.instrument_test(self.modulename, label, ifexp.test)
             result = self.generic_visit(ifexp)
         return result
     
@@ -258,8 +259,9 @@ class CoverageAnnotator(ast.NodeTransformer):
         if PragmaNoCover in self.modifiers:
             result = if_
         else:
-            label = self._next_label(if_.lineno)
-            if_.test = self.node_factory.instrument_test(self.modulename, label, if_.test)
+            if not isinstance(if_.test, ast.BoolOp):
+                label = self._next_label(if_.lineno)
+                if_.test = self.node_factory.instrument_test(self.modulename, label, if_.test)
             if_ = self.generic_visit(if_)
             marker = self.node_factory.instrument_statement(self.modulename, if_)
             result = [marker, if_]
@@ -310,8 +312,9 @@ class CoverageAnnotator(ast.NodeTransformer):
         if PragmaNoCover in self.modifiers:
             result = while_
         else:
-            label = self._next_label(while_.lineno)
-            while_.test = self.node_factory.instrument_test(self.modulename, label, while_.test)
+            if not isinstance(while_.test, ast.BoolOp):
+                label = self._next_label(while_.lineno)
+                while_.test = self.node_factory.instrument_test(self.modulename, label, while_.test)
             self.generic_visit(while_)
             marker = self.node_factory.instrument_statement(self.modulename, while_)
             result = [marker, while_]
