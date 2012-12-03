@@ -24,11 +24,9 @@ from instrumental.xmlreport import XMLCoverageReport
 
 class ExecutionReport(object):
     
-    def __init__(self, working_directory, constructs, statements, sources):
+    def __init__(self, working_directory, metadata):
         self.working_directory = working_directory
-        self.constructs = constructs
-        self.statements = statements
-        self.sources = sources
+        self.metadata = metadata
     
     def report(self, showall=False):
         lines = []
@@ -38,19 +36,19 @@ class ExecutionReport(object):
         lines.append("===============================================")
         lines.append("")
         def _key_func(pair):
-            label, construct = pair
-            modulename, label = label.split('::')
+            label, _ = pair
             lineno, index = label.split('.')
-            return (modulename, int(lineno), int(index))
-        for label, construct in sorted(self.constructs.items(),
-                                       key=_key_func):
-            if showall or construct.conditions_missed():
-                if (isinstance(construct, LogicalBoolean) 
-                    and construct.is_decision()):
-                    lines.append(construct.decision_result())
+            return (int(lineno), int(index))
+        for modulename, metadata in sorted(self.metadata.items()):
+            for label, construct in sorted(metadata.constructs.items(),
+                                           key=_key_func):
+                if showall or construct.conditions_missed():
+                    if (isinstance(construct, LogicalBoolean) 
+                        and construct.is_decision()):
+                        lines.append(construct.decision_result())
+                        lines.append("")
+                    lines.append(construct.result())
                     lines.append("")
-                lines.append(construct.result())
-                lines.append("")
         return "\n".join(lines)
     
     def summary(self):

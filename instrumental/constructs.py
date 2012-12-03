@@ -32,6 +32,10 @@ class LogicalBoolean(object):
             dict((i, False) for i in range(self.pins + 1))
         self.literals = {}
     
+    @property
+    def lineno(self):
+        return self.node.lineno
+    
     def is_decision(self):
         return self.label.endswith('.1')
     

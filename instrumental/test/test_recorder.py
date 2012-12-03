@@ -17,7 +17,7 @@ class TestRecorder(object):
                                   ast.Str(s='""')],
                           lineno=1,
                           col_offset=0)
-        recorder.add_BoolOp('somemodule', node, [], None)
+        recorder.add_BoolOp('somemodule', '1.1', node, [], None)
     
     def test_add_a_non_BoolOp(self):
         recorder = ExecutionRecorder.get()
@@ -30,19 +30,4 @@ class TestRecorder(object):
             recorder.add_BoolOp('somemodule', node, [], None)
         except TypeError as exc:
             assert "BoolOp" in str(exc), exc
-    
-    def test_constructs_accessor(self):
-        recorder = ExecutionRecorder.get()
-        recorder._constructs = KnownValue
-        assert KnownValue == recorder.constructs
-    
-    def test_statements_accessor(self):
-        recorder = ExecutionRecorder.get()
-        recorder._statements = KnownValue
-        assert KnownValue == recorder.statements
-    
-    def test_sources_accessor(self):
-        recorder = ExecutionRecorder.get()
-        recorder._sources = KnownValue
-        assert KnownValue == recorder.sources
-    
+

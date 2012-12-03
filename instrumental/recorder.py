@@ -54,7 +54,7 @@ class ExecutionRecorder(object):
         return cls._instance
     
     def __init__(self):
-        self._metadata = {}
+        self.metadata = {}
         self.recording = False
         
     def start(self):
@@ -63,28 +63,8 @@ class ExecutionRecorder(object):
     def stop(self):
         self.recording = False
     
-    @property
-    def constructs(self):
-        _constructs = {}
-        for modulename in sorted(self._metadata):
-            for label in sorted(self._metadata[modulename].constructs):
-                _constructs[modulename + "::" + label] = self._metadata[modulename].constructs[label]
-        return _constructs
-    
-    @property
-    def statements(self):
-        _statements = {}
-        for modulename in sorted(self._metadata):
-            _statements[modulename] = self._metadata[modulename].lines
-        return _statements
-    
-    @property
-    def sources(self):
-        return dict((modulename, self._metadata[modulename].source)
-                    for modulename in self._metadata)
-        
     def add_metadata(self, metadata):
-        self._metadata[metadata.modulename] = metadata
+        self.metadata[metadata.modulename] = metadata
     
     @staticmethod
     def get_recorder_call():
@@ -97,26 +77,17 @@ class ExecutionRecorder(object):
         return kall
     
     def record(self, arg, modulename, label, *args, **kwargs):
-        if self.recording and label in self._metadata[modulename].constructs:
-            self._metadata[modulename].constructs[label].record(arg, *args, **kwargs)
+        if self.recording and label in self.metadata[modulename].constructs:
+            self.metadata[modulename].constructs[label].record(arg, *args, **kwargs)
         return arg
     
     def add_BoolOp(self, modulename, label, node, pragmas, parent):
-        construct = self._metadata[modulename].constructs.get(label)
         # Now wrap the individual values in recorder calls
         base_call = self.get_recorder_call()
         base_call.args = \
             [ast.Str(s=modulename, lineno=node.lineno, col_offset=node.col_offset),
              ast.Str(s=label, lineno=node.lineno, col_offset=node.col_offset)]
         for i, value in enumerate(node.values):
-            if construct:
-                # Try to determine if the condition is a literal
-                # Maybe we can do something with this information?
-                try:
-                    literal = ast.literal_eval(value)
-                    construct.literals[i] = literal
-                except ValueError:
-                    pass
             recorder_call = deepcopy(base_call)
             recorder_call.args.insert(0, node.values[i])
             recorder_call.args.append(ast.copy_location(ast.Num(n=i), node.values[i]))
@@ -149,8 +120,8 @@ class ExecutionRecorder(object):
         return kall_stmt
     
     def record_statement(self, modulename, lineno):
-        if self.recording and lineno in self._metadata[modulename].lines:
-            self._metadata[modulename].lines[lineno] = True
+        if self.recording and lineno in self.metadata[modulename].lines:
+            self.metadata[modulename].lines[lineno] = True
     
     def add_statement(self, modulename, node):
         marker = self.get_statement_recorder_call(modulename, node.lineno)

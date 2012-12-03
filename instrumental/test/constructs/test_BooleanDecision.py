@@ -12,9 +12,10 @@ class TestBooleanDecision(object):
                                 comparators=[ast.Num(n=4)],
                                 lineno=5, col_offset=23)
         self.modulename = 'somepackage.somemodule'
+        self.label = '5.1'
 
     def _makeOne(self):
-        return BooleanDecision(self.modulename, self.node)
+        return BooleanDecision(self.modulename, self.label, self.node, {})
     
     def test_a_new_one(self):
         decision = self._makeOne()
@@ -53,7 +54,7 @@ class TestBooleanDecision(object):
         node_source = SourceCodeRenderer.render(self.node)
         result_lines = []
         result_lines.append("Decision -> %s:%s < %s >" % (self.modulename,
-                                                          self.node.lineno,
+                                                          self.label,
                                                           node_source)
                             )
         result_lines.append("")

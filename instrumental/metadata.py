@@ -85,7 +85,16 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
         else:
             raise ValueError("We should have an And or Or here")
         pragmas = self.metadata.pragmas.get(node.lineno, [])
-        return klass(self.metadata.modulename, label, node, pragmas)
+        construct = klass(self.metadata.modulename, label, node, pragmas)
+        for i, value in enumerate(node.values):
+            # Try to determine if the condition is a literal
+            # Maybe we can do something with this information?
+            try:
+                literal = ast.literal_eval(value)
+                construct.literals[i] = literal
+            except ValueError:
+                pass
+        return construct
     
     def _make_decision(self, label, node):
         # BoolOps will be collected elsewhere

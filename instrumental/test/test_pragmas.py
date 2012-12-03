@@ -97,7 +97,7 @@ class TestPragmaNoCondition(object):
                           op=ast.And(),
                           lineno=17,
                           col_offset=4)
-        construct = LogicalAnd('<string>', node, None)
+        construct = LogicalAnd('<string>', '17.1', node, None)
         match = re.match(r'(T F,F \*)', 'T F,F *')
         pragma = PragmaNoCondition(match)
         construct = pragma(construct)

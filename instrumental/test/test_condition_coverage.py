@@ -20,13 +20,25 @@ class TestInstrumentation(object):
     
     def _load_and_compile_module(self, module_func):
         module, source = load_module(module_func)
-        self.recorder.add_source(module_func.__name__, source)
+        from instrumental.pragmas import PragmaFinder
+        pragmas = PragmaFinder().find_pragmas(source)
+        from instrumental.metadata import MetadataGatheringVisitor
+        self.recorder.add_metadata(MetadataGatheringVisitor.analyze(module_func.__name__,
+                                                                    source, 
+                                                                    pragmas))
+        # self.recorder.add_source(module_func.__name__, source)
         transformer = CoverageAnnotator(module_func.__name__,
                                         self.recorder)
         inst_module = transformer.visit(module)
         sys.stdout.write(renderer.render(inst_module) + "\n")
         code = compile(inst_module, '<string>', 'exec')
         return code
+    
+    def _verify_conditions(self, module, label, expected):
+        construct = self.recorder.metadata[module.__name__].constructs[label]
+        for i, value in enumerate(expected):
+            assert expected[i] == construct.conditions[i],\
+                (i, expected, construct.conditions)
     
     def test_two_pin_and_t_t(self):
         def test_module():
@@ -37,12 +49,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert True == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert recorder._constructs[label].conditions[0]
-        assert not recorder._constructs[label].conditions[1]
-        assert not recorder._constructs[label].conditions[2]
+        self._verify_conditions(test_module, '3.1', 
+                                [True, False, False])
     
     def test_two_pin_and_t_f(self):
         def test_module():
@@ -53,12 +61,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[0]
-        assert not recorder._constructs[label].conditions[1]
-        assert recorder._constructs[label].conditions[2]
+        self._verify_conditions(test_module, '3.1', 
+                                [False, False, True])
     
     def test_two_pin_and_f_t(self):
         def test_module():
@@ -69,12 +73,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[0]
-        assert recorder._constructs[label].conditions[1]
-        assert not recorder._constructs[label].conditions[2]
+        self._verify_conditions(test_module, '3.1', 
+                                [False, True, False])
     
     def test_two_pin_and_f_f(self):
         def test_module():
@@ -85,12 +85,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[0]
-        assert recorder._constructs[label].conditions[1]
-        assert not recorder._constructs[label].conditions[2]
+        self._verify_conditions(test_module, '3.1', 
+                                [False, True, False])
     
     def test_two_pin_or_t_t(self):
         def test_module():
@@ -101,12 +97,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert True == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert recorder._constructs[label].conditions[0]
-        assert not recorder._constructs[label].conditions[1]
-        assert not recorder._constructs[label].conditions[2]
+        self._verify_conditions(test_module, '3.1', 
+                                [True, False, False])
     
     def test_two_pin_or_t_f(self):
         def test_module():
@@ -117,12 +109,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert True == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert recorder._constructs[label].conditions[0]
-        assert not recorder._constructs[label].conditions[1]
-        assert not recorder._constructs[label].conditions[2]
+        self._verify_conditions(test_module, '3.1', 
+                                [True, False, False])
     
     def test_two_pin_or_f_t(self):
         def test_module():
@@ -133,12 +121,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert True == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[0]
-        assert recorder._constructs[label].conditions[1]
-        assert not recorder._constructs[label].conditions[2]
+        self._verify_conditions(test_module, '3.1', 
+                                [False, True, False])
     
     def test_two_pin_or_f_f(self):
         def test_module():
@@ -149,12 +133,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[0]
-        assert not recorder._constructs[label].conditions[1]
-        assert recorder._constructs[label].conditions[2]
+        self._verify_conditions(test_module, '3.1', 
+                                [False, False, True])
     
     def test_three_pin_and_t_t_t(self):
         def test_module():
@@ -166,13 +146,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert True == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert recorder._constructs[label].conditions[0]
-        assert not recorder._constructs[label].conditions[1]
-        assert not recorder._constructs[label].conditions[2]
-        assert not recorder._constructs[label].conditions[3]
+        self._verify_conditions(test_module, '4.1', 
+                                [True, False, False, False])
     
     def test_three_pin_and_f_t_t(self):
         def test_module():
@@ -184,13 +159,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[0]
-        assert recorder._constructs[label].conditions[1]
-        assert not recorder._constructs[label].conditions[2]
-        assert not recorder._constructs[label].conditions[3]
+        self._verify_conditions(test_module, '4.1', 
+                                [False, True, False, False])
     
     def test_three_pin_and_t_f_t(self):
         def test_module():
@@ -202,13 +172,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[0]
-        assert not recorder._constructs[label].conditions[1]
-        assert recorder._constructs[label].conditions[2]
-        assert not recorder._constructs[label].conditions[3]
+        self._verify_conditions(test_module, '4.1', 
+                                [False, False, True, False])
     
     def test_three_pin_and_t_t_f(self):
         def test_module():
@@ -220,13 +185,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[0]
-        assert not recorder._constructs[label].conditions[1]
-        assert not recorder._constructs[label].conditions[2]
-        assert recorder._constructs[label].conditions[3]
+        self._verify_conditions(test_module, '4.1', 
+                                [False, False, False, True])
     
     def test_three_pin_and_f_f_f(self):
         def test_module():
@@ -238,13 +198,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[0]
-        assert recorder._constructs[label].conditions[1]
-        assert not recorder._constructs[label].conditions[2]
-        assert not recorder._constructs[label].conditions[3]
+        self._verify_conditions(test_module, '4.1', 
+                                [False, True, False, False])
     
     def test_instrument_if_true_result(self):
         def test_module():
@@ -257,11 +212,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert result is 1
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert recorder._constructs[label].conditions[True]
-        assert not recorder._constructs[label].conditions[False]
+        self._verify_conditions(test_module, '2.1', [False, True])
         
     def test_instrument_if_false_result(self):
         def test_module():
@@ -274,11 +225,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert result is 7
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[True]
-        assert recorder._constructs[label].conditions[False]
+        self._verify_conditions(test_module, '2.1', [True, False])
         
     def test_instrument_while_false_result(self):
         def test_module():
@@ -291,11 +238,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert result is 0
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[True]
-        assert recorder._constructs[label].conditions[False]
+        self._verify_conditions(test_module, '3.1', [True, False])
         
     def test_instrument_while_with_loop_result(self):
         def test_module():
@@ -308,12 +251,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert result is 3
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert recorder._constructs[label].conditions[True]
-        assert recorder._constructs[label].conditions[False]
-    
+        self._verify_conditions(test_module, '3.1', [True, True])
+            
     def test_instrument_ifexp_true(self):
         def test_module():
             a = 3
@@ -322,11 +261,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert result is 1
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert recorder._constructs[label].conditions[True]
-        assert not recorder._constructs[label].conditions[False]
+        self._verify_conditions(test_module, '2.1', [False, True])
     
     def test_instrument_ifexp_false(self):
         def test_module():
@@ -336,12 +271,8 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert result is 4
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[True]
-        assert recorder._constructs[label].conditions[False]
-
+        self._verify_conditions(test_module, '2.1', [True, False])
+    
     def test_instrument_ifexp_true_and_false(self):
         def test_module():
             def test_func(arg):
@@ -351,11 +282,7 @@ class TestInstrumentation(object):
         code = self._load_and_compile_module(test_module)
         exec_f(code, globals())
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert recorder._constructs[label].conditions[True]
-        assert recorder._constructs[label].conditions[False]
+        self._verify_conditions(test_module, '2.1', [True, True])
     
     def test_instrument_ifexp_with_boolop(self):
         def test_module():
@@ -366,9 +293,5 @@ class TestInstrumentation(object):
         code = self._load_and_compile_module(test_module)
         exec_f(code, globals())
         
-        recorder = self.recorder
-        label = 1
-        assert label in recorder._constructs
-        assert not recorder._constructs[label].conditions[0] # TT
-        assert not recorder._constructs[label].conditions[1] # FT
-        assert recorder._constructs[label].conditions[2]     # TF
+        self._verify_conditions(test_module, '2.1', [False, False, True])
+        

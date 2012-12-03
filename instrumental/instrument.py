@@ -82,7 +82,7 @@ class CoverageAnnotator(ast.NodeTransformer):
     
     def __init__(self, modulename, recorder):
         self.modulename = modulename
-        self.pragmas = recorder._metadata[modulename].pragmas
+        self.pragmas = recorder.metadata[modulename].pragmas
         self.node_factory = InstrumentedNodeFactory(recorder)
         self.modifiers = []
         self.expression_context = []

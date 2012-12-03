@@ -1,5 +1,11 @@
 from instrumental.reporting import ExecutionReport
 
+class FakeMetadata(object):
+    
+    def __init__(self, constructs, statements=[]):
+        self.constructs = constructs
+        self.statements = statements
+    
 class FakeConstruct(object):
     
     def __init__(self, label, *conditions_hit):
@@ -22,8 +28,8 @@ class TestExecutionReport(object):
         self.TF = FakeConstruct("Both", True, False)
         self.missed = FakeConstruct("Neither")
     
-    def _makeOne(self, working_directory='.', constructs={}, statements={}, sources={}):
-        return ExecutionReport(working_directory, constructs, statements, sources)
+    def _makeOne(self, working_directory, metadata):
+        return ExecutionReport(working_directory, metadata)
         
     def test_header(self):
         expected_header = """
@@ -32,9 +38,9 @@ Instrumental Condition/Decision Coverage Report
 ===============================================
 """
         
-        reporter = self._makeOne()
+        reporter = self._makeOne('.', {})
         assert expected_header in reporter.report(), reporter.report()
     
     def test_showall_true(self):
-        reporter = self._makeOne('.', {1: self.missed})
+        reporter = self._makeOne('.', {'somemodule': FakeMetadata({'1.1': self.missed})})
         assert "ConstructResult(Neither)" in reporter.report(True), reporter.report(True)

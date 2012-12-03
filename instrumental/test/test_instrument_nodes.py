@@ -28,8 +28,12 @@ class TestInstrumentNodesPython2(object):
         self.recorder = ExecutionRecorder.get()
     
     def _instrument_module(self, module_func):
+        from instrumental.metadata import MetadataGatheringVisitor
+        from instrumental.pragmas import PragmaFinder
         module, source = load_module(module_func)
-        self.recorder.add_source(module_func.__name__, source)
+        pragmas = PragmaFinder().find_pragmas(source)
+        metadata = MetadataGatheringVisitor.analyze(module_func.__name__, source, pragmas)
+        self.recorder.add_metadata(metadata)
         transformer = CoverageAnnotator(module_func.__name__,
                                         self.recorder)
         inst_module = transformer.visit(module)
@@ -215,8 +219,10 @@ class TestInstrumentNodesPython2(object):
         assert inst_module.body[3].test.func.attr == 'record'
         assert isinstance(inst_module.body[3].test.args[0], ast.Name)
         assert inst_module.body[3].test.args[0].id == 'i'
-        assert isinstance(inst_module.body[3].test.args[1], ast.Num)
-        assert inst_module.body[3].test.args[1].n == 1
+        assert isinstance(inst_module.body[3].test.args[1], ast.Str)
+        assert inst_module.body[3].test.args[1].s == 'test_module'
+        assert isinstance(inst_module.body[3].test.args[2], ast.Str)
+        assert inst_module.body[3].test.args[2].s == '1.1'
         assert not inst_module.body[3].test.keywords
         assert not hasattr(inst_module.body[3].test, 'starargs')
         assert not hasattr(inst_module.body[3].test, 'kwargs')
@@ -243,8 +249,10 @@ class TestInstrumentNodesPython2(object):
         assert inst_module.body[3].test.func.attr == 'record'
         assert isinstance(inst_module.body[3].test.args[0], ast.Name)
         assert inst_module.body[3].test.args[0].id == 'i'
-        assert isinstance(inst_module.body[3].test.args[1], ast.Num)
-        assert inst_module.body[3].test.args[1].n == 1
+        assert isinstance(inst_module.body[3].test.args[1], ast.Str)
+        assert inst_module.body[3].test.args[1].s == 'test_module', inst_module.body[3].test.args[1].s
+        assert isinstance(inst_module.body[3].test.args[2], ast.Str)
+        assert inst_module.body[3].test.args[2].s == '1.1', inst_module.body[3].test.args[2].s
         assert not inst_module.body[3].test.keywords
         assert not hasattr(inst_module.body[3].test, 'starargs')
         assert not hasattr(inst_module.body[3].test, 'kwargs')
