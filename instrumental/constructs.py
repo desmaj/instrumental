@@ -21,7 +21,9 @@ from astkit.render import SourceCodeRenderer
 
 class LogicalBoolean(object):
     
-    def __init__(self, node, pragmas):
+    def __init__(self, modulename, label, node, pragmas):
+        self.modulename = modulename
+        self.label = label
         self.node = deepcopy(node)
         self.pragmas = pragmas
         self.source = SourceCodeRenderer.render(node)
@@ -31,7 +33,7 @@ class LogicalBoolean(object):
         self.literals = {}
     
     def is_decision(self):
-        return bool(self.parent)
+        return self.label.endswith('.1')
     
     def number_of_conditions(self):
         return len(self.conditions)
@@ -50,7 +52,7 @@ class LogicalBoolean(object):
         
     def result(self):
         lines = []
-        name = "%s -> < %s >" % (self.__class__.__name__, self.source)
+        name = "%s -> %s:%s < %s >" % (self.__class__.__name__, self.modulename, self.label, self.source)
         lines.append("%s" % (name,))
         if self.literals:
             lines.append("")
@@ -64,7 +66,7 @@ class LogicalBoolean(object):
     
     def decision_result(self):
         lines = []
-        name = "Decision -> < %s >" % (self.source,)
+        name = "Decision -> %s:%s < %s >" % (self.modulename, self.label, self.source,)
         lines.append("%s" % (name,))
         lines.append("")
         lines.append("T ==> %r" % self.was_true())
@@ -177,7 +179,9 @@ class LogicalOr(LogicalBoolean):
     
 class BooleanDecision(object):
     
-    def __init__(self, node, pragmas):
+    def __init__(self, modulename, label, node, pragmas):
+        self.modulename = modulename
+        self.label = label
         self.node = deepcopy(node)
         self.pragmas = pragmas
         self.lineno = node.lineno
@@ -203,7 +207,7 @@ class BooleanDecision(object):
     
     def result(self):
         lines = []
-        name = "Decision -> %s:%s < %s >" % (self.modulename, self.lineno, self.source)
+        name = "Decision -> %s:%s < %s >" % (self.modulename, self.label, self.source)
         lines.append("%s" % (name,))
         lines.append("")
         lines.append("T ==> %r" % self.conditions[True])

@@ -2,6 +2,7 @@ import sys
 
 from instrumental.importer import ImportHook
 from instrumental.instrument import AnnotatorFactory
+from instrumental.metadata import gather_metadata
 from instrumental.monkey import monkeypatch_imp
 from instrumental.monkey import unmonkeypatch_imp
 from instrumental.recorder import ExecutionRecorder
@@ -13,6 +14,7 @@ class Coverage(object):
         self._import_hooks = []
 
     def start(self, targets, ignores):
+        gather_metadata(self.recorder, targets, ignores)
         annotator_factory = AnnotatorFactory(self.recorder)
         monkeypatch_imp(targets, ignores, annotator_factory)
         for target in targets:

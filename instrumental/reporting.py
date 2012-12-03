@@ -38,8 +38,10 @@ class ExecutionReport(object):
         lines.append("===============================================")
         lines.append("")
         def _key_func(pair):
-            line, construct = pair
-            return (construct.modulename, construct.lineno, line)
+            label, construct = pair
+            modulename, label = label.split('::')
+            lineno, index = label.split('.')
+            return (modulename, int(lineno), int(index))
         for label, construct in sorted(self.constructs.items(),
                                        key=_key_func):
             if showall or construct.conditions_missed():
@@ -147,7 +149,10 @@ class StatementCoverageFormatter(object):
     
     def _make_line(self, modulename, lines, column_width):
         missing_lines = [line for line in sorted(lines) if not lines[line]]
-        cover_pct = "%s%%" % int(100 * (len(lines) - len(missing_lines)) / float(len(lines)))
+        if lines:
+            cover_pct = "%s%%" % int(100 * (len(lines) - len(missing_lines)) / float(len(lines)))
+        else:
+            cover_pct = "100%"
         
         line = modulename.ljust(column_width)
         line = "".join([line, str(len(lines)).rjust(5)])

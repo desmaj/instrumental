@@ -55,15 +55,15 @@ class InstrumentedNodeFactory(object):
     def __init__(self, recorder):
         self._recorder = recorder
     
-    def instrument_node(self, modulename, node, pragmas, parent):
+    def instrument_node(self, modulename, label, node, pragmas, parent):
         if isinstance(node, ast.BoolOp):
-            return self._recorder.add_BoolOp(modulename, node, pragmas, parent)
+            return self._recorder.add_BoolOp(modulename, label, node, pragmas, parent)
         else:
             return node
     
-    def instrument_test(self, modulename, node):
+    def instrument_test(self, modulename, label, node):
         if not isinstance(node, ast.BoolOp):
-            return self._recorder.add_test(modulename, node)
+            return self._recorder.add_test(modulename, label, node)
         else:
             return node
     
@@ -76,17 +76,25 @@ class AnnotatorFactory(object):
         self.recorder = recorder
     
     def create(self, modulename, module_source):
-        self.recorder.add_source(modulename, module_source)
         return CoverageAnnotator(modulename, self.recorder)
 
 class CoverageAnnotator(ast.NodeTransformer):
     
     def __init__(self, modulename, recorder):
         self.modulename = modulename
-        self.pragmas = recorder.pragmas[modulename]
+        self.pragmas = recorder._metadata[modulename].pragmas
         self.node_factory = InstrumentedNodeFactory(recorder)
         self.modifiers = []
         self.expression_context = []
+        self._found_labels = []
+    
+    def _next_label(self, lineno):
+        i = 1
+        while ('%s.%s' % (lineno, i)) in self._found_labels:
+            i += 1
+        label = '%s.%s' % (lineno, i)
+        self._found_labels.append(label)
+        return label
     
     def visit_Module(self, module):
         self.generic_visit(module)
@@ -114,8 +122,9 @@ class CoverageAnnotator(ast.NodeTransformer):
                 parent = self.expression_context[-1]
             else:
                 parent = None
+            label = self._next_label(boolop.lineno)
             result =\
-                self.node_factory.instrument_node(self.modulename, boolop, pragmas, parent)
+                self.node_factory.instrument_node(self.modulename, label, boolop, pragmas, parent)
             self.expression_context.append(result)
             result = self.generic_visit(result)
             self.expression_context.pop(-1)
@@ -125,7 +134,8 @@ class CoverageAnnotator(ast.NodeTransformer):
         if PragmaNoCover in self.modifiers:
             result = ifexp
         else:
-            ifexp.test = self.node_factory.instrument_test(self.modulename, ifexp.test)
+            label = self._next_label(ifexp.lineno)
+            ifexp.test = self.node_factory.instrument_test(self.modulename, label, ifexp.test)
             result = self.generic_visit(ifexp)
         return result
     
@@ -142,11 +152,14 @@ class CoverageAnnotator(ast.NodeTransformer):
             self.modifiers.pop(-1)
         return result
     
-    def visit_AugAssign(self, augassign):
-        return self._visit_stmt(augassign)
+    def visit_Assert(self, assert_):
+        return self._visit_stmt(assert_)
     
     def visit_Assign(self, assign):
         return self._visit_stmt(assign)
+    
+    def visit_AugAssign(self, augassign):
+        return self._visit_stmt(augassign)
     
     def visit_Break(self, break_):
         return self._visit_stmt(break_)
@@ -245,7 +258,8 @@ class CoverageAnnotator(ast.NodeTransformer):
         if PragmaNoCover in self.modifiers:
             result = if_
         else:
-            if_.test = self.node_factory.instrument_test(self.modulename, if_.test)
+            label = self._next_label(if_.lineno)
+            if_.test = self.node_factory.instrument_test(self.modulename, label, if_.test)
             if_ = self.generic_visit(if_)
             marker = self.node_factory.instrument_statement(self.modulename, if_)
             result = [marker, if_]
@@ -296,7 +310,8 @@ class CoverageAnnotator(ast.NodeTransformer):
         if PragmaNoCover in self.modifiers:
             result = while_
         else:
-            while_.test = self.node_factory.instrument_test(self.modulename, while_.test)
+            label = self._next_label(while_.lineno)
+            while_.test = self.node_factory.instrument_test(self.modulename, label, while_.test)
             self.generic_visit(while_)
             marker = self.node_factory.instrument_statement(self.modulename, while_)
             result = [marker, while_]
