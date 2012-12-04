@@ -24,6 +24,7 @@ class TestInstrumentation(object):
         pragmas = PragmaFinder().find_pragmas(source)
         from instrumental.metadata import MetadataGatheringVisitor
         self.recorder.add_metadata(MetadataGatheringVisitor.analyze(module_func.__name__,
+                                                                    'somemodule.py',
                                                                     source, 
                                                                     pragmas))
         # self.recorder.add_source(module_func.__name__, source)

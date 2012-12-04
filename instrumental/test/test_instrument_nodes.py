@@ -32,7 +32,9 @@ class TestInstrumentNodesPython2(object):
         from instrumental.pragmas import PragmaFinder
         module, source = load_module(module_func)
         pragmas = PragmaFinder().find_pragmas(source)
-        metadata = MetadataGatheringVisitor.analyze(module_func.__name__, source, pragmas)
+        metadata = MetadataGatheringVisitor.analyze(module_func.__name__, 
+                                                    'somemodule.py',
+                                                    source, pragmas)
         self.recorder.add_metadata(metadata)
         transformer = CoverageAnnotator(module_func.__name__,
                                         self.recorder)

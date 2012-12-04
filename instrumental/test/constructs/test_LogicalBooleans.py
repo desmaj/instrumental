@@ -319,6 +319,6 @@ x = a or None"""
     
     def test_presence_of_a_literal(self):
         from instrumental.metadata import MetadataGatheringVisitor
-        metadata = MetadataGatheringVisitor.analyze(self.modulename, self.source, {6: []})
+        metadata = MetadataGatheringVisitor.analyze(self.modulename, 'somefile.py', self.source, {6: []})
         construct = metadata.constructs[self.label]
         assert "literal" in construct.result(), construct.result()

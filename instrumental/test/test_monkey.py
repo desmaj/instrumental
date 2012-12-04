@@ -66,7 +66,10 @@ class TestLoadModule(object):
         
         source = open(simple_path, "r").read()
         pragmas = PragmaFinder().find_pragmas(source)
-        metadata = MetadataGatheringVisitor.analyze(simple_name, source, pragmas)
+        metadata = MetadataGatheringVisitor.analyze(simple_name, 
+                                                    'simple_name.py', 
+                                                    source, 
+                                                    pragmas)
         
         recorder = ExecutionRecorder.get()
         recorder.add_metadata(metadata)
@@ -97,7 +100,10 @@ class TestLoadModule(object):
         
         source = open(os.path.join(simple_path, '__init__.py'), "r").read()
         pragmas = PragmaFinder().find_pragmas(source)
-        metadata = MetadataGatheringVisitor.analyze(simple_name, source, pragmas)
+        metadata = MetadataGatheringVisitor.analyze(simple_name, 
+                                                    '__init__.py',
+                                                    source, 
+                                                    pragmas)
         
         recorder = ExecutionRecorder.get()
         recorder.add_metadata(metadata)
