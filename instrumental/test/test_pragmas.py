@@ -1,3 +1,7 @@
+from astkit import ast
+
+from instrumental.test import InstrumentationTestCase
+
 class TestPragmaFinder(object):
     
     def setup(self):
@@ -112,3 +116,80 @@ class TestPragmaNoCondition(object):
         construct.record(True, 1)
         
         assert not construct.conditions_missed()
+
+class TestInstrumentationWithPragmas(InstrumentationTestCase):
+    
+    def test_ClassDef(self):
+        def test_module():
+            foo = 7
+            class FooClass(object): # pragma: no cover
+                bar = 4
+            baz = 8
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        
+        assert isinstance(inst_module.body[3], ast.Assign)
+        assert isinstance(inst_module.body[3].targets[0], ast.Name)
+        assert inst_module.body[3].targets[0].id == 'foo'
+        assert isinstance(inst_module.body[3].value, ast.Num)
+        assert inst_module.body[3].value.n == 7
+        
+        assert isinstance(inst_module.body[4], ast.ClassDef), inst_module.body[4]
+        assert inst_module.body[4].name == 'FooClass'
+        assert isinstance(inst_module.body[4].bases[0], ast.Name)
+        assert inst_module.body[4].bases[0].id == 'object'
+        
+        assert 1 == len(inst_module.body[4].body)
+        assert isinstance(inst_module.body[4].body[0], ast.Assign)
+        assert isinstance(inst_module.body[4].body[0].targets[0], ast.Name)
+        assert inst_module.body[4].body[0].targets[0].id == 'bar'
+        assert isinstance(inst_module.body[4].body[0].value, ast.Num)
+        assert inst_module.body[4].body[0].value.n == 4
+        
+        self._assert_record_statement(inst_module.body[5], 'test_module', 4)
+        
+        assert isinstance(inst_module.body[6], ast.Assign)
+        assert isinstance(inst_module.body[6].targets[0], ast.Name)
+        assert inst_module.body[6].targets[0].id == 'baz'
+        assert isinstance(inst_module.body[6].value, ast.Num)
+        assert inst_module.body[6].value.n == 8
+
+    def test_FunctionDef(self):
+        def test_module():
+            foo = 7
+            def foo_func(): # pragma: no cover
+                bar = 4
+            baz = 8
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        
+        assert isinstance(inst_module.body[3], ast.Assign)
+        assert isinstance(inst_module.body[3].targets[0], ast.Name)
+        assert inst_module.body[3].targets[0].id == 'foo'
+        assert isinstance(inst_module.body[3].value, ast.Num)
+        assert inst_module.body[3].value.n == 7
+        
+        assert isinstance(inst_module.body[4], ast.FunctionDef), inst_module.body[4]
+        assert inst_module.body[4].name == 'foo_func'
+        assert not inst_module.body[4].args.args
+        assert not inst_module.body[4].args.kwarg
+        assert not inst_module.body[4].decorator_list
+        
+        assert 1 == len(inst_module.body[4].body)
+        assert isinstance(inst_module.body[4].body[0], ast.Assign)
+        assert isinstance(inst_module.body[4].body[0].targets[0], ast.Name)
+        assert inst_module.body[4].body[0].targets[0].id == 'bar'
+        assert isinstance(inst_module.body[4].body[0].value, ast.Num)
+        assert inst_module.body[4].body[0].value.n == 4
+        
+        self._assert_record_statement(inst_module.body[5], 'test_module', 4)
+        
+        assert isinstance(inst_module.body[6], ast.Assign)
+        assert isinstance(inst_module.body[6].targets[0], ast.Name)
+        assert inst_module.body[6].targets[0].id == 'baz'
+        assert isinstance(inst_module.body[6].value, ast.Num)
+        assert inst_module.body[6].value.n == 8

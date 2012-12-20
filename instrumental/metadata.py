@@ -107,6 +107,12 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
             pragmas = self.metadata.pragmas.get(node.lineno, [])
             return constructs.BooleanDecision(self.metadata.modulename, label, node, pragmas)
     
+    def visit_Module(self, module):
+        docstring = None
+        if has_docstring(module):
+            docstring = module.body.pop(0)
+        self.generic_visit(module)
+    
     def visit_BoolOp(self, boolop):
         if PragmaNoCover in self.modifiers:
             return
