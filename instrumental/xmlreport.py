@@ -33,7 +33,7 @@ class CoverageObject(object):
             total_statements = len(statements)
             hit_statements = len([statement for statement in statements
                                   if statement])
-            return hit_statements / total_statements
+            return float(hit_statements) / total_statements
         else:
             return 1.0
     
@@ -44,7 +44,7 @@ class CoverageObject(object):
             total_conditions = 2 * len(decisions)
             total_conditions_hit = sum(construct.number_of_conditions_hit()
                                        for construct in decisions)
-            return total_conditions_hit / total_conditions
+            return float(total_conditions_hit) / total_conditions
         else:
             return 1.0
     
@@ -173,7 +173,7 @@ class ModuleCoverage(CoverageObject):
     
     @property
     def statements(self):
-        return self._metadata.lines
+        return self._metadata.lines.values()
     
     @property
     def decisions(self):
