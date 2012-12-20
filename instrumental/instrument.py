@@ -97,18 +97,19 @@ class CoverageAnnotator(ast.NodeTransformer):
         return label
     
     def visit_Module(self, module):
-        self.generic_visit(module)
         recorder_setup = recorder.get_setup()
-        for node in recorder_setup:
-            force_location(node, 1)
+        docstring = None
         if has_docstring(module):
-            recorder_setup = [module.body.pop(0) + recorder_setup]
+            docstring = module.body.pop(0)
+        self.generic_visit(module)
+        
         if has_future_import(module):
             future_import = module.body.pop(0)
-            if has_docstring(module):
-                recorder_setup.insert(1, future_import)
-            else:
-                recorder_setup.insert(0, future_import)
+            recorder_setup.insert(0, future_import)
+        if docstring:
+            recorder_setup.insert(0, docstring)
+        for node in recorder_setup:
+            force_location(node, 1)
         module.body = recorder_setup + module.body
         
         return module

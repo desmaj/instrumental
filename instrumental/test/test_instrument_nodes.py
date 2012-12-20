@@ -18,6 +18,7 @@ def load_module(func):
     normal_source =\
         "\n".join(line[leading_space_count:] for line in lines)
     module = ast.parse(normal_source)
+    assert isinstance(module, ast.Module)
     return module, normal_source
 
 class TestInstrumentNodesPython2(object):
@@ -42,26 +43,26 @@ class TestInstrumentNodesPython2(object):
         # print renderer.render(inst_module)
         return inst_module
     
-    def _assert_recorder_setup(self, module):
+    def _assert_recorder_setup(self, module, starting_lineno=0):
         assert isinstance(module, ast.Module)
         
-        assert isinstance(module.body[0], ast.ImportFrom)
-        assert module.body[0].module == 'instrumental.recorder'
-        assert isinstance(module.body[0].names[0], ast.alias)
-        assert module.body[0].names[0].name == 'ExecutionRecorder'
+        assert isinstance(module.body[starting_lineno], ast.ImportFrom)
+        assert module.body[starting_lineno].module == 'instrumental.recorder'
+        assert isinstance(module.body[starting_lineno].names[0], ast.alias)
+        assert module.body[starting_lineno].names[0].name == 'ExecutionRecorder'
         
-        assert isinstance(module.body[1], ast.Assign)
-        assert isinstance(module.body[1].targets[0], ast.Name)
-        assert module.body[1].targets[0].id == '_xxx_recorder_xxx_'
-        assert isinstance(module.body[1].value, ast.Call)
-        assert isinstance(module.body[1].value.func, ast.Attribute)
-        assert isinstance(module.body[1].value.func.value, ast.Name)
-        assert module.body[1].value.func.value.id == 'ExecutionRecorder'
-        assert module.body[1].value.func.attr == 'get'
-        assert not module.body[1].value.args
-        assert not module.body[1].value.keywords
-        assert not module.body[1].value.starargs
-        assert not module.body[1].value.kwargs
+        assert isinstance(module.body[starting_lineno+1], ast.Assign)
+        assert isinstance(module.body[starting_lineno+1].targets[0], ast.Name)
+        assert module.body[starting_lineno+1].targets[0].id == '_xxx_recorder_xxx_'
+        assert isinstance(module.body[starting_lineno+1].value, ast.Call)
+        assert isinstance(module.body[starting_lineno+1].value.func, ast.Attribute)
+        assert isinstance(module.body[starting_lineno+1].value.func.value, ast.Name)
+        assert module.body[starting_lineno+1].value.func.value.id == 'ExecutionRecorder'
+        assert module.body[starting_lineno+1].value.func.attr == 'get'
+        assert not module.body[starting_lineno+1].value.args
+        assert not module.body[starting_lineno+1].value.keywords
+        assert not module.body[starting_lineno+1].value.starargs
+        assert not module.body[starting_lineno+1].value.kwargs
     
     def _assert_record_statement(self, statement, modname, lineno):
         assert isinstance(statement, ast.Expr)
@@ -262,3 +263,69 @@ class TestInstrumentNodesPython2(object):
         assert isinstance(inst_module.body[3].body[1],ast.Return)
         self._assert_record_statement(inst_module.body[3].orelse[0], 'test_module', 4)
         assert isinstance(inst_module.body[3].orelse[1],ast.Return)
+    
+    def test_Module_with_docstring(self):
+        def test_module():
+            """ I am a docstring
+                I span more than one line """
+            if u:
+                return u
+            else:
+                return 'else'
+        inst_module = self._instrument_module(test_module)
+        assert ast.get_docstring(inst_module)
+        self._assert_recorder_setup(inst_module, 1)
+    
+    def test_Module_with_future_import(self):
+        from instrumental.metadata import MetadataGatheringVisitor
+        from instrumental.pragmas import PragmaFinder
+        
+        source = """from __future__ import with_statement
+if u:
+    return u
+else:
+    return 'else'
+"""
+        module = ast.parse(source)
+        pragmas = PragmaFinder().find_pragmas(source)
+        metadata = MetadataGatheringVisitor.analyze('somemodule', 
+                                                    'somemodule.py',
+                                                    source, pragmas)
+        self.recorder.add_metadata(metadata)
+        transformer = CoverageAnnotator('somemodule',
+                                        self.recorder)
+        inst_module = transformer.visit(module)
+        
+        assert isinstance(inst_module.body[0], ast.ImportFrom)
+        assert module.body[0].module == '__future__'
+        assert isinstance(module.body[0].names[0], ast.alias)
+        assert module.body[0].names[0].name == 'with_statement'
+        self._assert_recorder_setup(inst_module, 1)
+    
+    def test_Module_with_docstring_and_future_import(self):
+        from instrumental.metadata import MetadataGatheringVisitor
+        from instrumental.pragmas import PragmaFinder
+        
+        source = """'a docstring am I'
+from __future__ import with_statement
+if u:
+    return u
+else:
+    return 'else'
+"""
+        module = ast.parse(source)
+        pragmas = PragmaFinder().find_pragmas(source)
+        metadata = MetadataGatheringVisitor.analyze('somemodule', 
+                                                    'somemodule.py',
+                                                    source, pragmas)
+        self.recorder.add_metadata(metadata)
+        transformer = CoverageAnnotator('somemodule',
+                                        self.recorder)
+        inst_module = transformer.visit(module)
+        
+        
+        assert isinstance(inst_module.body[1], ast.ImportFrom)
+        assert module.body[1].module == '__future__'
+        assert isinstance(module.body[1].names[0], ast.alias)
+        assert module.body[1].names[0].name == 'with_statement'
+        self._assert_recorder_setup(inst_module, 2)
