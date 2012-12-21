@@ -114,15 +114,12 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
         self.generic_visit(module)
     
     def visit_BoolOp(self, boolop):
-        if PragmaNoCover in self.modifiers:
-            return
-        else:
-            label = self.metadata.next_label(boolop.lineno)
-            construct = self._make_boolop_construct(label, boolop)
-            self.metadata.constructs[label] = construct
-            self.expression_context.append(label)
-            self.generic_visit(boolop)
-            self.expression_context.pop(-1)
+        label = self.metadata.next_label(boolop.lineno)
+        construct = self._make_boolop_construct(label, boolop)
+        self.metadata.constructs[label] = construct
+        self.expression_context.append(label)
+        self.generic_visit(boolop)
+        self.expression_context.pop(-1)
             
     def visit_If(self, if_):
         if self._has_pragma(PragmaNoCover, if_.lineno):
@@ -206,7 +203,7 @@ class SourceFinder(object):
                 for filepath in self._find_target(filepath, suffix, ignores):
                     yield filepath
 
-if __name__ == '__main__':
+if __name__ == '__main__': # pragma: no cover
 
     target = sys.argv[1]
     ignores = [sys.argv[2]] if len(sys.argv) > 2 else []

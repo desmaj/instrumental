@@ -173,7 +173,7 @@ class PragmaApplier(ast.NodeVisitor):
             for stmt in node.orelse:
                 self._pragmas.setdefault(stmt.lineno, set())\
                     .update(else_pragmas)
-        
+    
 class PragmaFinder(object):
     
     def __init__(self):

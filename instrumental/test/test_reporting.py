@@ -17,6 +17,9 @@ class FakeConstruct(object):
         for condition in conditions_hit:
             self.conditions[condition] = True
     
+    def is_decision(self):
+        return False
+    
     def result(self):
         return "ConstructResult(%s)" % self.label
     
