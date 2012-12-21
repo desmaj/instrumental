@@ -232,6 +232,32 @@ class TestInstrumentNodesPython2(InstrumentationTestCase):
         self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
         assert isinstance(inst_module.body[3].body[1], ast.Break)
     
+    def test_Continue(self):
+        def test_module():
+            while True:
+                continue
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.While)
+        assert isinstance(inst_module.body[3].test, ast.Call)
+        assert isinstance(inst_module.body[3].test.func, ast.Attribute)
+        assert isinstance(inst_module.body[3].test.func.value, ast.Name)
+        assert inst_module.body[3].test.func.value.id == '_xxx_recorder_xxx_'
+        assert inst_module.body[3].test.func.attr == 'record'
+        assert isinstance(inst_module.body[3].test.args[0], ast.Name)
+        assert inst_module.body[3].test.args[0].id == 'True'
+        assert isinstance(inst_module.body[3].test.args[1], ast.Str)
+        assert inst_module.body[3].test.args[1].s == 'test_module'
+        assert isinstance(inst_module.body[3].test.args[2], ast.Str)
+        assert inst_module.body[3].test.args[2].s == '1.1'
+        assert not inst_module.body[3].test.keywords
+        assert not hasattr(inst_module.body[3].test, 'starargs')
+        assert not hasattr(inst_module.body[3].test, 'kwargs')
+        self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
+        assert isinstance(inst_module.body[3].body[1], ast.Continue)
+    
     if sys.version_info[0] < 3:
         from instrumental.test.py2_only import test_Print
     
