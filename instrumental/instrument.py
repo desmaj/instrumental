@@ -218,12 +218,15 @@ class CoverageAnnotator(ast.NodeTransformer):
         if self._has_pragma(excepthandler.lineno, PragmaNoCover):
             self.modifiers.append(PragmaNoCover)
         
-        self.generic_visit(excepthandler)
+        if PragmaNoCover in self.modifiers:
+            result = excepthandler
+        else:
+            result = self.generic_visit(excepthandler)
         
         if self._has_pragma(excepthandler.lineno, PragmaNoCover):
             self.modifiers.pop(-1)
         
-        return excepthandler
+        return result
     
     def visit_For(self, for_):
         if self._has_pragma(for_.lineno, PragmaNoCover):

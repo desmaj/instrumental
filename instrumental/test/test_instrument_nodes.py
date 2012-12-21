@@ -280,6 +280,31 @@ class TestInstrumentNodesPython2(InstrumentationTestCase):
         self._assert_record_statement(inst_module.body[3].orelse[0], 'test_module', 4)
         assert isinstance(inst_module.body[3].orelse[1],ast.Return)
     
+    def test_For_with_no_cover(self):
+        def test_module():
+            for i in [1,2,3,5]: # pragma: no cover
+                return i
+            else:
+                return 'else'
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        assert isinstance(inst_module.body[2], ast.For)
+        assert isinstance(inst_module.body[2].target, ast.Name)
+        assert inst_module.body[2].target.id == 'i'
+        assert isinstance(inst_module.body[2].iter, ast.List)
+        assert isinstance(inst_module.body[2].body[0],ast.Return)
+        assert isinstance(inst_module.body[2].orelse[0],ast.Return)
+    
+    def test_Global(self):
+        def test_module():
+            global frog
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.Global)
+    
     def test_While(self):
         def test_module():
             while i:
@@ -310,9 +335,22 @@ class TestInstrumentNodesPython2(InstrumentationTestCase):
         self._assert_record_statement(inst_module.body[3].orelse[0], 'test_module', 4)
         assert isinstance(inst_module.body[3].orelse[1],ast.Return)
 
-    def test_If(self):
+    def test_While_with_no_cover(self):
         def test_module():
-            if i:
+            while i: # pragma: no cover
+                return i
+            else:
+                return 'else'
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        assert isinstance(inst_module.body[2], ast.While)
+        assert isinstance(inst_module.body[2].body[0], ast.Return)
+        assert isinstance(inst_module.body[2].orelse[0], ast.Return)
+
+    def test_While(self):
+        def test_module():
+            while i:
                 return i
             else:
                 return 'else'
@@ -320,7 +358,7 @@ class TestInstrumentNodesPython2(InstrumentationTestCase):
         self._assert_recorder_setup(inst_module)
         
         self._assert_record_statement(inst_module.body[2], 'test_module', 1)
-        assert isinstance(inst_module.body[3], ast.If)
+        assert isinstance(inst_module.body[3], ast.While)
         assert isinstance(inst_module.body[3].test, ast.Call)
         assert isinstance(inst_module.body[3].test.func, ast.Attribute)
         assert isinstance(inst_module.body[3].test.func.value, ast.Name)
@@ -329,9 +367,9 @@ class TestInstrumentNodesPython2(InstrumentationTestCase):
         assert isinstance(inst_module.body[3].test.args[0], ast.Name)
         assert inst_module.body[3].test.args[0].id == 'i'
         assert isinstance(inst_module.body[3].test.args[1], ast.Str)
-        assert inst_module.body[3].test.args[1].s == 'test_module', inst_module.body[3].test.args[1].s
+        assert inst_module.body[3].test.args[1].s == 'test_module'
         assert isinstance(inst_module.body[3].test.args[2], ast.Str)
-        assert inst_module.body[3].test.args[2].s == '1.1', inst_module.body[3].test.args[2].s
+        assert inst_module.body[3].test.args[2].s == '1.1'
         assert not inst_module.body[3].test.keywords
         assert not hasattr(inst_module.body[3].test, 'starargs')
         assert not hasattr(inst_module.body[3].test, 'kwargs')
@@ -339,6 +377,63 @@ class TestInstrumentNodesPython2(InstrumentationTestCase):
         assert isinstance(inst_module.body[3].body[1],ast.Return)
         self._assert_record_statement(inst_module.body[3].orelse[0], 'test_module', 4)
         assert isinstance(inst_module.body[3].orelse[1],ast.Return)
+
+    def test_With(self):
+        def test_module():
+            with i as x:
+                foo(x)
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
+        assert isinstance(inst_module.body[3].body[1], ast.Expr)
+        assert isinstance(inst_module.body[3].body[1].value, ast.Call)
+    
+    def test_If_with_no_cover(self):
+        def test_module():
+            if i: # pragma: no cover
+                return i
+            else:
+                return 'else'
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        assert isinstance(inst_module.body[2], ast.If)
+        assert isinstance(inst_module.body[2].body[0],ast.Return)
+        assert isinstance(inst_module.body[2].orelse[0],ast.Return)
+    
+    def test_If_with_no_cover_else(self):
+        def test_module():
+            if i:
+                return i
+            else: # pragma: no cover
+                return 'else'
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.If)
+        self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
+        assert isinstance(inst_module.body[3].body[1],ast.Return)
+        assert isinstance(inst_module.body[3].orelse[0],ast.Return)
+    
+    def test_ImportFrom(self):
+        def test_module():
+            from flag import pole
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.ImportFrom)
+    
+    def test_ImportFrom_with_no_cover(self):
+        def test_module():
+            from flag import pole # pragma: no cover
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        assert isinstance(inst_module.body[2], ast.ImportFrom)
     
     def test_Module_with_docstring(self):
         def test_module():
@@ -408,3 +503,66 @@ else:
         assert module.body[1].names[0].name == 'with_statement'
         self._assert_recorder_setup(inst_module, 2)
     
+    def test_ExceptHandler(self):
+        def test_module():
+            try:
+                return u
+            except Exception, exc:
+                return 'other'
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module, 0)
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.TryExcept)
+        self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
+        assert isinstance(inst_module.body[3].body[1], ast.Return)
+        self._assert_record_statement(inst_module.body[3].handlers[0].body[0], 'test_module', 4)
+        assert isinstance(inst_module.body[3].handlers[0].body[1], ast.Return)
+        
+    def test_ExceptHandler_with_no_cover(self):
+        def test_module():
+            try:
+                return u
+            except Exception, exc: # pragma: no cover
+                return 'other'
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module, 0)
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.TryExcept)
+        self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
+        assert isinstance(inst_module.body[3].body[1], ast.Return)
+        assert isinstance(inst_module.body[3].handlers[0].body[0], ast.Return)
+        
+    def test_Pass(self):
+        def test_module():
+            pass
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.Pass)
+    
+    def test_Raise(self):
+        def test_module():
+            raise Exception("no problem")
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.Raise)
+    
+    def test_TryFinally(self):
+        def test_module():
+            try:
+                return u
+            finally:
+                foo()
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module, 0)
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.TryFinally)
+        self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
+        assert isinstance(inst_module.body[3].body[1], ast.Return)
+        self._assert_record_statement(inst_module.body[3].finalbody[0], 'test_module', 4)
+        assert isinstance(inst_module.body[3].finalbody[1], ast.Expr)
+        assert isinstance(inst_module.body[3].finalbody[1].value, ast.Call)
+        
