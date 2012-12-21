@@ -43,7 +43,8 @@ class ExecutionReport(object):
             for label, construct in sorted(metadata.constructs.items(),
                                            key=_key_func):
                 if showall or construct.conditions_missed():
-                    if construct.is_decision():
+                    if (isinstance(construct, LogicalBoolean) 
+                        and construct.is_decision()):
                         lines.append(construct.decision_result())
                         lines.append("")
                     lines.append(construct.result())
