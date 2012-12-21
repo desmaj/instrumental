@@ -40,6 +40,58 @@ class TestInstrumentNodesPython2(InstrumentationTestCase):
         assert isinstance(inst_module.body[3].body[1].value, ast.Num)
         assert inst_module.body[3].body[1].value.n == 4
     
+    def test_FunctionDef_with_docstring(self):
+        def test_module():
+            def foo():
+                "I'm a little docstring"
+                bar = 4
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.FunctionDef)
+        assert inst_module.body[3].name == 'foo'
+        assert isinstance(inst_module.body[3].args, ast.arguments)
+        assert not inst_module.body[3].args.args
+        assert not inst_module.body[3].args.vararg
+        assert not inst_module.body[3].args.kwarg
+        assert not inst_module.body[3].args.defaults
+        assert 3 == len(inst_module.body[3].body)
+        assert isinstance(inst_module.body[3].body[0], ast.Expr)
+        assert isinstance(inst_module.body[3].body[0].value, ast.Str)
+        assert inst_module.body[3].body[0].value.s == "I'm a little docstring"
+        self._assert_record_statement(inst_module.body[3].body[1], 'test_module', 3)
+        assert isinstance(inst_module.body[3].body[2], ast.Assign)
+        assert isinstance(inst_module.body[3].body[2].targets[0], ast.Name)
+        assert inst_module.body[3].body[2].targets[0].id == 'bar'
+        assert isinstance(inst_module.body[3].body[2].value, ast.Num)
+        assert inst_module.body[3].body[2].value.n == 4
+    
+    def test_FunctionDef_with_docstring_and_no_cover(self):
+        def test_module():
+            def foo(): # pragma: no cover
+                "I'm a little docstring"
+                bar = 4
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        assert isinstance(inst_module.body[2], ast.FunctionDef)
+        assert inst_module.body[2].name == 'foo'
+        assert isinstance(inst_module.body[2].args, ast.arguments)
+        assert not inst_module.body[2].args.args
+        assert not inst_module.body[2].args.vararg
+        assert not inst_module.body[2].args.kwarg
+        assert not inst_module.body[2].args.defaults
+        assert 2 == len(inst_module.body[2].body)
+        assert isinstance(inst_module.body[2].body[0], ast.Expr)
+        assert isinstance(inst_module.body[2].body[0].value, ast.Str)
+        assert inst_module.body[2].body[0].value.s == "I'm a little docstring"
+        assert isinstance(inst_module.body[2].body[1], ast.Assign)
+        assert isinstance(inst_module.body[2].body[1].targets[0], ast.Name)
+        assert inst_module.body[2].body[1].targets[0].id == 'bar'
+        assert isinstance(inst_module.body[2].body[1].value, ast.Num)
+        assert inst_module.body[2].body[1].value.n == 4
+    
     def test_ClassDef(self):
         def test_module():
             class FooClass(object):
@@ -59,6 +111,30 @@ class TestInstrumentNodesPython2(InstrumentationTestCase):
         assert inst_module.body[3].body[1].targets[0].id == 'bar'
         assert isinstance(inst_module.body[3].body[1].value, ast.Num)
         assert inst_module.body[3].body[1].value.n == 4
+    
+    def test_ClassDef_with_docstring(self):
+        def test_module():
+            class FooClass(object):
+                "I'm a little docstring"
+                bar = 4
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.ClassDef)
+        assert inst_module.body[3].name == 'FooClass'
+        assert isinstance(inst_module.body[3].bases[0], ast.Name)
+        assert inst_module.body[3].bases[0].id == 'object'
+        assert 3 == len(inst_module.body[3].body)
+        assert isinstance(inst_module.body[3].body[0], ast.Expr)
+        assert isinstance(inst_module.body[3].body[0].value, ast.Str)
+        assert inst_module.body[3].body[0].value.s == "I'm a little docstring"
+        self._assert_record_statement(inst_module.body[3].body[1], 'test_module', 3)
+        assert isinstance(inst_module.body[3].body[2], ast.Assign)
+        assert isinstance(inst_module.body[3].body[2].targets[0], ast.Name)
+        assert inst_module.body[3].body[2].targets[0].id == 'bar'
+        assert isinstance(inst_module.body[3].body[2].value, ast.Num)
+        assert inst_module.body[3].body[2].value.n == 4
     
     def test_Return(self):
         def test_module():
@@ -88,6 +164,21 @@ class TestInstrumentNodesPython2(InstrumentationTestCase):
         assert isinstance(inst_module.body[3].body[1].targets[0], ast.Name)
         assert inst_module.body[3].body[1].targets[0].id == 'bar'
     
+    def test_Assert(self):
+        def test_module():
+            assert a == 4
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.Assert)
+        assert isinstance(inst_module.body[3].test, ast.Compare)
+        assert isinstance(inst_module.body[3].test.left, ast.Name)
+        assert inst_module.body[3].test.left.id == 'a'
+        assert isinstance(inst_module.body[3].test.ops[0], ast.Eq)
+        assert isinstance(inst_module.body[3].test.comparators[0], ast.Num)
+        assert inst_module.body[3].test.comparators[0].n == 4
+    
     def test_Assign(self):
         def test_module():
             a = True
@@ -114,6 +205,32 @@ class TestInstrumentNodesPython2(InstrumentationTestCase):
         assert isinstance(inst_module.body[3].op, ast.Add)
         assert isinstance(inst_module.body[3].value, ast.Num)
         assert inst_module.body[3].value.n == 4
+    
+    def test_Break(self):
+        def test_module():
+            while True:
+                break
+        inst_module = self._instrument_module(test_module)
+        self._assert_recorder_setup(inst_module)
+        
+        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+        assert isinstance(inst_module.body[3], ast.While)
+        assert isinstance(inst_module.body[3].test, ast.Call)
+        assert isinstance(inst_module.body[3].test.func, ast.Attribute)
+        assert isinstance(inst_module.body[3].test.func.value, ast.Name)
+        assert inst_module.body[3].test.func.value.id == '_xxx_recorder_xxx_'
+        assert inst_module.body[3].test.func.attr == 'record'
+        assert isinstance(inst_module.body[3].test.args[0], ast.Name)
+        assert inst_module.body[3].test.args[0].id == 'True'
+        assert isinstance(inst_module.body[3].test.args[1], ast.Str)
+        assert inst_module.body[3].test.args[1].s == 'test_module'
+        assert isinstance(inst_module.body[3].test.args[2], ast.Str)
+        assert inst_module.body[3].test.args[2].s == '1.1'
+        assert not inst_module.body[3].test.keywords
+        assert not hasattr(inst_module.body[3].test, 'starargs')
+        assert not hasattr(inst_module.body[3].test, 'kwargs')
+        self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
+        assert isinstance(inst_module.body[3].body[1], ast.Break)
     
     if sys.version_info[0] < 3:
         from instrumental.test.py2_only import test_Print
@@ -264,3 +381,4 @@ else:
         assert isinstance(module.body[1].names[0], ast.alias)
         assert module.body[1].names[0].name == 'with_statement'
         self._assert_recorder_setup(inst_module, 2)
+    

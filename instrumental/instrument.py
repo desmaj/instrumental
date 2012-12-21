@@ -119,30 +119,24 @@ class CoverageAnnotator(ast.NodeTransformer):
         return module
     
     def visit_BoolOp(self, boolop):
-        if PragmaNoCover in self.modifiers:
-            result = boolop
+        pragmas = self.pragmas.get(boolop.lineno, [])
+        if self.expression_context:
+            parent = self.expression_context[-1]
         else:
-            pragmas = self.pragmas.get(boolop.lineno, [])
-            if self.expression_context:
-                parent = self.expression_context[-1]
-            else:
-                parent = None
-            label = self._next_label(boolop.lineno)
-            result =\
-                self.node_factory.instrument_node(self.modulename, label, boolop, pragmas, parent)
-            self.expression_context.append(result)
-            result = self.generic_visit(result)
-            self.expression_context.pop(-1)
+            parent = None
+        label = self._next_label(boolop.lineno)
+        result =\
+            self.node_factory.instrument_node(self.modulename, label, boolop, pragmas, parent)
+        self.expression_context.append(result)
+        result = self.generic_visit(result)
+        self.expression_context.pop(-1)
         return result
     
     def visit_IfExp(self, ifexp):
-        if PragmaNoCover in self.modifiers:
-            result = ifexp
-        else:
-            if not isinstance(ifexp.test, ast.BoolOp):
-                label = self._next_label(ifexp.lineno)
-                ifexp.test = self.node_factory.instrument_test(self.modulename, label, ifexp.test)
-            result = self.generic_visit(ifexp)
+        if not isinstance(ifexp.test, ast.BoolOp):
+            label = self._next_label(ifexp.lineno)
+            ifexp.test = self.node_factory.instrument_test(self.modulename, label, ifexp.test)
+        result = self.generic_visit(ifexp)
         return result
     
     def _visit_stmt(self, node):
@@ -174,7 +168,6 @@ class CoverageAnnotator(ast.NodeTransformer):
     
     def _visit_defn_with_docstring(self, defn):
         if PragmaNoCover in self.modifiers:
-            self.generic_visit(defn)
             result = defn
         else:
             # grab the docstring so that it isn't visited generically
