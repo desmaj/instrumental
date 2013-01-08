@@ -21,19 +21,23 @@ from astkit.render import SourceCodeRenderer
 
 class LogicalBoolean(object):
     
-    def __init__(self, modulename, node, parent=None):
+    def __init__(self, modulename, label, node, pragmas):
         self.modulename = modulename
+        self.label = label
         self.node = deepcopy(node)
-        self.lineno = node.lineno
+        self.pragmas = pragmas
         self.source = SourceCodeRenderer.render(node)
         self.pins = len(node.values)
         self.conditions =\
             dict((i, False) for i in range(self.pins + 1))
         self.literals = {}
-        self.parent = parent
+    
+    @property
+    def lineno(self):
+        return self.node.lineno
     
     def is_decision(self):
-        return bool(self.parent)
+        return self.label.endswith('.1')
     
     def number_of_conditions(self):
         return len(self.conditions)
@@ -52,7 +56,7 @@ class LogicalBoolean(object):
         
     def result(self):
         lines = []
-        name = "%s -> %s:%s < %s >" % (self.__class__.__name__, self.modulename, self.lineno, self.source)
+        name = "%s -> %s:%s < %s >" % (self.__class__.__name__, self.modulename, self.label, self.source)
         lines.append("%s" % (name,))
         if self.literals:
             lines.append("")
@@ -66,7 +70,7 @@ class LogicalBoolean(object):
     
     def decision_result(self):
         lines = []
-        name = "Decision -> %s:%s < %s >" % (self.modulename, self.lineno, self.source)
+        name = "Decision -> %s:%s < %s >" % (self.modulename, self.label, self.source,)
         lines.append("%s" % (name,))
         lines.append("")
         lines.append("T ==> %r" % self.was_true())
@@ -179,14 +183,19 @@ class LogicalOr(LogicalBoolean):
     
 class BooleanDecision(object):
     
-    def __init__(self, modulename, node):
+    def __init__(self, modulename, label, node, pragmas):
         self.modulename = modulename
+        self.label = label
         self.node = deepcopy(node)
+        self.pragmas = pragmas
         self.lineno = node.lineno
         self.source = SourceCodeRenderer.render(node)
         self.conditions = {True: False,
                            False: False}
-        
+    
+    def is_decision(self):
+        return True
+    
     def record(self, expression):
         result = bool(expression)
         self.conditions[result] = True
@@ -205,7 +214,7 @@ class BooleanDecision(object):
     
     def result(self):
         lines = []
-        name = "Decision -> %s:%s < %s >" % (self.modulename, self.lineno, self.source)
+        name = "Decision -> %s:%s < %s >" % (self.modulename, self.label, self.source)
         lines.append("%s" % (name,))
         lines.append("")
         lines.append("T ==> %r" % self.conditions[True])

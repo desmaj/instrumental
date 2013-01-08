@@ -5,16 +5,18 @@ from astkit import ast
 from instrumental.instrument import CoverageAnnotator
 from instrumental.recorder import ExecutionRecorder
 
-def load_module(func):
+def get_normalized_source(func):
     source = inspect.getsource(func)
-    lines = source.splitlines(False)[1:]
-    leading_space_count = 0
-    for ch in lines[0]:
-        if ch != ' ':
-            break
-        leading_space_count += 1
+    source_lines = source.splitlines(False)[1:]
+    base_indentation = 0
+    while source_lines[0][base_indentation] == ' ':
+        base_indentation += 1
     normal_source =\
-        "\n".join(line[leading_space_count:] for line in lines)
+        "\n".join(line[base_indentation:] for line in source_lines)
+    return normal_source
+
+def load_module(func):
+    normal_source = get_normalized_source(func)
     module = ast.parse(normal_source)
     return module, normal_source
 
@@ -26,33 +28,40 @@ class InstrumentationTestCase(object):
         self.recorder = ExecutionRecorder.get()
     
     def _instrument_module(self, module_func):
+        from instrumental.metadata import MetadataGatheringVisitor
+        from instrumental.pragmas import PragmaFinder
         module, source = load_module(module_func)
-        self.recorder.add_source(module_func.__name__, source)
+        pragmas = PragmaFinder().find_pragmas(source)
+        metadata = MetadataGatheringVisitor.analyze(module_func.__name__, 
+                                                    'somemodule.py',
+                                                    source, pragmas)
+        self.recorder.add_metadata(metadata)
         transformer = CoverageAnnotator(module_func.__name__,
                                         self.recorder)
         inst_module = transformer.visit(module)
+        # print renderer.render(inst_module)
         return inst_module
     
-    def _assert_recorder_setup(self, module):
+    def _assert_recorder_setup(self, module, starting_lineno=0):
         assert isinstance(module, ast.Module)
         
-        assert isinstance(module.body[0], ast.ImportFrom)
-        assert module.body[0].module == 'instrumental.recorder'
-        assert isinstance(module.body[0].names[0], ast.alias)
-        assert module.body[0].names[0].name == 'ExecutionRecorder'
+        assert isinstance(module.body[starting_lineno], ast.ImportFrom)
+        assert module.body[starting_lineno].module == 'instrumental.recorder'
+        assert isinstance(module.body[starting_lineno].names[0], ast.alias)
+        assert module.body[starting_lineno].names[0].name == 'ExecutionRecorder'
         
-        assert isinstance(module.body[1], ast.Assign)
-        assert isinstance(module.body[1].targets[0], ast.Name)
-        assert module.body[1].targets[0].id == '_xxx_recorder_xxx_'
-        assert isinstance(module.body[1].value, ast.Call)
-        assert isinstance(module.body[1].value.func, ast.Attribute)
-        assert isinstance(module.body[1].value.func.value, ast.Name)
-        assert module.body[1].value.func.value.id == 'ExecutionRecorder'
-        assert module.body[1].value.func.attr == 'get'
-        assert not module.body[1].value.args
-        assert not module.body[1].value.keywords
-        assert not module.body[1].value.starargs
-        assert not module.body[1].value.kwargs
+        assert isinstance(module.body[starting_lineno+1], ast.Assign)
+        assert isinstance(module.body[starting_lineno+1].targets[0], ast.Name)
+        assert module.body[starting_lineno+1].targets[0].id == '_xxx_recorder_xxx_'
+        assert isinstance(module.body[starting_lineno+1].value, ast.Call)
+        assert isinstance(module.body[starting_lineno+1].value.func, ast.Attribute)
+        assert isinstance(module.body[starting_lineno+1].value.func.value, ast.Name)
+        assert module.body[starting_lineno+1].value.func.value.id == 'ExecutionRecorder'
+        assert module.body[starting_lineno+1].value.func.attr == 'get'
+        assert not module.body[starting_lineno+1].value.args
+        assert not module.body[starting_lineno+1].value.keywords
+        assert not module.body[starting_lineno+1].value.starargs
+        assert not module.body[starting_lineno+1].value.kwargs
     
     def _assert_record_statement(self, statement, modname, lineno):
         assert isinstance(statement, ast.Expr), statement.__dict__
@@ -65,4 +74,3 @@ class InstrumentationTestCase(object):
         assert statement.value.args[0].s == modname
         assert isinstance(statement.value.args[1], ast.Num)
         assert statement.value.args[1].n == lineno
-    

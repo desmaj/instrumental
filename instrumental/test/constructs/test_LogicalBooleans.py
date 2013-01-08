@@ -15,6 +15,7 @@ class ThreePinTestCase(object):
                                        ],
                                lineno=6,
                                col_offset=4)
+        self.label = '6.1'
 
 class TwoPinTestCase(object):
     
@@ -25,6 +26,7 @@ class TwoPinTestCase(object):
                                        ],
                                lineno=6,
                                col_offset=4)
+        self.label = '6.1'
 
 class TestLogicalAnd(ThreePinTestCase):
     
@@ -33,10 +35,10 @@ class TestLogicalAnd(ThreePinTestCase):
         self.node.op = ast.And()
     
     def _makeOne(self):
-        return LogicalAnd(self.modulename, self.node, None)
+        return LogicalAnd(self.modulename, self.label, self.node, None)
     
     def test_constructor(self):
-        assert LogicalAnd(self.modulename, self.node, None)
+        assert LogicalAnd(self.modulename, self.label, self.node, None)
     
     def test_has_conditions(self):
         assert hasattr(self._makeOne(), 'conditions')
@@ -67,7 +69,7 @@ class TestLogicalAnd(ThreePinTestCase):
         assert "T T F" == and_.description(3), and_.description(3)
     
     def _expect_result(self, *set_conditions):
-        expected_result = "\n".join(["LogicalAnd -> somename:6 < (a and b and c) >",
+        expected_result = "\n".join(["LogicalAnd -> somename:6.1 < (a and b and c) >",
                                      "",
                                      "T T T ==> %s" % ("T T T" in set_conditions),
                                      "F * * ==> %s" % ("F * *" in set_conditions),
@@ -112,7 +114,7 @@ class TestLogicalAnd2Pin(TwoPinTestCase):
         self.node.op = ast.And()
     
     def _makeOne(self):
-        return LogicalAnd(self.modulename, self.node, None)
+        return LogicalAnd(self.modulename, self.label, self.node, None)
     
     def test_2_pin_and_condition_0(self):
         and_ = self._makeOne()
@@ -137,7 +139,7 @@ class TestLogicalOr(ThreePinTestCase):
         self.node.op = ast.Or()
     
     def _makeOne(self):
-        return LogicalOr(self.modulename, self.node, None)
+        return LogicalOr(self.modulename, self.label, self.node, None)
     
     def test_has_conditions(self):
         or_ = self._makeOne()
@@ -173,7 +175,7 @@ class TestLogicalOr(ThreePinTestCase):
         assert "Other" == or_.description(4)
     
     def _expect_result(self, *set_conditions):
-        expected_result = "\n".join(["LogicalOr -> somename:6 < (a or b or c) >",
+        expected_result = "\n".join(["LogicalOr -> somename:6.1 < (a or b or c) >",
                                      "",
                                      "T * * ==> %s" % ("T * *" in set_conditions),
                                      "F T * ==> %s" % ("F T *" in set_conditions),
@@ -218,7 +220,7 @@ class TestLogicalOr2Pin(TwoPinTestCase):
         self.node.op = ast.Or()
     
     def _makeOne(self):
-        return LogicalOr(self.modulename, self.node, None)
+        return LogicalOr(self.modulename, self.label, self.node, None)
     
     def test_2_pin_or_condition_0(self):
         or_ = self._makeOne()
@@ -246,9 +248,10 @@ class TestLogicalBoolean(object):
                                lineno=17,
                                col_offset=24,
                                )
+        self.label = '17.1'
     
     def _makeOne(self):
-        return LogicalAnd(self.modulename, self.node, None)
+        return LogicalAnd(self.modulename, self.label, self.node, None)
     
     def test_modulename(self):
         construct = self._makeOne()
@@ -287,7 +290,7 @@ class TestLogicalBoolean(object):
     
     def test_initial_result(self):
         construct = self._makeOne()
-        expected_result = "\n".join(["LogicalAnd -> somename.subname:17 < (a and b) >",
+        expected_result = "\n".join(["LogicalAnd -> somename.subname:17.1 < (a and b) >",
                                      "",
                                      "T T ==> False",
                                      "F * ==> False",
@@ -299,17 +302,23 @@ class TestLiteralInConstruct(object):
     
     def setup(self):
         # Reset recorder
-        ExecutionRecorder.reset()
         self.modulename = 'somename'
+        self.source = """
+
+
+
+
+x = a or None"""
         self.node = ast.BoolOp(op=ast.Or(),
                                values=[ast.Name(id='a'),
                                        ast.Str(s='None'),
                                        ],
                                lineno=6,
                                col_offset=4)
+        self.label = '6.1'
     
     def test_presence_of_a_literal(self):
-        recorder = ExecutionRecorder.get()
-        recorder.add_BoolOp(self.modulename, self.node, [], None)
-        construct = list(recorder.constructs.values())[0]
+        from instrumental.metadata import MetadataGatheringVisitor
+        metadata = MetadataGatheringVisitor.analyze(self.modulename, 'somefile.py', self.source, {6: []})
+        construct = metadata.constructs[self.label]
         assert "literal" in construct.result(), construct.result()

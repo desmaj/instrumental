@@ -15,12 +15,18 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
+import os
 import sys
 
 from instrumental.constructs import BooleanDecision
 
 def _package(modulename):
-    return sys.modules[modulename].__package__
+    modulepath = '%s.py' % modulename.replace('.', os.path.sep)
+    if any(os.path.exists(os.path.join(path, modulepath))
+           for path in sys.path):
+        return '.'.join(modulename.split('.')[:-1])
+    else:
+        return modulename
 
 class BaseExecutionSummary(object):
     
@@ -79,7 +85,7 @@ class ExecutionSummary(BaseExecutionSummary):
                     _conditions.setdefault(_package(modulename), {})
                 _package_conditions.update(\
                     dict((label, condition) 
-                         for label, condition in self.conditions.items()
+                         for label, condition in self.conditions[modulename].items()
                          if condition.modulename == modulename)
                     )
                     
@@ -124,6 +130,8 @@ class ModuleExecutionSummary(BaseExecutionSummary):
     
     def statement_rate(self):
         total_statements = len(self.statements)
+        if not total_statements:
+            return 1.0
         hit_statements = sum(hit for (lineno, hit) in self.statements.items())
         return hit_statements / float(total_statements)
 

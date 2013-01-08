@@ -24,11 +24,9 @@ from instrumental.xmlreport import XMLCoverageReport
 
 class ExecutionReport(object):
     
-    def __init__(self, working_directory, constructs, statements, sources):
+    def __init__(self, working_directory, metadata):
         self.working_directory = working_directory
-        self.constructs = constructs
-        self.statements = statements
-        self.sources = sources
+        self.metadata = metadata
     
     def report(self, showall=False):
         lines = []
@@ -38,39 +36,39 @@ class ExecutionReport(object):
         lines.append("===============================================")
         lines.append("")
         def _key_func(pair):
-            line, construct = pair
-            return (construct.modulename, construct.lineno, line)
-        for label, construct in sorted(self.constructs.items(),
-                                       key=_key_func):
-            if showall or construct.conditions_missed():
-                if (isinstance(construct, LogicalBoolean) 
-                    and construct.is_decision()):
-                    lines.append(construct.decision_result())
+            label, _ = pair
+            lineno, index = label.split('.')
+            return (int(lineno), int(index))
+        for modulename, metadata in sorted(self.metadata.items()):
+            for label, construct in sorted(metadata.constructs.items(),
+                                           key=_key_func):
+                if showall or construct.conditions_missed():
+                    if (isinstance(construct, LogicalBoolean) 
+                        and construct.is_decision()):
+                        lines.append(construct.decision_result())
+                        lines.append("")
+                    lines.append(construct.result())
                     lines.append("")
-                lines.append(construct.result())
-                lines.append("")
         return "\n".join(lines)
     
     def summary(self):
-        modules = {}
-        for construct in self.constructs.values():
-            constructs = modules.setdefault(construct.modulename, [])
-            constructs.append(construct)
-        
         lines = []
         lines.append("")
         lines.append("================================================")
         lines.append("Instrumental Condition/Decision Coverage Summary")
         lines.append("================================================")
         lines.append("")
-        for modulename, constructs in sorted(modules.items()):
+        for modulename, metadata in sorted(self.metadata.items()):
             total_conditions = sum(construct.number_of_conditions()
-                                   for construct in constructs)
+                                   for construct in metadata.constructs.values())
             hit_conditions = sum(construct.number_of_conditions_hit()
-                                 for construct in constructs)
-            lines.append('%s: %s/%s hit (%.0f%%)' %\
-                             (modulename, hit_conditions, total_conditions,
-                              hit_conditions/float(total_conditions) * 100))
+                                 for construct in metadata.constructs.values())
+            if not total_conditions:
+                lines.append('%s: 0/0 hit (---)' % modulename)
+            else:
+                lines.append('%s: %s/%s hit (%.0f%%)' %\
+                                 (modulename, hit_conditions, total_conditions,
+                                  hit_conditions/float(total_conditions) * 100))
         return '\n'.join(lines)
     
     def statement_summary(self):
@@ -81,15 +79,24 @@ class ExecutionReport(object):
                     ]
         
         formatter = StatementCoverageFormatter()
-        return "\n".join(outlines + [formatter.format(self.statements)])
+        statements = dict((modulename, self.metadata[modulename].lines)
+                          for modulename in self.metadata)
+        return "\n".join(outlines + [formatter.format(statements)])
 
     def write_xml_coverage_report(self, filename):
-        xml_report = XMLCoverageReport(self)
+        xml_report = XMLCoverageReport(self.working_directory, self.metadata)
         xml_report.write(filename)
     
-    def write_html_coverage_report(self, directory='instrumental'):
-        summary = ExecutionSummary(self.constructs, self.statements)
-        html_report = HTMLCoverageReport(summary, self.sources)
+    def write_html_coverage_report(self, directory='instrumental-result-html'):
+        conditions = {}
+        statements = {}
+        sources = {}
+        for modulename in self.metadata:
+            conditions[modulename] = self.metadata[modulename].constructs
+            statements[modulename] = self.metadata[modulename].lines
+            sources[modulename] = self.metadata[modulename].source
+        summary = ExecutionSummary(conditions, statements)
+        html_report = HTMLCoverageReport(summary, sources)
         html_report.write(os.path.join(self.working_directory, directory))
     
 class Chunk(object):
@@ -147,7 +154,10 @@ class StatementCoverageFormatter(object):
     
     def _make_line(self, modulename, lines, column_width):
         missing_lines = [line for line in sorted(lines) if not lines[line]]
-        cover_pct = "%s%%" % int(100 * (len(lines) - len(missing_lines)) / float(len(lines)))
+        if lines:
+            cover_pct = "%s%%" % int(100 * (len(lines) - len(missing_lines)) / float(len(lines)))
+        else:
+            cover_pct = "100%"
         
         line = modulename.ljust(column_width)
         line = "".join([line, str(len(lines)).rjust(5)])
