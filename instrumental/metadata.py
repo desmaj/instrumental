@@ -2,12 +2,15 @@ from copy import deepcopy
 import fnmatch
 import itertools
 import os
+import pickle
 import re
 import sys
+import time
 
 from astkit import ast
 
 from instrumental import constructs
+from instrumental import util
 from instrumental.pragmas import PragmaFinder
 from instrumental.pragmas import PragmaNoCover
 
@@ -16,15 +19,19 @@ def has_docstring(defn):
 
 def gather_metadata(recorder, targets, ignores):
     finder = SourceFinder(sys.path)
+    metadata_cache = FileBackedMetadataCache()
     for target in targets:
         for source_spec in finder.find(target, ignores):
             filepath, modulename = source_spec
-            source = open(filepath, "r").read()
-            pragmas = PragmaFinder().find_pragmas(source)
-            metadata = MetadataGatheringVisitor.analyze(modulename,
-                                                        filepath,
-                                                        source,
-                                                        pragmas)
+            metadata = metadata_cache.fetch(filepath)
+            if not metadata:
+                source = open(filepath, "r").read()
+                pragmas = PragmaFinder().find_pragmas(source)
+                metadata = MetadataGatheringVisitor.analyze(modulename,
+                                                            filepath,
+                                                            source,
+                                                            pragmas)
+                metadata_cache.store(filepath, metadata)
             recorder.add_metadata(metadata)
 
 class ModuleMetadata(object):
@@ -202,6 +209,57 @@ class SourceFinder(object):
             elif self._is_package_directory(filepath):
                 for filepath in self._find_target(filepath, suffix, ignores):
                     yield filepath
+
+
+class BaseMetadataCache(object):
+    
+    def initialize(self):
+        self._init_storage()
+    
+    def store(self, filepath, meta):
+        now = util.now()
+        record = {'timestamp': now,
+                  'metadata': meta}
+        self._store(filepath, record)
+    
+    def fetch(self, filepath):
+        file_mtime = os.stat(filepath).st_mtime
+        cached_record = self._fetch(filepath)
+        if not cached_record:
+            return
+        timestamp = time.mktime(cached_record['timestamp'].timetuple())
+        if file_mtime < timestamp:
+            return cached_record['metadata']
+    
+class FileBackedMetadataCache(BaseMetadataCache):
+    
+    def __init__(self):
+        super(FileBackedMetadataCache, self).__init__()
+        self._working_directory = os.path.join(os.getcwd(), '.instrumental.cache')
+        
+    def _init_storage(self):
+        if not os.path.exists(self._working_directory):
+            os.mkdir(self._working_directory)
+    
+    def _store(self, filepath, record):
+        if filepath.startswith('/'):
+            filepath = filepath[1:]
+        cache_file_path = os.path.join(self._working_directory, filepath)
+        if not os.path.exists(os.path.dirname(cache_file_path)):
+            os.makedirs(os.path.dirname(cache_file_path))
+        with open(cache_file_path, 'wb') as cache_file:
+            pickle.dump(record, cache_file)
+    
+    def _fetch(self, filepath):
+        if filepath.startswith('/'):
+            filepath = filepath[1:]
+        cache_file_path = os.path.join(self._working_directory, filepath)
+        if not os.path.exists(cache_file_path):
+            return None
+        with open(cache_file_path, 'rb') as cache_file:
+            record = pickle.load(cache_file)
+        return record
+
 
 if __name__ == '__main__': # pragma: no cover
 
