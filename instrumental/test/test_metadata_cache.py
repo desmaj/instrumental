@@ -16,16 +16,16 @@ def monkeypatch_now(when):
     util.now = old_now
 
 class TestFileBackedMetadataCache(object):
-    CACHE_PATH = '.instrumental.cache'
+    CACHE_PATH = os.path.join(os.getcwd(), '.instrumental.cache')
     
     def setup(self):
-        self._dirty_paths = []# self.CACHE_PATH]
+        self._dirty_paths = [self.CACHE_PATH]
     
     def teardown(self):
         for path in self._dirty_paths:
             if os.path.isdir(path):
                 shutil.rmtree(path)
-            else:
+            elif os.path.exists(path):
                 os.remove(path)
     
     def _make_one(self):
@@ -79,5 +79,16 @@ class TestFileBackedMetadataCache(object):
         with monkeypatch_now(timestamp):
             cache.store(filepath, meta)
         self._touch_file(filepath)
+        cached_metadata = cache.fetch(filepath)
+        assert not cached_metadata
+    
+    def test_item_absence_when_absent(self):
+        cache = self._make_one()
+        cache.initialize()
+        
+        filepath = os.path.join(os.getcwd(), 'path/to/module.py')
+        self._touch_file(filepath)
+        self._dirty_paths.append(filepath)
+        
         cached_metadata = cache.fetch(filepath)
         assert not cached_metadata

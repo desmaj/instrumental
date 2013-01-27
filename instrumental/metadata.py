@@ -223,10 +223,10 @@ class BaseMetadataCache(object):
         self._store(filepath, record)
     
     def fetch(self, filepath):
-        file_mtime = os.stat(filepath).st_mtime
         cached_record = self._fetch(filepath)
         if not cached_record:
             return
+        file_mtime = os.stat(filepath).st_mtime
         timestamp = time.mktime(cached_record['timestamp'].timetuple())
         if file_mtime < timestamp:
             return cached_record['metadata']
