@@ -71,39 +71,39 @@ class TestLogicalAnd(ThreePinTestCase):
     def _expect_result(self, *set_conditions):
         expected_result = "\n".join(["LogicalAnd -> somename:6.1 < (a and b and c) >",
                                      "",
-                                     "T T T ==> %s" % ("T T T" in set_conditions),
-                                     "F * * ==> %s" % ("F * *" in set_conditions),
-                                     "T F * ==> %s" % ("T F *" in set_conditions),
-                                     "T T F ==> %s" % ("T T F" in set_conditions),
+                                     "T T T ==> %s" % ('X' if "T T T" in set_conditions else ''),
+                                     "F * * ==> %s" % ('X' if "F * *" in set_conditions else ''),
+                                     "T F * ==> %s" % ('X' if "T F *" in set_conditions else ''),
+                                     "T T F ==> %s" % ('X' if "T T F" in set_conditions else ''),
                                      ])
         return expected_result
                                      
     def test_all_true(self):
         and_ = self._makeOne()
-        and_.record(True, 0)
-        and_.record(True, 1)
-        and_.record(True, 2)
+        and_.record(True, 0, 'X')
+        and_.record(True, 1, 'X')
+        and_.record(True, 2, 'X')
         expected_result = self._expect_result('T T T')
         assert expected_result == and_.result()
         
     def test_F_T_T(self):
         and_ = self._makeOne()
-        and_.record(False, 0)
+        and_.record(False, 0, 'X')
         expected_result = self._expect_result('F * *')
         assert expected_result == and_.result(), and_.result()
         
     def test_T_F_T(self):
         and_ = self._makeOne()
-        and_.record(True, 0)
-        and_.record(False, 1)
+        and_.record(True, 0, 'X')
+        and_.record(False, 1, 'X')
         expected_result = self._expect_result('T F *')
         assert expected_result == and_.result()
         
     def test_T_T_F(self):
         and_ = self._makeOne()
-        and_.record(True, 0)
-        and_.record(True, 1)
-        and_.record(False, 2)
+        and_.record(True, 0, 'X')
+        and_.record(True, 1, 'X')
+        and_.record(False, 2, 'X')
         expected_result = self._expect_result('T T F')
         assert expected_result == and_.result()
         
@@ -177,39 +177,39 @@ class TestLogicalOr(ThreePinTestCase):
     def _expect_result(self, *set_conditions):
         expected_result = "\n".join(["LogicalOr -> somename:6.1 < (a or b or c) >",
                                      "",
-                                     "T * * ==> %s" % ("T * *" in set_conditions),
-                                     "F T * ==> %s" % ("F T *" in set_conditions),
-                                     "F F T ==> %s" % ("F F T" in set_conditions),
-                                     "F F F ==> %s" % ("F F F" in set_conditions),
+                                     "T * * ==> %s" % ('X' if "T * *" in set_conditions else ''),
+                                     "F T * ==> %s" % ('X' if "F T *" in set_conditions else ''),
+                                     "F F T ==> %s" % ('X' if "F F T" in set_conditions else ''),
+                                     "F F F ==> %s" % ('X' if "F F F" in set_conditions else ''),
                                      ])
         return expected_result
                                      
     def test_T_F_F(self):
         or_ = self._makeOne()
-        or_.record(True, 0)
+        or_.record(True, 0, 'X')
         expected_result = self._expect_result('T * *')
         assert expected_result == or_.result(), or_.result()
         
     def test_F_T_F(self):
         or_ = self._makeOne()
-        or_.record(False, 0)
-        or_.record(True, 1)
+        or_.record(False, 0, 'X')
+        or_.record(True, 1, 'X')
         expected_result = self._expect_result('F T *')
         assert expected_result == or_.result()
         
     def test_F_F_T(self):
         or_ = self._makeOne()
-        or_.record(False, 0)
-        or_.record(False, 1)
-        or_.record(True, 2)
+        or_.record(False, 0, 'X')
+        or_.record(False, 1, 'X')
+        or_.record(True, 2, 'X')
         expected_result = self._expect_result('F F T')
         assert expected_result == or_.result()
         
     def test_F_F_F(self):
         or_ = self._makeOne()
-        or_.record(False, 0)
-        or_.record(False, 1)
-        or_.record(False, 2)
+        or_.record(False, 0, 'X')
+        or_.record(False, 1, 'X')
+        or_.record(False, 2, 'X')
         expected_result = self._expect_result('F F F')
         assert expected_result == or_.result()
         
@@ -271,9 +271,9 @@ class TestLogicalBoolean(object):
     
     def test_conditions(self):
         construct = self._makeOne()
-        assert {0: False,
-                1: False,
-                2: False,
+        assert {0: set(),
+                1: set(),
+                2: set(),
                 } == construct.conditions, construct.conditions
     
     def test_number_of_conditions(self):
@@ -292,9 +292,9 @@ class TestLogicalBoolean(object):
         construct = self._makeOne()
         expected_result = "\n".join(["LogicalAnd -> somename.subname:17.1 < (a and b) >",
                                      "",
-                                     "T T ==> False",
-                                     "F * ==> False",
-                                     "T F ==> False",
+                                     "T T ==> ",
+                                     "F * ==> ",
+                                     "T F ==> ",
                                      ])
         assert expected_result == construct.result()
 

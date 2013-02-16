@@ -22,20 +22,20 @@ class TestBooleanDecision(object):
         assert self.modulename == decision.modulename
         assert 5 == decision.lineno
         assert "(x == 4)" == decision.source
-        assert {True: False,
-                False: False} == decision.conditions
+        assert {True: set(),
+                False: set()} == decision.conditions
     
     def test_record_True(self):
         decision = self._makeOne()
-        decision.record(True)
-        assert {True: True,
-                False: False} == decision.conditions
+        decision.record(True, 'X')
+        assert decision.conditions[True] == set('X')
+        assert not decision.conditions[False]
     
     def test_record_False(self):
         decision = self._makeOne()
-        decision.record(False)
-        assert {True: False,
-                False: True} == decision.conditions
+        decision.record(False, 'X')
+        assert not decision.conditions[True]
+        assert decision.conditions[False] == set('X')
     
     def test_number_of_conditions(self):
         decision = self._makeOne()
@@ -43,7 +43,7 @@ class TestBooleanDecision(object):
     
     def test_number_of_conditions_hit(self):
         decision = self._makeOne()
-        decision.record(False)
+        decision.record(False, 'X')
         assert 1 == decision.number_of_conditions_hit()
     
     def test_conditions_missed(self):
@@ -59,8 +59,8 @@ class TestBooleanDecision(object):
                             )
         result_lines.append("")
         for condition in ("T", "F"):
-            result_lines.append("%s ==> %s" % (condition,
-                                               condition in conditions_hit))
+            tag = 'X' if condition in conditions_hit else ''
+            result_lines.append("%s ==> %s" % (condition, tag))
         return "\n".join(result_lines)
     
     def test_result_not_hit(self):

@@ -46,7 +46,7 @@ class PragmaNoCondition(Pragma):
     def apply(self, construct):
         for condition in construct.conditions:
             if construct.description(condition) in self.conditions:
-                construct.conditions[condition] = True
+                construct.conditions[condition].add('*')
         return construct
 
 class ConstructWrapper(object):

@@ -22,9 +22,6 @@ import sys
 
 from astkit import ast
 
-from instrumental.constructs import BooleanDecision
-from instrumental.constructs import LogicalAnd
-from instrumental.constructs import LogicalOr
 from instrumental.pragmas import PragmaFinder
 
 def __setup_recorder(): # pragma: no cover
@@ -41,6 +38,7 @@ def get_setup():
     return setup
 
 class ExecutionRecorder(object):
+    DEFAULT_TAG = 'X'
     
     @classmethod
     def reset(cls):
@@ -56,7 +54,9 @@ class ExecutionRecorder(object):
     def __init__(self):
         self.metadata = {}
         self.recording = False
-        
+        self.tag = None
+        self._tagging = False
+    
     def start(self):
         self.recording = True
     
@@ -78,7 +78,11 @@ class ExecutionRecorder(object):
     
     def record(self, arg, modulename, label, *args, **kwargs):
         if self.recording and label in self.metadata[modulename].constructs:
-            self.metadata[modulename].constructs[label].record(arg, *args, **kwargs)
+            kwargs['tag'] = (self.tag 
+                             if self.tag is not None 
+                             else self.DEFAULT_TAG)
+            self.metadata[modulename].constructs[label].record(arg, 
+                                                               *args, **kwargs)
         return arg
     
     def add_BoolOp(self, modulename, label, node, pragmas, parent):

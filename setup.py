@@ -48,5 +48,7 @@ Announcements and discussion about instrumental can be found on the
       entry_points="""
       [console_scripts]
       instrumental = instrumental.run:main
+      [nose.plugins.0.10]
+      instrumental-tag = instrumental.plugins.nose.tag_test_cases:InstrumentalTagPlugin
       """,
       )

@@ -29,7 +29,7 @@ class LogicalBoolean(object):
         self.source = SourceCodeRenderer.render(node)
         self.pins = len(node.values)
         self.conditions =\
-            dict((i, False) for i in range(self.pins + 1))
+            dict((i, set()) for i in range(self.pins + 1))
         self.literals = {}
     
     @property
@@ -53,7 +53,11 @@ class LogicalBoolean(object):
     def _literal_warning(self):
         return ("** One or more conditions may not be reachable due to"
                 " the presence of a literal in the decision")
-        
+    
+    def _format_condition_result(self, result, length=6):
+        padding = '\n' + (' ' * length)
+        return padding.join(tag for tag in sorted(result))
+    
     def result(self):
         lines = []
         name = "%s -> %s:%s < %s >" % (self.__class__.__name__, self.modulename, self.label, self.source)
@@ -63,9 +67,11 @@ class LogicalBoolean(object):
             lines.append(self._literal_warning())
         lines.append("")
         for condition in sorted(self.conditions):
-            lines.append(self.description(condition) +\
-                             " ==> " +\
-                             str(self.conditions[condition]))
+            desc = self.description(condition)
+            length = len(desc) + 5
+            lines.append(desc +
+                         " ==> " + self._format_condition_result(self.conditions[condition],
+                                                                 length=length))
         return "\n".join(lines)
     
     def decision_result(self):
@@ -73,8 +79,8 @@ class LogicalBoolean(object):
         name = "Decision -> %s:%s < %s >" % (self.modulename, self.label, self.source,)
         lines.append("%s" % (name,))
         lines.append("")
-        lines.append("T ==> %r" % self.was_true())
-        lines.append("F ==> %r" % self.was_false())
+        lines.append("T ==> %s" % self.was_true())
+        lines.append("F ==> %s" % self.was_false())
         return "\n".join(lines)
     
 
@@ -91,25 +97,24 @@ class LogicalAnd(LogicalBoolean):
         never be evaluated.
     """
     
-    def record(self, value, pin):
+    def record(self, value, pin, tag):
         """ Record that a value was seen for a particular pin """
-        
         # If the pin is not the last pin in the decision and
         # the value seen is False, then we've found the pin
         # that has forced the decision False and we should
         # record that.
         if pin < (self.pins-1):
             if not value:
-                self.conditions[pin+1] = True
+                self.conditions[pin+1].add(tag)
         
         # If the pin is the last pin then we'll record that
         # it either allowed the decision to be True or it
         # is the pin that has forced the decision False.
         elif pin == (self.pins-1):
             if value:
-                self.conditions[0] = True
+                self.conditions[0].add(tag)
             else:
-                self.conditions[self.pins] = True
+                self.conditions[self.pins].add(tag)
     
     def description(self, n):
         if n == 0:
@@ -126,10 +131,13 @@ class LogicalAnd(LogicalBoolean):
             return "Other"
     
     def was_true(self):
-        return self.conditions[0]
+        return self._format_condition_result(self.conditions[0])
     
     def was_false(self):
-        return any(self.conditions[n] for n in range(1, self.pins+1))
+        results = set()
+        for n in range(1, self.pins+1):
+            results.update(self.conditions[n])
+        return self._format_condition_result(results)
     
 class LogicalOr(LogicalBoolean):
     """ Stores the execution information for a Logical Or
@@ -141,7 +149,7 @@ class LogicalOr(LogicalBoolean):
         False. Condition n + 1 is "Other".
     """
     
-    def record(self, value, pin):
+    def record(self, value, pin, tag):
         """ Record that a value was seen for a particular pin """
         
         # If the pin is not the last pin in the decision
@@ -151,15 +159,15 @@ class LogicalOr(LogicalBoolean):
         # since this is not a significant case.
         if pin < (self.pins-1):
             if value:
-                self.conditions[pin] = True
+                self.conditions[pin].add(tag)
         
         # If this is the last pin then it either allowed the
         # decision to be False or forced the decision True.
         elif pin == (self.pins-1):
             if value:
-                self.conditions[pin] = True
+                self.conditions[pin].add(tag)
             else:
-                self.conditions[self.pins] = True
+                self.conditions[self.pins].add(tag)
         
     def description(self, n):
         acc = ""
@@ -176,10 +184,13 @@ class LogicalOr(LogicalBoolean):
             return "Other"
     
     def was_true(self):
-        return any(self.conditions[n] for n in range(0, self.pins))
+        results = set()
+        for n in range(0, self.pins):
+            results.update(self.conditions[n])
+        return self._format_condition_result(results)
     
     def was_false(self):
-        return self.conditions[self.pins]
+        return self._format_condition_result(self.conditions[self.pins])
     
 class BooleanDecision(object):
     
@@ -190,15 +201,15 @@ class BooleanDecision(object):
         self.pragmas = pragmas
         self.lineno = node.lineno
         self.source = SourceCodeRenderer.render(node)
-        self.conditions = {True: False,
-                           False: False}
+        self.conditions = {True: set(),
+                           False: set()}
     
     def is_decision(self):
         return True
     
-    def record(self, expression):
+    def record(self, expression, tag):
         result = bool(expression)
-        self.conditions[result] = True
+        self.conditions[result].add(tag)
         return result
 
     def number_of_conditions(self):
@@ -212,11 +223,15 @@ class BooleanDecision(object):
     def conditions_missed(self):
         return self.number_of_conditions() - self.number_of_conditions_hit()
     
+    def _format_condition_result(self, result, length=6):
+        padding = '\n' + (' ' * length)
+        return padding.join(tag for tag in sorted(result))
+    
     def result(self):
         lines = []
         name = "Decision -> %s:%s < %s >" % (self.modulename, self.label, self.source)
         lines.append("%s" % (name,))
         lines.append("")
-        lines.append("T ==> %r" % self.conditions[True])
-        lines.append("F ==> %r" % self.conditions[False])
+        lines.append("T ==> %s" % self._format_condition_result(self.conditions[True]))
+        lines.append("F ==> %s" % self._format_condition_result(self.conditions[False]))
         return "\n".join(lines)

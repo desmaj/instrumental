@@ -20,6 +20,7 @@ class TestXMLReport(object):
             reload(robust)
         else:
             from instrumental.test.samples import robust
+        print c.recorder.metadata[modname].constructs['5.1']
         robust.test_func(*args, **kwargs)
         c.stop()
         return c.recorder
@@ -39,7 +40,6 @@ class TestXMLReport(object):
         from instrumental.reporting import ExecutionReport
         
         recorder = self._run_test(True, True, False, True, False)
-        
         report = ExecutionReport(os.getcwd(), recorder.metadata)
         xml_filename = 'test-xml-report.xml'
         report.write_xml_coverage_report(xml_filename)
