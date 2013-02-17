@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.3.3'
+version = '0.4.0'
 
 setup(name='instrumental',
       version=version,
@@ -48,7 +48,7 @@ Announcements and discussion about instrumental can be found on the
       entry_points="""
       [console_scripts]
       instrumental = instrumental.run:main
-      [nose.plugins.0.10]
+      [nose.plugins]
       instrumental-tag = instrumental.plugins.nose.tag_test_cases:InstrumentalTagPlugin
       """,
       )
