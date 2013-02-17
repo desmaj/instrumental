@@ -12,10 +12,10 @@ class FakeConstruct(object):
         self.label = label
         self.modulename = "somemodulename"
         self.lineno = 17
-        self.conditions = {True: False,
-                           False: False}
+        self.conditions = {True: set(),
+                           False: set()}
         for condition in conditions_hit:
-            self.conditions[condition] = True
+            self.conditions[condition].add('*')
     
     def is_decision(self):
         return False

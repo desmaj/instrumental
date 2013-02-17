@@ -32,8 +32,8 @@ class TestLogicalAnd(object):
         construct = self._makeOne()
         expected = """Decision -> somemodule:3.1 < (a and b) >
 
-T ==> False
-F ==> False"""
+T ==> 
+F ==> """
         assert expected == construct.decision_result(), (expected, construct.decision_result())
 
 
@@ -64,8 +64,8 @@ class TestLogicalOr(object):
         construct = self._makeOne()
         expected = """Decision -> somemodule:3.1 < (a or b) >
 
-T ==> False
-F ==> False"""
+T ==> 
+F ==> """
         assert expected == construct.decision_result(), (expected, construct.decision_result())
 
 
@@ -82,8 +82,8 @@ class TestBooleanDecision(object):
         construct = self._makeOne()
         expected = """Decision -> somemodule:3.1 < j >
 
-T ==> False
-F ==> False"""
+T ==> 
+F ==> """
         assert expected == construct.result(), (expected, construct.result())
 
 

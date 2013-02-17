@@ -37,9 +37,12 @@ class TestInstrumentation(object):
     
     def _verify_conditions(self, module, label, expected):
         construct = self.recorder.metadata[module.__name__].constructs[label]
+        tag = self.recorder.DEFAULT_TAG
         for i, value in enumerate(expected):
-            assert expected[i] == construct.conditions[i],\
-                (i, expected, construct.conditions)
+            if expected[i]:
+                assert tag in construct.conditions[i], construct.conditions[i]
+            else:
+                assert not construct.conditions[i], construct.conditions[i]
     
     def test_two_pin_and_t_t(self):
         def test_module():

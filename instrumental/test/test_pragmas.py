@@ -112,8 +112,8 @@ class TestPragmaNoCondition(object):
         assert "T F" == construct.description(2)
         
         # T T
-        construct.record(True, 0)
-        construct.record(True, 1)
+        construct.record(True, 0, '*')
+        construct.record(True, 1, '*')
         
         assert not construct.conditions_missed()
 

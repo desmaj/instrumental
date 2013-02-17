@@ -1,4 +1,5 @@
 import inspect
+import shutil
 
 from astkit import ast
 
@@ -74,3 +75,6 @@ class InstrumentationTestCase(object):
         assert statement.value.args[0].s == modname
         assert isinstance(statement.value.args[1], ast.Num)
         assert statement.value.args[1].n == lineno
+
+def setup():
+    shutil.rmtree('.instrumental.cache')
