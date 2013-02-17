@@ -1,4 +1,5 @@
 import inspect
+import os
 import shutil
 
 from astkit import ast
@@ -77,4 +78,5 @@ class InstrumentationTestCase(object):
         assert statement.value.args[1].n == lineno
 
 def setup():
-    shutil.rmtree('.instrumental.cache')
+    if os.path.exists('.instrumental.cache'):
+        shutil.rmtree('.instrumental.cache')

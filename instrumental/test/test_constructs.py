@@ -87,3 +87,78 @@ F ==> """
         assert expected == construct.result(), (expected, construct.result())
 
 
+class TestUnreachableConditions(object):
+    
+    def _makeNode(self, op, conditions):
+        return ast.BoolOp(values=conditions,
+                          op=op)
+    
+    def _makeAnd(self, *conditions):
+        node = self._makeNode(ast.And(), conditions)
+        return LogicalAnd('somemodule', '3.1', node, {})
+    
+    def _makeOr(self, *conditions):
+        node = self._makeNode(ast.Or(), conditions)
+        return LogicalOr('somemodule', '3.1', node, {})
+    
+    def _test(self, expected, ctor, conditions):
+        construct = ctor(*conditions)
+        assert expected == construct.unreachable_conditions(),(
+            expected, construct.unreachable_conditions())
+    
+    def test_And_without_literals(self):
+        yield self._test, [], self._makeAnd, (
+            ast.Name(id='a'), ast.Name(id='b'), ast.Name(id='c'))
+    
+    def test_And_with_True_first_pin(self):
+        yield self._test, [1], self._makeAnd, (
+            ast.Name(id='True'), ast.Name(id='b'), ast.Name(id='c'))
+    
+    def test_And_with_False_first_pin(self):
+        yield self._test, [], self._makeAnd, (
+            ast.Name(id='False'), ast.Name(id='b'), ast.Name(id='c'))
+    
+    def test_And_with_True_second_pin(self):
+        yield self._test, [2], self._makeAnd, (
+            ast.Name(id='a'), ast.Name(id='True'), ast.Name(id='c'))
+    
+    def test_And_with_False_second_pin(self):
+        yield self._test, [], self._makeAnd, (
+            ast.Name(id='a'), ast.Name(id='False'), ast.Name(id='c'))
+    
+    def test_And_with_True_third_pin(self):
+        yield self._test, [3], self._makeAnd, (
+            ast.Name(id='a'), ast.Name(id='b'), ast.Name(id='True'))
+    
+    def test_And_with_False_third_pin(self):
+        yield self._test, [0], self._makeAnd, (
+            ast.Name(id='a'), ast.Name(id='b'), ast.Name(id='False'))
+    
+    def test_Or_without_literals(self):
+        yield self._test, [], self._makeOr, (
+            ast.Name(id='a'), ast.Name(id='b'), ast.Name(id='c'))
+    
+    def test_Or_with_True_first_pin(self):
+        yield self._test, [], self._makeOr, (
+            ast.Name(id='True'), ast.Name(id='b'), ast.Name(id='c'))
+    
+    def test_Or_with_False_first_pin(self):
+        yield self._test, [0], self._makeOr, (
+            ast.Name(id='False'), ast.Name(id='b'), ast.Name(id='c'))
+    
+    def test_Or_with_True_second_pin(self):
+        yield self._test, [], self._makeOr, (
+            ast.Name(id='a'), ast.Name(id='True'), ast.Name(id='c'))
+    
+    def test_Or_with_False_second_pin(self):
+        yield self._test, [1], self._makeOr, (
+            ast.Name(id='a'), ast.Name(id='False'), ast.Name(id='c'))
+    
+    def test_Or_with_True_third_pin(self):
+        yield self._test, [3], self._makeOr, (
+            ast.Name(id='a'), ast.Name(id='b'), ast.Name(id='True'))
+    
+    def test_Or_with_False_third_pin(self):
+        yield self._test, [2], self._makeOr, (
+            ast.Name(id='a'), ast.Name(id='b'), ast.Name(id='False'))
+    

@@ -17,6 +17,7 @@
 #
 from copy import deepcopy
 
+from astkit import ast
 from astkit.render import SourceCodeRenderer
 
 class LogicalBoolean(object):
@@ -30,7 +31,19 @@ class LogicalBoolean(object):
         self.pins = len(node.values)
         self.conditions =\
             dict((i, set()) for i in range(self.pins + 1))
-        self.literals = {}
+        self.literals = self._gather_literals(node)
+    
+    def _gather_literals(self, node):
+        _literals = {}
+        for i, value in enumerate(node.values):
+            # Try to determine if the condition is a literal
+            # Maybe we can do something with this information?
+            try:
+                literal = ast.literal_eval(value)
+                _literals[i] = literal
+            except ValueError:
+                pass
+        return _literals
     
     @property
     def lineno(self):
@@ -97,6 +110,23 @@ class LogicalAnd(LogicalBoolean):
         never be evaluated.
     """
     
+    def unreachable_conditions(self):
+        """ Return the unreachable conditions for this construct
+            
+            Note that conditions are reported as unreachable if they cannot
+            happen due to the presence of literals in the expression *and*
+            if they do not represent a situation in which later inputs are
+            left unevaluated because of a literal value earlier in the
+            expression.
+        """
+        _conditions = []
+        if not self.literals.get(self.pins-1, True):
+            _conditions.append(0)
+        for i, literal in self.literals.items():
+            if literal:
+                _conditions.append(i+1)
+        return _conditions
+    
     def record(self, value, pin, tag):
         """ Record that a value was seen for a particular pin """
         # If the pin is not the last pin in the decision and
@@ -148,6 +178,23 @@ class LogicalOr(LogicalBoolean):
         True. Condition n indicates that all inputs are
         False. Condition n + 1 is "Other".
     """
+    
+    def unreachable_conditions(self):
+        """ Return the unreachable conditions for this construct
+            
+            Note that conditions are reported as unreachable if they cannot
+            happen due to the presence of literals in the expression *and*
+            if they do not represent a situation in which later inputs are
+            left unevaluated because of a literal value earlier in the
+            expression.
+        """
+        _conditions = []
+        for i, literal in self.literals.items():
+            if not literal:
+                _conditions.append(i)
+        if self.literals.get(self.pins-1):
+            _conditions.append(self.pins)
+        return _conditions
     
     def record(self, value, pin, tag):
         """ Record that a value was seen for a particular pin """
