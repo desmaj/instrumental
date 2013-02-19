@@ -99,7 +99,7 @@ def main(argv=None):
             coverage.stop()
             sys.stdout.write("\n")
             recorder = coverage.recorder
-            report = ExecutionReport(here, recorder.metadata)
+            report = ExecutionReport(here, recorder.metadata, opts)
             if opts.summary:
                 sys.stdout.write(report.summary() + "\n")
             if opts.report:

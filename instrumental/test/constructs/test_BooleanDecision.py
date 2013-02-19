@@ -39,7 +39,7 @@ class TestBooleanDecision(object):
     
     def test_number_of_conditions(self):
         decision = self._makeOne()
-        assert 2 == decision.number_of_conditions()
+        assert 2 == decision.number_of_conditions(False)
     
     def test_number_of_conditions_hit(self):
         decision = self._makeOne()
@@ -48,7 +48,7 @@ class TestBooleanDecision(object):
     
     def test_conditions_missed(self):
         decision = self._makeOne()
-        assert 2 == decision.conditions_missed()
+        assert 2 == decision.conditions_missed(False)
     
     def _make_expected_result(self, decision, *conditions_hit):
         node_source = SourceCodeRenderer.render(self.node)

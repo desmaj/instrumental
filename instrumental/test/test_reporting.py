@@ -31,8 +31,10 @@ class TestExecutionReport(object):
         self.TF = FakeConstruct("Both", True, False)
         self.missed = FakeConstruct("Neither")
     
-    def _makeOne(self, working_directory, metadata):
-        return ExecutionReport(working_directory, metadata)
+    def _makeOne(self, working_directory, metadata, options=None):
+        if options is None:
+            options = object()
+        return ExecutionReport(working_directory, metadata, options)
         
     def test_header(self):
         expected_header = """

@@ -278,7 +278,7 @@ class TestLogicalBoolean(object):
     
     def test_number_of_conditions(self):
         construct = self._makeOne()
-        assert 3 == construct.number_of_conditions()
+        assert 3 == construct.number_of_conditions(False)
     
     def test_number_of_conditions_hit(self):
         construct = self._makeOne()
@@ -286,7 +286,7 @@ class TestLogicalBoolean(object):
     
     def test_conditions_missed(self):
         construct = self._makeOne()
-        assert 3 == construct.conditions_missed()
+        assert 3 == len(construct.conditions_missed(False))
     
     def test_initial_result(self):
         construct = self._makeOne()
@@ -309,16 +309,21 @@ class TestLiteralInConstruct(object):
 
 
 x = a or None"""
-        self.node = ast.BoolOp(op=ast.Or(),
-                               values=[ast.Name(id='a'),
-                                       ast.Str(s='None'),
-                                       ],
-                               lineno=6,
-                               col_offset=4)
         self.label = '6.1'
     
-    def test_presence_of_a_literal(self):
+    def _makeOne(self):
         from instrumental.metadata import MetadataGatheringVisitor
         metadata = MetadataGatheringVisitor.analyze(self.modulename, 'somefile.py', self.source, {6: []})
-        construct = metadata.constructs[self.label]
+        return metadata.constructs[self.label]
+        
+    def test_presence_of_a_literal(self):
+        construct = self._makeOne()
         assert "literal" in construct.result(), construct.result()
+    
+    def test_unreachable_condition(self):
+        from instrumental.constructs import UnreachableCondition
+        construct = self._makeOne()
+        assert 2 == construct.number_of_conditions(False)
+        assert not construct.conditions[0]
+        assert isinstance(construct.conditions[1], UnreachableCondition)
+        assert not construct.conditions[2]

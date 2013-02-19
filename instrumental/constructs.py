@@ -20,6 +20,15 @@ from copy import deepcopy
 from astkit import ast
 from astkit.render import SourceCodeRenderer
 
+class UnreachableCondition(object):
+    TAG = 'U'
+    
+    def __iter__(self):
+        return iter([])
+    
+    def __str__(self):
+        return self.TAG
+
 class LogicalBoolean(object):
     
     def __init__(self, modulename, label, node, pragmas):
@@ -32,7 +41,8 @@ class LogicalBoolean(object):
         self.conditions =\
             dict((i, set()) for i in range(self.pins + 1))
         self.literals = self._gather_literals(node)
-    
+        self._set_unreachable_conditions()
+        
     def _gather_literals(self, node):
         _literals = {}
         for i, value in enumerate(node.values):
@@ -45,6 +55,10 @@ class LogicalBoolean(object):
                 pass
         return _literals
     
+    def _set_unreachable_conditions(self):
+        for condition in self.unreachable_conditions():
+            self.conditions[condition] = UnreachableCondition()
+    
     @property
     def lineno(self):
         return self.node.lineno
@@ -52,24 +66,38 @@ class LogicalBoolean(object):
     def is_decision(self):
         return self.label.endswith('.1')
     
-    def number_of_conditions(self):
-        return len(self.conditions)
+    def number_of_conditions(self, report_conditions_with_literals):
+        if report_conditions_with_literals:
+            return len(self.conditions)
+        else:
+            return len(self.conditions) - len(self.unreachable_conditions())
     
     def number_of_conditions_hit(self):
         return len([value 
                     for value in self.conditions.values()
-                    if value])
+                    if value and not isinstance(value, UnreachableCondition)])
     
-    def conditions_missed(self):
-        return self.number_of_conditions() - self.number_of_conditions_hit()
+    def conditions_missed(self, report_conditions_with_literals):
+        if report_conditions_with_literals:
+            missed = [self.description(n) for n in self.conditions
+                      if (not self.conditions[n] 
+                          or isinstance(self.conditions[n], UnreachableCondition))]
+        else:
+            missed = [self.description(n) for n in self.conditions
+                      if not (isinstance(self.conditions[n], UnreachableCondition)
+                              or self.conditions[n])]
+        return missed
     
     def _literal_warning(self):
         return ("** One or more conditions may not be reachable due to"
                 " the presence of a literal in the decision")
     
     def _format_condition_result(self, result, length=6):
-        padding = '\n' + (' ' * length)
-        return padding.join(tag for tag in sorted(result))
+        if isinstance(result, UnreachableCondition):
+            return str(result)
+        else:
+            padding = '\n' + (' ' * length)
+            return padding.join(tag for tag in sorted(result))
     
     def result(self):
         lines = []
@@ -92,8 +120,8 @@ class LogicalBoolean(object):
         name = "Decision -> %s:%s < %s >" % (self.modulename, self.label, self.source,)
         lines.append("%s" % (name,))
         lines.append("")
-        lines.append("T ==> %s" % self.was_true())
-        lines.append("F ==> %s" % self.was_false())
+        lines.append("T ==> %s" % self._format_condition_result(self.was_true()))
+        lines.append("F ==> %s" % self._format_condition_result(self.was_false()))
         return "\n".join(lines)
     
 
@@ -161,13 +189,13 @@ class LogicalAnd(LogicalBoolean):
             return "Other"
     
     def was_true(self):
-        return self._format_condition_result(self.conditions[0])
+        return self.conditions[0]
     
     def was_false(self):
         results = set()
         for n in range(1, self.pins+1):
             results.update(self.conditions[n])
-        return self._format_condition_result(results)
+        return results
     
 class LogicalOr(LogicalBoolean):
     """ Stores the execution information for a Logical Or
@@ -234,10 +262,10 @@ class LogicalOr(LogicalBoolean):
         results = set()
         for n in range(0, self.pins):
             results.update(self.conditions[n])
-        return self._format_condition_result(results)
+        return results
     
     def was_false(self):
-        return self._format_condition_result(self.conditions[self.pins])
+        return self.conditions[self.pins]
     
 class BooleanDecision(object):
     
@@ -258,17 +286,24 @@ class BooleanDecision(object):
         result = bool(expression)
         self.conditions[result].add(tag)
         return result
-
-    def number_of_conditions(self):
+    
+    def was_true(self):
+        return self.conditions[True]
+    
+    def was_false(self):
+        return (self.conditions[False] 
+                and isinstance(list(self.conditions[False])[0], UnreachableCondition))
+    
+    def number_of_conditions(self, report_conditions_with_literals):
         return len(self.conditions)
     
     def number_of_conditions_hit(self):
         return len([value 
                     for value in self.conditions.values()
-                    if value])
+                    if value and not isinstance(value, UnreachableCondition)])
     
-    def conditions_missed(self):
-        return self.number_of_conditions() - self.number_of_conditions_hit()
+    def conditions_missed(self, report_conditions_With_literals):
+        return self.number_of_conditions(report_conditions_With_literals) - self.number_of_conditions_hit()
     
     def _format_condition_result(self, result, length=6):
         padding = '\n' + (' ' * length)
