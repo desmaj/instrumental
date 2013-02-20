@@ -57,6 +57,11 @@ parser.add_option('-i', '--ignore', dest='ignores',
                   help=('A Python regular expression; modules with names'
                         ' matching this regular expression will be'
                         ' ignored and not have their coverage reported'))
+parser.add_option('--report-literals',
+                  dest='report_conditions_with_literals',
+                  action='store_true', default=False,
+                  help=('Report conditions containing literals as though'
+                        'they were reachable'))
 
 def main(argv=None):
     if argv is None:
@@ -94,7 +99,7 @@ def main(argv=None):
             coverage.stop()
             sys.stdout.write("\n")
             recorder = coverage.recorder
-            report = ExecutionReport(here, recorder.metadata)
+            report = ExecutionReport(here, recorder.metadata, opts)
             if opts.summary:
                 sys.stdout.write(report.summary() + "\n")
             if opts.report:

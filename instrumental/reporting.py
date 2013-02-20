@@ -24,9 +24,10 @@ from instrumental.xmlreport import XMLCoverageReport
 
 class ExecutionReport(object):
     
-    def __init__(self, working_directory, metadata):
+    def __init__(self, working_directory, metadata, options):
         self.working_directory = working_directory
         self.metadata = metadata
+        self.options = options
     
     def report(self, showall=False):
         lines = []
@@ -42,11 +43,7 @@ class ExecutionReport(object):
         for modulename, metadata in sorted(self.metadata.items()):
             for label, construct in sorted(metadata.constructs.items(),
                                            key=_key_func):
-                if showall or construct.conditions_missed():
-                    if (isinstance(construct, LogicalBoolean) 
-                        and construct.is_decision()):
-                        lines.append(construct.decision_result())
-                        lines.append("")
+                if showall or construct.conditions_missed(self.options.report_conditions_with_literals):
                     lines.append(construct.result())
                     lines.append("")
         return "\n".join(lines)
@@ -59,7 +56,7 @@ class ExecutionReport(object):
         lines.append("================================================")
         lines.append("")
         for modulename, metadata in sorted(self.metadata.items()):
-            total_conditions = sum(construct.number_of_conditions()
+            total_conditions = sum(construct.number_of_conditions(self.options.report_conditions_with_literals)
                                    for construct in metadata.constructs.values())
             hit_conditions = sum(construct.number_of_conditions_hit()
                                  for construct in metadata.constructs.values())
@@ -84,7 +81,7 @@ class ExecutionReport(object):
         return "\n".join(outlines + [formatter.format(statements)])
 
     def write_xml_coverage_report(self, filename):
-        xml_report = XMLCoverageReport(self.working_directory, self.metadata)
+        xml_report = XMLCoverageReport(self.working_directory, self.metadata, self.options)
         xml_report.write(filename)
     
     def write_html_coverage_report(self, directory='instrumental-result-html'):
@@ -95,7 +92,7 @@ class ExecutionReport(object):
             conditions[modulename] = self.metadata[modulename].constructs
             statements[modulename] = self.metadata[modulename].lines
             sources[modulename] = self.metadata[modulename].source
-        summary = ExecutionSummary(conditions, statements)
+        summary = ExecutionSummary(conditions, statements, self.options)
         html_report = HTMLCoverageReport(summary, sources)
         html_report.write(os.path.join(self.working_directory, directory))
     

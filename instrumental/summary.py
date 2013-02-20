@@ -30,28 +30,32 @@ def _package(modulename):
 
 class BaseExecutionSummary(object):
     
-    def __init__(self, conditions, statements):
-        self.decisions = dict((label, condition) for label, condition in conditions.items()
-                              if isinstance(condition, BooleanDecision))
+    def __init__(self, conditions, statements, options):
         self.conditions = conditions
         self.statements = statements
+        self.options = options
         
+    @property
+    def decisions(self):
+        return [condition for condition in self.conditions
+                if condition.is_decision()]
+    
     def condition_rate(self):
-        total_conditions = sum(condition.number_of_conditions()
-                               for label, condition in self.conditions.items())
+        total_conditions = sum(condition.number_of_conditions(self.options.report_conditions_with_literals)
+                               for condition in self.conditions)
         if not total_conditions:
             return 1.0
         hit_conditions = sum(condition.number_of_conditions_hit()
-                             for label, condition in self.conditions.items())
+                             for condition in self.conditions)
         return hit_conditions / float(total_conditions)
     
     def decision_rate(self):
-        total_conditions = sum(decision.number_of_conditions()
-                               for label, decision in self.decisions.items())
+        total_conditions = sum(decision.number_of_conditions(self.options.report_conditions_with_literals)
+                               for decision in self.decisions)
         if not total_conditions:
             return 1.0
         hit_conditions = sum(decision.number_of_conditions_hit()
-                             for label, decision in self.decisions.items())
+                             for decision in self.decisions)
         return hit_conditions / float(total_conditions)
     
     def statement_rate(self):
@@ -68,8 +72,12 @@ class BaseExecutionSummary(object):
 
 class ExecutionSummary(BaseExecutionSummary):
     
-    def __init__(self, conditions, statements):
-        super(ExecutionSummary, self).__init__(conditions, statements)
+    def __init__(self, conditions, statements, options):
+        self.statements = statements
+        self.conditions = []
+        for modulename in statements:
+            self.conditions += conditions[modulename].values()
+        self.options = options
         self._packages = None
     
     @property
@@ -78,60 +86,59 @@ class ExecutionSummary(BaseExecutionSummary):
             _statements = {}
             _conditions = {}
             for modulename in self.statements:
+                _package_name = _package(modulename)
+                
                 _package_statements = \
-                    _statements.setdefault(_package(modulename), {})
+                    _statements.setdefault(_package_name, {})
                 _package_statements[modulename] = self.statements[modulename]
+                
                 _package_conditions = \
-                    _conditions.setdefault(_package(modulename), {})
-                _package_conditions.update(\
-                    dict((label, condition) 
-                         for label, condition in self.conditions[modulename].items()
-                         if condition.modulename == modulename)
-                    )
-                    
+                    _conditions.setdefault(_package_name, [])
+                for condition in self.conditions:
+                    if condition.modulename == modulename:
+                        _package_conditions.append(condition)
+            
             self._packages = \
                 dict((packagename, 
                       PackageExecutionSummary(packagename,
                                               _conditions[packagename],
-                                              _statements[packagename]))
+                                              _statements[packagename],
+                                              self.options))
                      for packagename in _statements)
         return self._packages
-
-        
+    
 class PackageExecutionSummary(BaseExecutionSummary):
     
-    def __init__(self, name, conditions, statements):
-        super(PackageExecutionSummary, self).__init__(conditions, statements)
+    def __init__(self, name, conditions, statements, options):
+        super(PackageExecutionSummary, self).__init__(conditions, statements, options)
         self.name = name
         self._modules = None
     
     @property
     def modules(self):
         if self._modules is None:
-            _conditions = dict((modulename,
-                                dict((label, condition) 
-                                     for label, condition in self.conditions.items()
-                                     if modulename == condition.modulename))
-                                for modulename in self.statements)
-            self._modules = \
-                dict((modulename,
-                      ModuleExecutionSummary(modulename,
-                                             _conditions[modulename],
-                                             self.statements[modulename]))
-                      for modulename in self.statements)
+            self._modules = {}
+            for modulename in self.statements:
+                _conditions = [condition for condition in self.conditions
+                               if condition.modulename == modulename]
+                self._modules[modulename] = (
+                    ModuleExecutionSummary(modulename,
+                                           _conditions,
+                                           self.statements[modulename],
+                                           self.options))
         return self._modules
-
+    
 
 class ModuleExecutionSummary(BaseExecutionSummary):
     
-    def __init__(self, name, conditions, statements):
+    def __init__(self, name, conditions, statements, options):
+        super(ModuleExecutionSummary, self).__init__(conditions, statements, options)
         self.name = name
-        super(ModuleExecutionSummary, self).__init__(conditions, statements)
     
     def statement_rate(self):
         total_statements = len(self.statements)
         if not total_statements:
             return 1.0
-        hit_statements = sum(hit for (lineno, hit) in self.statements.items())
+        hit_statements = sum(hit for hit in self.statements.values())
         return hit_statements / float(total_statements)
-
+    

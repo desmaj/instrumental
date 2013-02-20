@@ -106,7 +106,7 @@ class TestPragmaNoCondition(object):
         pragma = PragmaNoCondition(match)
         construct = pragma(construct)
         assert '(x and y)' == construct.source
-        assert 3 == construct.number_of_conditions()
+        assert 3 == construct.number_of_conditions(False)
         assert "T T" == construct.description(0)
         assert "F *" == construct.description(1)
         assert "T F" == construct.description(2)
@@ -115,7 +115,7 @@ class TestPragmaNoCondition(object):
         construct.record(True, 0, '*')
         construct.record(True, 1, '*')
         
-        assert not construct.conditions_missed()
+        assert not construct.conditions_missed(False)
 
 class TestInstrumentationWithPragmas(InstrumentationTestCase):
     

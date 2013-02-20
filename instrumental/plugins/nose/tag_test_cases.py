@@ -14,7 +14,11 @@ class InstrumentalTagPlugin(Plugin):
     
     def startTest(self, test):
         from instrumental.recorder import ExecutionRecorder
-        ExecutionRecorder.get().tag = ':'.join(test.address()[1:])
+        if hasattr(test, 'address'):
+            tag = ':'.join(test.address()[1:])
+        else:
+            tag = test.id()
+        ExecutionRecorder.get().tag = tag
     
     def stopTest(self, test):
         from instrumental.recorder import ExecutionRecorder
