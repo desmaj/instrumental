@@ -16,7 +16,7 @@
       <td class="lineno" >${ lineno }</td>
       <td><pre>${ line }</pre></td>
 %   if conditions.get(lineno):
-%     if any(condition.conditions_missed() \
+%     if any(condition.conditions_missed(module.options.report_conditions_with_literals) \
              for col, condition_list in conditions.get(lineno).items() \
              for condition in condition_list):
       <td class="missed-conditions"><div>${ decorate_line(lineno, line, conditions)}</div></td>
@@ -33,7 +33,7 @@
         conditions_for_col_offset = \
             conditions[lineno][col_offset]
         for condition in conditions_for_col_offset:
-            if not condition.conditions_missed():
+            if not condition.conditions_missed(module.options.report_conditions_with_literals):
                 continue
             decoration += condition.result().replace("\n", "<br>") + "<br><br>"
 %>

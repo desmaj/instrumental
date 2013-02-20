@@ -62,7 +62,7 @@ class HTMLCoverageReport(object):
                 module_template = \
                     template_lookup.get_template('/html/module.html')
                 conditions_by_line = {}
-                for condition in module_summary.conditions.values():
+                for condition in module_summary.conditions:
                     conditions_by_col = \
                         conditions_by_line.setdefault(condition.lineno, {})
                     condition_list = conditions_by_col.setdefault(condition.node.col_offset, [])

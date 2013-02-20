@@ -92,7 +92,7 @@ class ExecutionReport(object):
             conditions[modulename] = self.metadata[modulename].constructs
             statements[modulename] = self.metadata[modulename].lines
             sources[modulename] = self.metadata[modulename].source
-        summary = ExecutionSummary(conditions, statements)
+        summary = ExecutionSummary(conditions, statements, self.options)
         html_report = HTMLCoverageReport(summary, sources)
         html_report.write(os.path.join(self.working_directory, directory))
     
