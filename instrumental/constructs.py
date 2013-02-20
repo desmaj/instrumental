@@ -23,9 +23,6 @@ from astkit.render import SourceCodeRenderer
 class UnreachableCondition(object):
     TAG = 'U'
     
-    def __iter__(self):
-        return iter([])
-    
     def __str__(self):
         return self.TAG
 
@@ -42,7 +39,12 @@ class LogicalBoolean(object):
             dict((i, set()) for i in range(self.pins + 1))
         self.literals = self._gather_literals(node)
         self._set_unreachable_conditions()
-        
+        for pragma in pragmas:
+            if hasattr(pragma, 'selector'):
+                pragma_label = '%s.%s' % (node.lineno, pragma.selector)
+                if label == pragma_label:
+                    pragma.apply(self)
+    
     def _gather_literals(self, node):
         _literals = {}
         for i, value in enumerate(node.values):
@@ -278,6 +280,11 @@ class BooleanDecision(object):
         self.source = SourceCodeRenderer.render(node)
         self.conditions = {True: set(),
                            False: set()}
+        for pragma in pragmas:
+            if hasattr(pragma, 'selector'):
+                pragma_label = '%s.%s' % (node.lineno, pragma.selector)
+                if label == pragma_label:
+                    pragma.apply(self)
     
     def is_decision(self):
         return True
@@ -286,6 +293,9 @@ class BooleanDecision(object):
         result = bool(expression)
         self.conditions[result].add(tag)
         return result
+    
+    def description(self, condition):
+        return str(bool(condition))[0]
     
     def was_true(self):
         return self.conditions[True]

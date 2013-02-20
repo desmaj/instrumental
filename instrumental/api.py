@@ -10,9 +10,12 @@ from instrumental.recorder import ExecutionRecorder
 class Coverage(object):
     
     def __init__(self):
-        self.recorder = ExecutionRecorder.get()
         self._import_hooks = []
-
+    
+    @property
+    def recorder(self):
+        return ExecutionRecorder.get()
+    
     def start(self, targets, ignores):
         gather_metadata(self.recorder, targets, ignores)
         annotator_factory = AnnotatorFactory(self.recorder)
@@ -28,3 +31,9 @@ class Coverage(object):
         for hook in self._import_hooks:
             sys.meta_path.remove(hook)
         unmonkeypatch_imp()
+    
+    def start_context(self, label):
+        self.recorder.tag = label
+    
+    def stop_context(self):
+        self.recorder.tag = None

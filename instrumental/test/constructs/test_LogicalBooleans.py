@@ -35,10 +35,10 @@ class TestLogicalAnd(ThreePinTestCase):
         self.node.op = ast.And()
     
     def _makeOne(self):
-        return LogicalAnd(self.modulename, self.label, self.node, None)
+        return LogicalAnd(self.modulename, self.label, self.node, set())
     
     def test_constructor(self):
-        assert LogicalAnd(self.modulename, self.label, self.node, None)
+        assert LogicalAnd(self.modulename, self.label, self.node, set())
     
     def test_has_conditions(self):
         assert hasattr(self._makeOne(), 'conditions')
@@ -114,7 +114,7 @@ class TestLogicalAnd2Pin(TwoPinTestCase):
         self.node.op = ast.And()
     
     def _makeOne(self):
-        return LogicalAnd(self.modulename, self.label, self.node, None)
+        return LogicalAnd(self.modulename, self.label, self.node, set())
     
     def test_2_pin_and_condition_0(self):
         and_ = self._makeOne()
@@ -139,7 +139,7 @@ class TestLogicalOr(ThreePinTestCase):
         self.node.op = ast.Or()
     
     def _makeOne(self):
-        return LogicalOr(self.modulename, self.label, self.node, None)
+        return LogicalOr(self.modulename, self.label, self.node, set())
     
     def test_has_conditions(self):
         or_ = self._makeOne()
@@ -220,7 +220,7 @@ class TestLogicalOr2Pin(TwoPinTestCase):
         self.node.op = ast.Or()
     
     def _makeOne(self):
-        return LogicalOr(self.modulename, self.label, self.node, None)
+        return LogicalOr(self.modulename, self.label, self.node, set())
     
     def test_2_pin_or_condition_0(self):
         or_ = self._makeOne()
@@ -251,7 +251,7 @@ class TestLogicalBoolean(object):
         self.label = '17.1'
     
     def _makeOne(self):
-        return LogicalAnd(self.modulename, self.label, self.node, None)
+        return LogicalAnd(self.modulename, self.label, self.node, set())
     
     def test_modulename(self):
         construct = self._makeOne()
@@ -313,7 +313,7 @@ x = a or None"""
     
     def _makeOne(self):
         from instrumental.metadata import MetadataGatheringVisitor
-        metadata = MetadataGatheringVisitor.analyze(self.modulename, 'somefile.py', self.source, {6: []})
+        metadata = MetadataGatheringVisitor.analyze(self.modulename, 'somefile.py', self.source, {6: set()})
         return metadata.constructs[self.label]
         
     def test_presence_of_a_literal(self):
@@ -327,3 +327,13 @@ x = a or None"""
         assert not construct.conditions[0]
         assert isinstance(construct.conditions[1], UnreachableCondition)
         assert not construct.conditions[2]
+        assert set(['T *', 'F F']) == set(construct.conditions_missed(False))
+    
+    def test_count_literals(self):
+        from instrumental.constructs import UnreachableCondition
+        construct = self._makeOne()
+        assert 3 == construct.number_of_conditions(True)
+        assert not construct.conditions[0]
+        assert isinstance(construct.conditions[1], UnreachableCondition)
+        assert not construct.conditions[2]
+        assert set(['T *', 'F T', 'F F']) == set(construct.conditions_missed(True))

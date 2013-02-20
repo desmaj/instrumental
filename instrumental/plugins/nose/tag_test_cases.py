@@ -13,13 +13,15 @@ class InstrumentalTagPlugin(Plugin):
         return 'Tags each test case for use with instrumental'
     
     def startTest(self, test):
-        from instrumental.recorder import ExecutionRecorder
+        from instrumental.api import Coverage
         if hasattr(test, 'address'):
             tag = ':'.join(test.address()[1:])
         else:
             tag = test.id()
-        ExecutionRecorder.get().tag = tag
+        cov = Coverage()
+        cov.start_context(tag)
     
     def stopTest(self, test):
-        from instrumental.recorder import ExecutionRecorder
-        ExecutionRecorder.get().tag = None
+        from instrumental.api import Coverage
+        cov = Coverage()
+        cov.stop_context()

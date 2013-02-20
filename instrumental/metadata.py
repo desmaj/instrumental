@@ -94,8 +94,6 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
             klass = constructs.LogicalAnd
         elif isinstance(node.op, ast.Or):
             klass = constructs.LogicalOr
-        else:
-            raise ValueError("We should have an And or Or here")
         pragmas = self.metadata.pragmas.get(node.lineno, [])
         construct = klass(self.metadata.modulename, label, node, pragmas)
         return construct
