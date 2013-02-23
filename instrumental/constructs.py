@@ -91,8 +91,8 @@ class LogicalBoolean(object):
         return missed
     
     def _literal_warning(self):
-        return ("** One or more conditions may not be reachable due to"
-                " the presence of a literal in the decision")
+        return ("** One or more condition combinations may not be reachable due"
+                " to the presence of a literal in the decision")
     
     def _format_condition_result(self, result, length=6):
         if isinstance(result, UnreachableCondition):
