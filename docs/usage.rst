@@ -40,6 +40,8 @@ There I'm telling instrumental to run nosetests targetting the 'pyramid' package
   -----------------------------------------------------------
   TOTAL                          6419      0   100%
 
+If there are statements that weren't executed during the instrumented run, instrumental will report their line numbers in the 'Missing' column of the statement coverage report.
+
 Condition / decision coverage
 -----------------------------
 
@@ -56,21 +58,21 @@ when execution is complete. The output should look something like this::
   
   Decision -> pyramid.authentication:43 < logger >
   
-  T ==> True
-  F ==> False
+  T ==> X
+  F ==> 
   
   ...
   
   Decision -> pyramid.view:31 < (package_name is None) >
   
-  T ==> True
-  F ==> False
+  T ==> X
+  F ==> 
   
   LogicalOr -> pyramid.view:281 < (getattr(request, 'exception', None) or context) >
   
-  T * ==> True
-  F T ==> False
-  F F ==> False
+  T * ==> X
+  F T ==> 
+  F F ==> 
 
 The preceeding output is formatted like this::
 
@@ -85,5 +87,67 @@ package_name was not None.
 
 The third chunk in the example report describes the condition coverage for the logical or on line 281 of
 pyramid.view. The result there says that every time the or decision was executed, the expression on the left side
-always evaluated True as a boolean expression. So the expression on the right side of the or, context, was never
-tested!
+always evaluated True as a boolean expression. So the expression on the right side of the or, 'context', was never
+Tested!
+
+Unreachable Cases
+-----------------
+
+There are times when you may include a literal in an expression. It may be in an assignment (as below) or in the test for an if statement. Instrumental doesn't judge. If Instrumental finds a decision that contains one or more literals it won't, by default, count against coverage totals the cases that are directly unreachable because of a literal. On the other hand, Instrumental will hold you responsible for cases that are unreachable due to the presence of literals proceeding them in the calcuation of the decision. A concrete example of this would probably be helpful here.
+
+Note that in the following report section, the literal value '/' is used as the second condition in the decision. So the 'F F' condition combination will never be possible and is considered unreachable. In this situation, Instrumental will only expect the 'T *' and 'F T' condition combinations to be reported as covered. As long as those combinations are seen during execution, this decision is considered to be fully covered and it will not be present in the coverage report.::
+
+  LogicalOr -> pyramid.view:277.1 < (request.environ['PATH_INFO'] or '/') >
+  
+  ** One or more condition combinations may not be reachable due to the presence of a literal in the decision
+  
+  T * ==> X
+  F T ==> X
+  F F ==> U
+
+Now consider the decision described in the next report chunk. This is the same expression as the one in the last example except that it has an additional condition at the end. In this situation, Instrumental will recognize that the 'F F T' and 'F F F' combinations are unreachable, but only the 'F F F' combination is marked as unreachable and so exempted from coverage. This is because the literal in the expression prevents the final condition, 'default_path()', from ever being evaluated. Since this represents a possible bug, Instrumental will report it as missed coverage.::
+
+  LogicalOr -> pyramid.view:277.1 < (request.environ['PATH_INFO'] or '/' or default_path()) >
+  
+  ** One or more condition combinations may not be reachable due to the presence of a literal in the decision
+  
+  T * * ==> X
+  F T * ==> X
+  F F T ==>  
+  F F F ==> U
+
+If you're interested in expressions that contain literals, you can always use the --report-literals option. This option tells Instrumental to count cases that are unreachable due to the presence of literals during coverage calculation.
+
+Marking conditions as unreachable
+=================================
+
+It may be that there are condition combinations that aren't possible, but appear possible to Instrumental. In this situation you can tell Instrumental to not expect to find certain condition combinations using the 'pragma: no cond' directive. Let's look at a concrete example::
+
+  [1] a = func1()
+  [2] b = False
+  [3] c = func2()
+  [4] if a or b or c: # pragma: no cond(F T F)
+  [5]     func3()
+  [6] else:
+  [7]     func4()
+
+In this example we can see that the 'F T F' case will not ever be possible since b will always be True. We can communicate this to instrumental by adding a comment to the end of line 4 in the form "pragma: no code(<condition1>[,condition2, ..., conditionN])". When we do that, Instrumental will output something like the following::
+
+  LogicalOr -> somemodule:4.1 < (a or b or c) >
+  
+  T * * ==> 
+  F T * ==> P
+  F F T ==>  
+  F F F ==> 
+
+In this report chunk, the 'P' indicates that the 'F T F' condition combination has been marked as impossible by a pragma. If we wanted to also say that the 'F F T' case we impossible, our pragma would look more like, "pragma: no cond(F T F,F F T)". The "pragma: no cond" system also supports nested expressions. Consider the following modified code::
+
+  [1] a = func1()
+  [2] b = True
+  [3] c = func2()
+  [4] if a or (b and d) or c: # pragma: no cond[.2](F T)
+  [5]     func3()
+  [6] else:
+  [7]     func4()
+
+Here we can see that the impossible condition will be the 'F T' combination in the nested 'and'. You can indicate that the pragma applies to the nested 'and' by specifying a "selector" of [.2]. The .2 will match the label that Instrumental will give the expression (i.e. 4.2) and Instrumental will know which expression to apply the pragma to. You can even add the pragma on a separate line and specify a selector that contains a line number. In this case, you could add the comment, "# pragma: no cond[4.2](F T)" to line 3 and Instrumental would figure out that the pragma should be applied to the expression labeled 4.2.

@@ -25,10 +25,7 @@ class Pragma(object):
     def __init__(self, match):
         pass
 
-    def __call__(self, construct):
-        return ConstructWrapper(construct, self)
-    
-    def apply(self, construct):
+    def apply(self, construct): # pragma: no cover
         return construct
 
 class PragmaNoCover(Pragma):
@@ -37,31 +34,36 @@ class PragmaNoCover(Pragma):
 class PragmaNoCondition(Pragma):
     block = False
     
-    def __init__(self, match):
-        self.conditions = match.group(1).split(',')
-        
-    def __call__(self, construct):
-        return ConstructWrapper(construct, self)
+    NO_COND_TAG = 'P'
     
+    def __init__(self, match):
+        selector = match.group('selector')
+        if selector:
+            _, self.selector = selector.split('.')
+        else:
+            self.selector = '1'
+        self.conditions = match.group('conditions').split(',')
+        
     def apply(self, construct):
         for condition in construct.conditions:
             if construct.description(condition) in self.conditions:
-                construct.conditions[condition].add('*')
+                construct.conditions[condition].add(self.NO_COND_TAG)
         return construct
 
-class ConstructWrapper(object):
-    
-    def __init__(self, construct, pragma):
-        self.construct = pragma.apply(construct)
-    
-    def __getattr__(self, attr):
-        if hasattr(self.construct, attr):
-            return getattr(self.construct, attr)
-        raise AttributeError(attr)
+selector = r'(\[(?P<selector>\d*\.\d+)\])?'
+
+no_cover_root = r'no\s+cover'
+no_cover = no_cover_root + selector
+
+no_cond_root = r'no\s+cond'
+no_cond_condition = r'[TF\*](\s+[TF\*])*'
+no_cond_conditions = r'\((?P<conditions>%s(,%s)*)\)' % (no_cond_condition,
+                                                        no_cond_condition)
+no_cond = no_cond_root + selector + no_cond_conditions
 
 valid_pragmas = {
-    r'no\s+cover': PragmaNoCover,
-    r'no\s+cond\(([TF\*](\s+[TF\*])*(,[TF\*](\s+[TF\*]))*)\)': PragmaNoCondition,
+    no_cover: PragmaNoCover,
+    no_cond: PragmaNoCondition,
     }
 
 class PragmaApplier(ast.NodeVisitor):
@@ -181,16 +183,24 @@ class PragmaFinder(object):
     
     def find_pragmas(self, source):
         pragmas = {}
-        for lineno, line in enumerate(source.splitlines()):
-            lineno += 1
+        lines = source.splitlines()
+        for lineno in range(1, len(lines)+1):
             pragmas[lineno] = set()
+        for lineno, line in enumerate(lines):
+            lineno += 1
             pragma_match = re.search(r'#\s*pragma:(.+)$', line)
             if pragma_match:
                 pragma_text = pragma_match.group(1)
                 for pragma_label, pragma in valid_pragmas.items():
                     pragma_match = re.search(pragma_label, pragma_text)
                     if pragma_match:
-                        pragmas[lineno].add(pragma(pragma_match))
+                        selected_lineno = lineno
+                        selector = pragma_match.group('selector')
+                        if selector:
+                            selector_lineno, _ = selector.split('.')
+                            if selector_lineno:
+                                selected_lineno = int(selector_lineno)
+                        pragmas[selected_lineno].add(pragma(pragma_match))
         
         applier = PragmaApplier(pragmas, source)
         pragmas = applier.apply()
