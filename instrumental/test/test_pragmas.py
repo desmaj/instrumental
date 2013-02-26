@@ -209,6 +209,30 @@ class TestPragmaNoCondition(InstrumentationTestCase):
         assert construct.conditions[1] == set(['P']) # F *
         assert construct.conditions[2] == set([self.recorder.DEFAULT_TAG]) # T F
         
+    def test_conditions_are_ignored_for_decision(self):
+        import re
+        from astkit import ast
+        from instrumental.constructs import BooleanDecision
+        from instrumental.pragmas import no_cond
+        from instrumental.pragmas import PragmaNoCondition
+        node = ast.Name(id="x",
+                        lineno=17,
+                        col_offset=1)
+        match = re.match(no_cond, 'no cond(T)')
+        pragma = PragmaNoCondition(match)
+        construct = BooleanDecision('<string>', '17.1', node, set([pragma]))
+        assert 'x' == construct.source
+        assert 2 == construct.number_of_conditions(False)
+        assert "T" == construct.description(True)
+        assert "F" == construct.description(False)
+        
+        # T T
+        construct.record(False, '*')
+        
+        assert not construct.conditions_missed(False)
+        assert construct.conditions[True] == set(['P'])
+        assert construct.conditions[False] == set(['*'])
+    
 class TestInstrumentationWithPragmas(InstrumentationTestCase):
     
     def test_ClassDef(self):

@@ -87,6 +87,14 @@ F ==> """
         assert expected == construct.result(), (expected, construct.result())
 
 
+    def test_description_of_T(self):
+        construct = self._makeOne()
+        assert 'T' == construct.description(True)
+
+    def test_description_of_F(self):
+        construct = self._makeOne()
+        assert 'T' == construct.description(True)
+
 class TestUnreachableConditions(object):
     
     def _makeNode(self, op, conditions):
