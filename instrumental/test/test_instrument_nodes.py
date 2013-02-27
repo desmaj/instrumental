@@ -166,18 +166,14 @@ class TestInstrumentNodesPython2(InstrumentationTestCase):
     
     def test_Assert(self):
         def test_module():
-            assert a == 4
+            assert True
         inst_module = self._instrument_module(test_module)
         self._assert_recorder_setup(inst_module)
         
         self._assert_record_statement(inst_module.body[2], 'test_module', 1)
         assert isinstance(inst_module.body[3], ast.Assert)
-        assert isinstance(inst_module.body[3].test, ast.Compare)
-        assert isinstance(inst_module.body[3].test.left, ast.Name)
-        assert inst_module.body[3].test.left.id == 'a'
-        assert isinstance(inst_module.body[3].test.ops[0], ast.Eq)
-        assert isinstance(inst_module.body[3].test.comparators[0], ast.Num)
-        assert inst_module.body[3].test.comparators[0].n == 4
+        assert isinstance(inst_module.body[3].test, ast.Name)
+        assert inst_module.body[3].test.id == 'True'
     
     def test_Assign(self):
         def test_module():

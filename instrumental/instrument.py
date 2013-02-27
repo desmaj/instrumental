@@ -85,7 +85,7 @@ class CoverageAnnotator(ast.NodeTransformer):
         self.pragmas = recorder.metadata[modulename].pragmas
         self.node_factory = InstrumentedNodeFactory(recorder)
         self.modifiers = []
-        self.expression_context = []
+        self.expression_context = [None]
         self._found_labels = []
     
     def _next_label(self, lineno):
@@ -132,8 +132,18 @@ class CoverageAnnotator(ast.NodeTransformer):
         self.expression_context.pop(-1)
         return result
     
+    def visit_Compare(self, compare):
+        pragmas = self.pragmas.get(compare.lineno, [])
+        if not (isinstance(self.expression_context[-1], ast.BoolOp)):
+            label = self._next_label(compare.lineno)
+            compare = self.generic_visit(compare)
+            result = self.node_factory.instrument_test(self.modulename, label, compare)
+        else:
+            result = self.generic_visit(compare)
+        return result
+    
     def visit_IfExp(self, ifexp):
-        if not isinstance(ifexp.test, ast.BoolOp):
+        if not (isinstance(ifexp.test, ast.BoolOp) or isinstance(ifexp.test, ast.Compare)):
             label = self._next_label(ifexp.lineno)
             ifexp.test = self.node_factory.instrument_test(self.modulename, label, ifexp.test)
         result = self.generic_visit(ifexp)

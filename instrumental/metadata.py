@@ -66,7 +66,7 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
     def __init__(self, metadata, pragmas):
         self.metadata = metadata
         self.modifiers = []
-        self.expression_context = []
+        self.expression_context = [None]
     
     def _has_pragma(self, pragma, lineno):
         return any(isinstance(p, pragma) for p in self.metadata.pragmas[lineno])
@@ -99,8 +99,8 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
         return construct
     
     def _make_decision(self, label, node):
-        # BoolOps will be collected elsewhere
-        if not isinstance(node, ast.BoolOp):
+        # BoolOps and Compares will be collected elsewhere
+        if not (isinstance(node, ast.BoolOp) or isinstance(node, ast.Compare)):
             pragmas = self.metadata.pragmas.get(node.lineno, [])
             return constructs.BooleanDecision(self.metadata.modulename, label, node, pragmas)
     
@@ -114,10 +114,22 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
         label = self.metadata.next_label(boolop.lineno)
         construct = self._make_boolop_construct(label, boolop)
         self.metadata.constructs[label] = construct
-        self.expression_context.append(label)
+        self.expression_context.append(construct)
         self.generic_visit(boolop)
         self.expression_context.pop(-1)
-            
+    
+    def visit_Compare(self, compare):
+        construct = None
+        if not isinstance(self.expression_context[-1], 
+                          constructs.LogicalBoolean):
+            label = self.metadata.next_label(compare.lineno)
+            pragmas = self.metadata.pragmas.get(compare.lineno, [])
+            construct = constructs.BooleanDecision(self.metadata.modulename, label, compare, pragmas)
+            self.metadata.constructs[label] = construct
+        self.expression_context.append(construct)
+        self.generic_visit(compare)
+        self.expression_context.pop(-1)
+    
     def visit_If(self, if_):
         if self._has_pragma(PragmaNoCover, if_.lineno):
             self.modifiers.append(PragmaNoCover)
@@ -127,7 +139,10 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
             construct = self._make_decision(label, if_.test)
             if construct:
                 self.metadata.constructs[str(label)] = construct
+                self.expression_context.append(construct)
             self.generic_visit(if_)
+            if construct:
+                self.expression_context.pop(-1)
         if self._has_pragma(PragmaNoCover, if_.lineno):
             self.modifiers.pop(-1)
     
@@ -136,8 +151,11 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
         construct = self._make_decision(label, ifexp.test)
         if construct:
             self.metadata.constructs[str(label)] = construct
+            self.expression_context.append(construct)
         self.generic_visit(ifexp)
-        
+        if construct:
+            self.expression_context.pop(-1)
+    
     def visit_While(self, while_):
         if self._has_pragma(PragmaNoCover, while_.lineno):
             self.modifiers.append(PragmaNoCover)
@@ -146,8 +164,11 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
             label = self.metadata.next_label(while_.lineno)
             construct = self._make_decision(label, while_.test)
             if construct:
+                self.expression_context.append(construct)
                 self.metadata.constructs[str(label)] = construct
             self.generic_visit(while_)
+            if construct:
+                self.expression_context.pop(-1)
         if self._has_pragma(PragmaNoCover, while_.lineno):
             self.modifiers.pop(-1)
 
