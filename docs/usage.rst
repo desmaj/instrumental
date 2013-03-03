@@ -151,3 +151,10 @@ In this report chunk, the 'P' indicates that the 'F T F' condition combination h
   [7]     func4()
 
 Here we can see that the impossible condition will be the 'F T' combination in the nested 'and'. You can indicate that the pragma applies to the nested 'and' by specifying a "selector" of [.2]. The .2 will match the label that Instrumental will give the expression (i.e. 4.2) and Instrumental will know which expression to apply the pragma to. You can even add the pragma on a separate line and specify a selector that contains a line number. In this case, you could add the comment, "# pragma: no cond[4.2](F T)" to line 3 and Instrumental would figure out that the pragma should be applied to the expression labeled 4.2.
+
+Excluding expressions from instrumentation
+==========================================
+
+In order to do the things it does, Instrumental takes some liberties with your code. This doesn't always work out very well with a language as dynamic as Python. Comparison operations are a good case to loo at. Instrumental, by default, attempts to detect comparisons and modify them so that it can measure the result of their executions as either True or False. But Python allows you to replace the semantics of comparisons with your own if you'd like. So comparisons may not evaluate to True or False at all. It is for this case that Instrumental provides --ignore-comparisons. Specifying the --ignore-comparisons option on the command-line tells instrumental to not touch comparisons at all. So you'll lose the ability to measure the execution of comparisons, but at least they won't raise exceptions or give you other problems.
+
+Instrumental also instruments and reports on the expressions in assertions by default. This can result in noisy missed condition reports since the expressions evaluated in the context of assertions are usually expected to be True for all cases. This is why Instrumental provides the --ignore-assertions option. Specifying --ignore-assertions on the command-line tells Instrumental to leave those assertions alone and not report on the results of evaluating them.
