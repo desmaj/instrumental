@@ -257,7 +257,7 @@ class TestPragmaNoCondition(InstrumentationTestCase):
         pragma = PragmaNoCondition(match)
         construct = BooleanDecision('<string>', '17.1', node, set([pragma]))
         assert 'x' == construct.source
-        assert 2 == construct.number_of_conditions(False)
+        assert 1 == construct.number_of_conditions(False)
         assert "T" == construct.description(True)
         assert "F" == construct.description(False)
         
