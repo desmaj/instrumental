@@ -54,9 +54,9 @@ class CoverageObject(object):
     def condition_rate(self):
         if self.constructs:
             total_conditions = sum(construct.number_of_conditions(self.options.report_conditions_with_literals)
-                                   for construct in self.decisions)
+                                   for construct in self.conditions)
             total_conditions_hit = sum(construct.number_of_conditions_hit()
-                                       for construct in self.decisions)
+                                       for construct in self.conditions)
             return float(total_conditions_hit) / total_conditions            
         else:
             return 1.0
@@ -65,6 +65,11 @@ class CoverageObject(object):
     def decisions(self):
         return [construct for construct in self.constructs
                 if construct.is_decision()]
+    
+    @property
+    def conditions(self):
+        return [construct for construct in self.constructs
+                if not construct.is_decision()]
     
     def to_element(self):
         element = ElementTree.Element(self.tag)

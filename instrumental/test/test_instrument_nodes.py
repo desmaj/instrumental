@@ -4,6 +4,7 @@ import sys
 from astkit import ast
 from astkit.render import SourceCodeRenderer as renderer
 
+from instrumental.test import DummyConfig
 from instrumental.test import InstrumentationTestCase
 from instrumental.test import load_module
 
@@ -456,11 +457,14 @@ else:
 """
         module = ast.parse(source)
         pragmas = PragmaFinder().find_pragmas(source)
-        metadata = MetadataGatheringVisitor.analyze('somemodule', 
+        config = DummyConfig()
+        metadata = MetadataGatheringVisitor.analyze(config,
+                                                    'somemodule', 
                                                     'somemodule.py',
                                                     source, pragmas)
         self.recorder.add_metadata(metadata)
-        transformer = CoverageAnnotator('somemodule',
+        transformer = CoverageAnnotator(config,
+                                        'somemodule',
                                         self.recorder)
         inst_module = transformer.visit(module)
         
@@ -484,11 +488,14 @@ else:
 """
         module = ast.parse(source)
         pragmas = PragmaFinder().find_pragmas(source)
-        metadata = MetadataGatheringVisitor.analyze('somemodule', 
+        config = DummyConfig()
+        metadata = MetadataGatheringVisitor.analyze(config,
+                                                    'somemodule', 
                                                     'somemodule.py',
                                                     source, pragmas)
         self.recorder.add_metadata(metadata)
-        transformer = CoverageAnnotator('somemodule',
+        transformer = CoverageAnnotator(config,
+                                        'somemodule',
                                         self.recorder)
         inst_module = transformer.visit(module)
         

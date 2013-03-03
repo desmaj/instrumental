@@ -2,6 +2,7 @@ from astkit import ast
 
 from instrumental.compat import exec_f
 from instrumental.recorder import ExecutionRecorder
+from instrumental.test import DummyConfig
 from instrumental.test import InstrumentationTestCase
 
 class TestPragmaFinder(object):
@@ -28,6 +29,39 @@ acc += 4
         assert pragmas[5], pragmas
         assert isinstance(list(pragmas[5])[0], PragmaNoCover)
         assert not pragmas[6]
+    
+    def test_pragma_nocover(self):
+        from instrumental.pragmas import PragmaNoCover
+        source = """
+acc = 1
+acc += 2
+if add_three:
+    acc += 3 # pragma: nocover
+acc += 4
+"""
+        pragmas = self.finder.find_pragmas(source)
+        assert 6 == len(pragmas), pragmas
+        assert not pragmas[1]
+        assert not pragmas[2]
+        assert not pragmas[3]
+        assert not pragmas[4]
+        assert pragmas[5], pragmas
+        assert isinstance(list(pragmas[5])[0], PragmaNoCover)
+        assert not pragmas[6]
+    
+    def test_pragma_no_cover_on_FunctionDefn(self):
+        from instrumental.pragmas import PragmaNoCover
+        source = """
+def somefunc(args): # pragma: nocover
+    return 'howdy'
+"""
+        pragmas = self.finder.find_pragmas(source)
+        assert 3 == len(pragmas), pragmas
+        assert not pragmas[1]
+        assert pragmas[2], pragmas
+        assert isinstance(list(pragmas[2])[0], PragmaNoCover)
+        assert pragmas[3], pragmas
+        assert isinstance(list(pragmas[3])[0], PragmaNoCover)
     
     def test_pragma_no_cond_T(self):
         from instrumental.pragmas import PragmaNoCondition
@@ -134,6 +168,7 @@ assert tot or err
 class TestPragmaNoCondition(InstrumentationTestCase):
     
     def setup(self):
+        self.config = DummyConfig()
         ExecutionRecorder.reset()
         ExecutionRecorder.get().start()
     
@@ -174,7 +209,7 @@ class TestPragmaNoCondition(InstrumentationTestCase):
     
     def test_roundtrip_with_full_selector(self):
         def dummy_module():
-            # pragma: no cond[5.2](F *)
+            # pragma: no cond[5.3](F *)
             a = True
             b = False
             c = False
@@ -184,8 +219,8 @@ class TestPragmaNoCondition(InstrumentationTestCase):
         exec_f(code, globals())
         assert not e
         
-        construct = self.recorder.metadata['dummy_module'].constructs['5.2']
-        assert construct.source == '(a and b)'
+        construct = self.recorder.metadata['dummy_module'].constructs['5.3']
+        assert construct.source == '(a and b)', construct.source
         assert construct.conditions_missed(False)
         assert construct.conditions[0] == set([]) # T T
         assert construct.conditions[1] == set(['P']) # F *
@@ -196,13 +231,13 @@ class TestPragmaNoCondition(InstrumentationTestCase):
             a = True
             b = False
             c = False
-            e = a and b or c # pragma: no cond[.2](F *)
+            e = a and b or c # pragma: no cond[.3](F *)
         mod = self._instrument_module(dummy_module)
         code = compile(mod, '<string>', 'exec')
         exec_f(code, globals())
         assert not e
         
-        construct = self.recorder.metadata['dummy_module'].constructs['4.2']
+        construct = self.recorder.metadata['dummy_module'].constructs['4.3']
         assert construct.source == '(a and b)'
         assert construct.conditions_missed(False)
         assert construct.conditions[0] == set([]) # T T

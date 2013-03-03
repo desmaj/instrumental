@@ -17,9 +17,12 @@ from instrumental.pragmas import PragmaNoCover
 def has_docstring(defn):
     return ast.get_docstring(defn) is not None
 
-def gather_metadata(recorder, targets, ignores):
+def gather_metadata(config, recorder, targets, ignores):
     finder = SourceFinder(sys.path)
-    metadata_cache = FileBackedMetadataCache()
+    if config.use_metadata_cache:
+        metadata_cache = FileBackedMetadataCache()
+    else:
+        metadata_cache = DummyMetadataCache()
     for target in targets:
         for source_spec in finder.find(target, ignores):
             filepath, modulename = source_spec
@@ -27,7 +30,8 @@ def gather_metadata(recorder, targets, ignores):
             if not metadata:
                 source = open(filepath, "r").read()
                 pragmas = PragmaFinder().find_pragmas(source)
-                metadata = MetadataGatheringVisitor.analyze(modulename,
+                metadata = MetadataGatheringVisitor.analyze(config,
+                                                            modulename,
                                                             filepath,
                                                             source,
                                                             pragmas)
@@ -56,17 +60,18 @@ class ModuleMetadata(object):
 class MetadataGatheringVisitor(ast.NodeVisitor):
     
     @classmethod
-    def analyze(cls, modulename, filepath, source, pragmas):
+    def analyze(cls, config, modulename, filepath, source, pragmas):
         module_ast = ast.parse(source)
         metadata = ModuleMetadata(modulename, filepath, source, pragmas)
-        visitor = cls(metadata, pragmas)
+        visitor = cls(config, metadata, pragmas)
         visitor.visit(module_ast)
         return visitor.metadata
     
-    def __init__(self, metadata, pragmas):
+    def __init__(self, config, metadata, pragmas):
+        self.config = config
         self.metadata = metadata
         self.modifiers = []
-        self.expression_context = [None]
+        self.gather = True
     
     def _has_pragma(self, pragma, lineno):
         return any(isinstance(p, pragma) for p in self.metadata.pragmas[lineno])
@@ -99,36 +104,43 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
         return construct
     
     def _make_decision(self, label, node):
-        # BoolOps and Compares will be collected elsewhere
-        if not (isinstance(node, ast.BoolOp) or isinstance(node, ast.Compare)):
-            pragmas = self.metadata.pragmas.get(node.lineno, [])
-            return constructs.BooleanDecision(self.metadata.modulename, label, node, pragmas)
+        pragmas = self.metadata.pragmas.get(node.lineno, [])
+        return constructs.BooleanDecision(self.metadata.modulename, 
+                                          label, node, pragmas)
     
     def visit_Module(self, module):
-        docstring = None
         if has_docstring(module):
-            docstring = module.body.pop(0)
+            module.body.pop(0)
         self.generic_visit(module)
+    
+    def visit_Assert(self, assert_):
+        if self.config.instrument_assertions:
+            if isinstance(assert_.test, ast.BoolOp):
+                label = self.metadata.next_label(assert_.lineno)
+                assert_.test = self._make_decision(label, assert_.test)
+                self.metadata.constructs[label] = assert_.test
+            self.generic_visit(assert_)
+    
+    def visit_assignment(self, assign):
+        if isinstance(assign.value, ast.BoolOp):
+            label = self.metadata.next_label(assign.lineno)
+            construct = self._make_decision(label, assign.value)
+            self.metadata.constructs[label] = construct
+        self.generic_visit(assign)
+    visit_Assign = visit_AugAssign = visit_assignment
     
     def visit_BoolOp(self, boolop):
         label = self.metadata.next_label(boolop.lineno)
         construct = self._make_boolop_construct(label, boolop)
         self.metadata.constructs[label] = construct
-        self.expression_context.append(construct)
         self.generic_visit(boolop)
-        self.expression_context.pop(-1)
     
     def visit_Compare(self, compare):
-        construct = None
-        if not isinstance(self.expression_context[-1], 
-                          constructs.LogicalBoolean):
-            label = self.metadata.next_label(compare.lineno)
-            pragmas = self.metadata.pragmas.get(compare.lineno, [])
-            construct = constructs.BooleanDecision(self.metadata.modulename, label, compare, pragmas)
-            self.metadata.constructs[label] = construct
-        self.expression_context.append(construct)
+        label = self.metadata.next_label(compare.lineno)
+        pragmas = self.metadata.pragmas.get(compare.lineno, [])
+        construct = constructs.BooleanDecision(self.metadata.modulename, label, compare, pragmas)
+        self.metadata.constructs[label] = construct
         self.generic_visit(compare)
-        self.expression_context.pop(-1)
     
     def visit_If(self, if_):
         if self._has_pragma(PragmaNoCover, if_.lineno):
@@ -137,24 +149,17 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
             self.metadata.lines[if_.lineno] = False
             label = self.metadata.next_label(if_.lineno)
             construct = self._make_decision(label, if_.test)
-            if construct:
-                self.metadata.constructs[str(label)] = construct
-                self.expression_context.append(construct)
+            self.metadata.constructs[str(label)] = construct
             self.generic_visit(if_)
-            if construct:
-                self.expression_context.pop(-1)
         if self._has_pragma(PragmaNoCover, if_.lineno):
             self.modifiers.pop(-1)
     
     def visit_IfExp(self, ifexp):
-        label = self.metadata.next_label(ifexp.lineno)
-        construct = self._make_decision(label, ifexp.test)
-        if construct:
+        if self.gather:
+            label = self.metadata.next_label(ifexp.lineno)
+            construct = self._make_decision(label, ifexp.test)
             self.metadata.constructs[str(label)] = construct
-            self.expression_context.append(construct)
         self.generic_visit(ifexp)
-        if construct:
-            self.expression_context.pop(-1)
     
     def visit_While(self, while_):
         if self._has_pragma(PragmaNoCover, while_.lineno):
@@ -163,12 +168,8 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
             self.metadata.lines[while_.lineno] = False
             label = self.metadata.next_label(while_.lineno)
             construct = self._make_decision(label, while_.test)
-            if construct:
-                self.expression_context.append(construct)
-                self.metadata.constructs[str(label)] = construct
+            self.metadata.constructs[str(label)] = construct
             self.generic_visit(while_)
-            if construct:
-                self.expression_context.pop(-1)
         if self._has_pragma(PragmaNoCover, while_.lineno):
             self.modifiers.pop(-1)
 
@@ -178,8 +179,9 @@ class SourceFinder(object):
     def __init__(self, path):
         """ path is a list of paths that can contain source files """
         self.path = path
+        if '.' not in self.path:
+            self.path.append('.')
     
-        
     def find(self, target, ignores):
         """ Find source files that look like `target` but not `ignores` """
         found = False
@@ -241,7 +243,18 @@ class BaseMetadataCache(object):
         timestamp = time.mktime(cached_record['timestamp'].timetuple())
         if file_mtime < timestamp:
             return cached_record['metadata']
+
+class DummyMetadataCache(BaseMetadataCache):
     
+    def _init_storage(self):
+        pass
+    
+    def _store(self, filepath, record):
+        pass
+    
+    def _fetch(self, filepath):
+        return None
+
 class FileBackedMetadataCache(BaseMetadataCache):
     
     def __init__(self):

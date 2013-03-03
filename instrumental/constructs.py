@@ -66,7 +66,7 @@ class LogicalBoolean(object):
         return self.node.lineno
     
     def is_decision(self):
-        return self.label.endswith('.1')
+        return False
     
     def number_of_conditions(self, report_conditions_with_literals):
         if report_conditions_with_literals:
@@ -301,8 +301,7 @@ class BooleanDecision(object):
         return self.conditions[True]
     
     def was_false(self):
-        return (self.conditions[False] 
-                and isinstance(list(self.conditions[False])[0], UnreachableCondition))
+        return self.conditions[False] 
     
     def number_of_conditions(self, report_conditions_with_literals):
         return len(self.conditions)

@@ -56,31 +56,27 @@ class InstrumentedNodeFactory(object):
         self._recorder = recorder
     
     def instrument_node(self, modulename, label, node, pragmas, parent):
-        if isinstance(node, ast.BoolOp):
-            return self._recorder.add_BoolOp(modulename, label, node, pragmas, parent)
-        else:
-            return node
+        return self._recorder.add_BoolOp(modulename, label, node, pragmas, parent)
     
     def instrument_test(self, modulename, label, node):
-        if not isinstance(node, ast.BoolOp):
-            return self._recorder.add_test(modulename, label, node)
-        else:
-            return node
+        return self._recorder.add_test(modulename, label, node)
     
     def instrument_statement(self, modulename, node):
         return self._recorder.add_statement(modulename, node)
 
 class AnnotatorFactory(object):
     
-    def __init__(self, recorder):
+    def __init__(self, config, recorder):
+        self.config = config
         self.recorder = recorder
     
     def create(self, modulename, module_source):
-        return CoverageAnnotator(modulename, self.recorder)
+        return CoverageAnnotator(self.config, modulename, self.recorder)
 
 class CoverageAnnotator(ast.NodeTransformer):
     
-    def __init__(self, modulename, recorder):
+    def __init__(self, config, modulename, recorder):
+        self.config = config
         self.modulename = modulename
         self.pragmas = recorder.metadata[modulename].pragmas
         self.node_factory = InstrumentedNodeFactory(recorder)
@@ -120,32 +116,22 @@ class CoverageAnnotator(ast.NodeTransformer):
     
     def visit_BoolOp(self, boolop):
         pragmas = self.pragmas.get(boolop.lineno, [])
-        if self.expression_context:
-            parent = self.expression_context[-1]
-        else:
-            parent = None
         label = self._next_label(boolop.lineno)
+        boolop = self.generic_visit(boolop)
         result =\
-            self.node_factory.instrument_node(self.modulename, label, boolop, pragmas, parent)
-        self.expression_context.append(result)
-        result = self.generic_visit(result)
-        self.expression_context.pop(-1)
+            self.node_factory.instrument_node(self.modulename, label, boolop, pragmas, None)
         return result
     
     def visit_Compare(self, compare):
         pragmas = self.pragmas.get(compare.lineno, [])
-        if not (isinstance(self.expression_context[-1], ast.BoolOp)):
-            label = self._next_label(compare.lineno)
-            compare = self.generic_visit(compare)
-            result = self.node_factory.instrument_test(self.modulename, label, compare)
-        else:
-            result = self.generic_visit(compare)
+        label = self._next_label(compare.lineno)
+        compare = self.generic_visit(compare)
+        result = self.node_factory.instrument_test(self.modulename, label, compare)
         return result
     
     def visit_IfExp(self, ifexp):
-        if not (isinstance(ifexp.test, ast.BoolOp) or isinstance(ifexp.test, ast.Compare)):
-            label = self._next_label(ifexp.lineno)
-            ifexp.test = self.node_factory.instrument_test(self.modulename, label, ifexp.test)
+        label = self._next_label(ifexp.lineno)
+        ifexp.test = self.node_factory.instrument_test(self.modulename, label, ifexp.test)
         result = self.generic_visit(ifexp)
         return result
     
@@ -165,13 +151,25 @@ class CoverageAnnotator(ast.NodeTransformer):
         return result
     
     def visit_Assert(self, assert_):
-        return self._visit_stmt(assert_)
+        if self.config.instrument_assertions:
+            result = self._visit_stmt(assert_)
+        else:
+            result = assert_
+        return result
     
-    def visit_Assign(self, assign):
+    def visit_assignment(self, assign):
+        if isinstance(assign.value, ast.BoolOp):
+            label = self._next_label(assign.lineno)
+            assign.value = self.node_factory.instrument_test(self.modulename, 
+                                                             label, 
+                                                             assign.value)
         return self._visit_stmt(assign)
     
+    def visit_Assign(self, assign):
+        return self.visit_assignment(assign)
+    
     def visit_AugAssign(self, augassign):
-        return self._visit_stmt(augassign)
+        return self.visit_assignment(augassign)
     
     def visit_Break(self, break_):
         return self._visit_stmt(break_)
@@ -278,9 +276,8 @@ class CoverageAnnotator(ast.NodeTransformer):
         if PragmaNoCover in self.modifiers:
             result = if_
         else:
-            if not isinstance(if_.test, ast.BoolOp):
-                label = self._next_label(if_.lineno)
-                if_.test = self.node_factory.instrument_test(self.modulename, label, if_.test)
+            label = self._next_label(if_.lineno)
+            if_.test = self.node_factory.instrument_test(self.modulename, label, if_.test)
             if_ = self.generic_visit(if_)
             marker = self.node_factory.instrument_statement(self.modulename, if_)
             result = [marker, if_]
@@ -335,9 +332,8 @@ class CoverageAnnotator(ast.NodeTransformer):
         if PragmaNoCover in self.modifiers:
             result = while_
         else:
-            if not isinstance(while_.test, ast.BoolOp):
-                label = self._next_label(while_.lineno)
-                while_.test = self.node_factory.instrument_test(self.modulename, label, while_.test)
+            label = self._next_label(while_.lineno)
+            while_.test = self.node_factory.instrument_test(self.modulename, label, while_.test)
             self.generic_visit(while_)
             marker = self.node_factory.instrument_statement(self.modulename, while_)
             result = [marker, while_]

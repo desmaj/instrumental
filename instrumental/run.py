@@ -62,6 +62,16 @@ parser.add_option('--report-literals',
                   action='store_true', default=False,
                   help=('Report conditions containing literals as though'
                         'they were reachable'))
+parser.add_option('--ignore-assertions',
+                  dest='instrument_assertions',
+                  action='store_false', default=True,
+                  help=('Do not instrument and report on the expressions'
+                        ' present in assertions'))
+parser.add_option('--use-metadata-cache',
+                  dest='user_metadata_cache',
+                  action='store_true', default=False,
+                  help=('Use a metadata cache to (possibly) speed up'
+                        ' execution of the target program'))
 
 def main(argv=None):
     if argv is None:
@@ -77,7 +87,7 @@ def main(argv=None):
         sys.stdout.write("No targets specified. Use the '-t' option to specify packages to cover")
         sys.exit()
     
-    coverage = Coverage()
+    coverage = Coverage(opts)
     coverage.start(opts.targets, opts.ignores)
     
     xml_filename = os.path.abspath('instrumental.xml')

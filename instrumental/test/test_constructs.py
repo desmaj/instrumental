@@ -18,7 +18,7 @@ class TestLogicalAnd(object):
     
     def test_and_as_decision(self):
         construct = self._makeOne()
-        assert construct.is_decision()
+        assert not construct.is_decision()
     
     def test_and_was_true(self):
         construct = self._makeOne()
@@ -50,7 +50,7 @@ class TestLogicalOr(object):
     
     def test_or_as_decision(self):
         construct = self._makeOne()
-        assert construct.is_decision()
+        assert not construct.is_decision()
     
     def test_or_was_true(self):
         construct = self._makeOne()

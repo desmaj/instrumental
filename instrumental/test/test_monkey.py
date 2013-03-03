@@ -2,6 +2,8 @@ import imp
 import os
 import sys
 
+from instrumental.test import DummyConfig
+
 class TestMonkeyPatch(object):
     
     def test_monkeypatch(self):
@@ -10,7 +12,8 @@ class TestMonkeyPatch(object):
         from instrumental.monkey import monkeypatch_imp
         
         original_load_module = imp.load_module
-        monkeypatch_imp([], [], AnnotatorFactory(None))
+        config = DummyConfig()
+        monkeypatch_imp([], [], AnnotatorFactory(config, None))
         assert original_load_module != imp.load_module
 
 class TestLoadModule(object):
@@ -19,6 +22,7 @@ class TestLoadModule(object):
         from instrumental.recorder import ExecutionRecorder
         ExecutionRecorder.reset()
         self._pre_test_modules = sys.modules.keys()
+        self.config = DummyConfig()
     
     def teardown(self):
         _post_test_modules = sys.modules.keys()
@@ -33,7 +37,7 @@ class TestLoadModule(object):
         from instrumental.recorder import ExecutionRecorder
         
         recorder = ExecutionRecorder.get()
-        visitor_factory = AnnotatorFactory(recorder)
+        visitor_factory = AnnotatorFactory(self.config, recorder)
         load_module = load_module_factory([], 
                                           [],
                                           visitor_factory)
@@ -66,14 +70,15 @@ class TestLoadModule(object):
         
         source = open(simple_path, "r").read()
         pragmas = PragmaFinder().find_pragmas(source)
-        metadata = MetadataGatheringVisitor.analyze(simple_name, 
+        metadata = MetadataGatheringVisitor.analyze(self.config,
+                                                    simple_name, 
                                                     'simple_name.py', 
                                                     source, 
                                                     pragmas)
         
         recorder = ExecutionRecorder.get()
         recorder.add_metadata(metadata)
-        visitor_factory = AnnotatorFactory(recorder)
+        visitor_factory = AnnotatorFactory(self.config, recorder)
         load_module = load_module_factory(['instrumental.test.samples.simple'], 
                                           [],
                                           visitor_factory)
@@ -100,14 +105,15 @@ class TestLoadModule(object):
         
         source = open(os.path.join(simple_path, '__init__.py'), "r").read()
         pragmas = PragmaFinder().find_pragmas(source)
-        metadata = MetadataGatheringVisitor.analyze(simple_name, 
+        metadata = MetadataGatheringVisitor.analyze(self.config, 
+                                                    simple_name, 
                                                     '__init__.py',
                                                     source, 
                                                     pragmas)
         
         recorder = ExecutionRecorder.get()
         recorder.add_metadata(metadata)
-        visitor_factory = AnnotatorFactory(recorder)
+        visitor_factory = AnnotatorFactory(self.config, recorder)
         load_module = load_module_factory(['instrumental.test.samples.package'], 
                                           [],
                                           visitor_factory)

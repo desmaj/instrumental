@@ -52,7 +52,7 @@ class PragmaNoCondition(Pragma):
 
 selector = r'(\[(?P<selector>\d*\.\d+)\])?'
 
-no_cover_root = r'no\s+cover'
+no_cover_root = r'no\s?cover'
 no_cover = no_cover_root + selector
 
 no_cond_root = r'no\s+cond'

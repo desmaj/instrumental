@@ -5,6 +5,7 @@ from astkit.render import SourceCodeRenderer as renderer
 from instrumental.compat import exec_f
 from instrumental.instrument import CoverageAnnotator
 from instrumental.recorder import ExecutionRecorder
+from instrumental.test import DummyConfig
 from instrumental.test import load_module
 
 class TestInstrumentation(object):
@@ -23,12 +24,15 @@ class TestInstrumentation(object):
         from instrumental.pragmas import PragmaFinder
         pragmas = PragmaFinder().find_pragmas(source)
         from instrumental.metadata import MetadataGatheringVisitor
-        self.recorder.add_metadata(MetadataGatheringVisitor.analyze(module_func.__name__,
+        config = DummyConfig()
+        self.recorder.add_metadata(MetadataGatheringVisitor.analyze(config,
+                                                                    module_func.__name__,
                                                                     'somemodule.py',
                                                                     source, 
                                                                     pragmas))
         # self.recorder.add_source(module_func.__name__, source)
-        transformer = CoverageAnnotator(module_func.__name__,
+        transformer = CoverageAnnotator(config,
+                                        module_func.__name__,
                                         self.recorder)
         inst_module = transformer.visit(module)
         sys.stdout.write(renderer.render(inst_module) + "\n")
@@ -53,7 +57,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert True == result
         
-        self._verify_conditions(test_module, '3.1', 
+        self._verify_conditions(test_module, '3.2', 
                                 [True, False, False])
     
     def test_two_pin_and_t_f(self):
@@ -65,7 +69,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        self._verify_conditions(test_module, '3.1', 
+        self._verify_conditions(test_module, '3.2', 
                                 [False, False, True])
     
     def test_two_pin_and_f_t(self):
@@ -77,7 +81,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        self._verify_conditions(test_module, '3.1', 
+        self._verify_conditions(test_module, '3.2', 
                                 [False, True, False])
     
     def test_two_pin_and_f_f(self):
@@ -89,7 +93,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        self._verify_conditions(test_module, '3.1', 
+        self._verify_conditions(test_module, '3.2', 
                                 [False, True, False])
     
     def test_two_pin_or_t_t(self):
@@ -101,7 +105,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert True == result
         
-        self._verify_conditions(test_module, '3.1', 
+        self._verify_conditions(test_module, '3.2', 
                                 [True, False, False])
     
     def test_two_pin_or_t_f(self):
@@ -113,7 +117,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert True == result
         
-        self._verify_conditions(test_module, '3.1', 
+        self._verify_conditions(test_module, '3.2', 
                                 [True, False, False])
     
     def test_two_pin_or_f_t(self):
@@ -125,7 +129,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert True == result
         
-        self._verify_conditions(test_module, '3.1', 
+        self._verify_conditions(test_module, '3.2', 
                                 [False, True, False])
     
     def test_two_pin_or_f_f(self):
@@ -137,7 +141,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        self._verify_conditions(test_module, '3.1', 
+        self._verify_conditions(test_module, '3.2', 
                                 [False, False, True])
     
     def test_three_pin_and_t_t_t(self):
@@ -150,7 +154,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert True == result
         
-        self._verify_conditions(test_module, '4.1', 
+        self._verify_conditions(test_module, '4.2', 
                                 [True, False, False, False])
     
     def test_three_pin_and_f_t_t(self):
@@ -163,7 +167,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        self._verify_conditions(test_module, '4.1', 
+        self._verify_conditions(test_module, '4.2', 
                                 [False, True, False, False])
     
     def test_three_pin_and_t_f_t(self):
@@ -176,7 +180,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        self._verify_conditions(test_module, '4.1', 
+        self._verify_conditions(test_module, '4.2', 
                                 [False, False, True, False])
     
     def test_three_pin_and_t_t_f(self):
@@ -189,7 +193,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        self._verify_conditions(test_module, '4.1', 
+        self._verify_conditions(test_module, '4.2', 
                                 [False, False, False, True])
     
     def test_three_pin_and_f_f_f(self):
@@ -202,7 +206,7 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         assert False == result
         
-        self._verify_conditions(test_module, '4.1', 
+        self._verify_conditions(test_module, '4.2', 
                                 [False, True, False, False])
     
     def test_instrument_if_true_result(self):
@@ -297,5 +301,5 @@ class TestInstrumentation(object):
         code = self._load_and_compile_module(test_module)
         exec_f(code, globals())
         
-        self._verify_conditions(test_module, '2.1', [False, False, True])
+        self._verify_conditions(test_module, '2.2', [False, False, True])
         

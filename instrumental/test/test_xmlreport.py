@@ -6,16 +6,21 @@ from xml.etree import ElementTree
 ZERO = '0.000000'
 ONE = '1.000000'
 
-class DummyOptions(object):
+class DummyConfig(object):
+    instrument_assertions = True
+    use_metadata_cache = False
     report_conditions_with_literals = False
 
 class TestXMLReport(object):
+    
+    def setUp(self):
+        self.config = DummyConfig()
     
     def _run_test(self, *args, **kwargs):
         from instrumental import api
         from instrumental.recorder import ExecutionRecorder
         ExecutionRecorder.reset()
-        c = api.Coverage()
+        c = api.Coverage(self.config)
         modname = 'instrumental.test.samples.robust'
         c.start([modname], [])
         if modname in sys.modules:
@@ -23,7 +28,6 @@ class TestXMLReport(object):
             reload(robust)
         else:
             from instrumental.test.samples import robust
-        print c.recorder.metadata[modname].constructs['5.1']
         robust.test_func(*args, **kwargs)
         c.stop()
         return c.recorder
@@ -42,9 +46,8 @@ class TestXMLReport(object):
     def test_full_coverage_report(self):
         from instrumental.reporting import ExecutionReport
         
-        options = DummyOptions()
         recorder = self._run_test(True, True, False, True, False)
-        report = ExecutionReport(os.getcwd(), recorder.metadata, options)
+        report = ExecutionReport(os.getcwd(), recorder.metadata, self.config)
         xml_filename = 'test-xml-report.xml'
         report.write_xml_coverage_report(xml_filename)
         
@@ -96,8 +99,8 @@ class TestXMLReport(object):
         class_spec = {'tag': 'class',
                       'name': 'instrumental.test.samples.robust',
                       'filename': 'instrumental/test/samples/robust.py',
-                      'condition-rate': '0.500000',
-                      'branch-rate': '0.600000',
+                      'condition-rate': '0.400000',
+                      'branch-rate': '0.666667',
                       'line-rate': ONE,
                       'children': [{'tag': 'methods'}, lines_spec],
                       }
@@ -105,8 +108,8 @@ class TestXMLReport(object):
             {'tag': 'packages',
              'children': [{'tag': 'package',
                            'name': 'instrumental.test.samples',
-                           'condition-rate': '0.500000',
-                           'branch-rate': '0.600000',
+                           'condition-rate': '0.400000',
+                           'branch-rate': '0.666667',
                            'line-rate': ONE,
                            'children': [{'tag': 'classes',
                                          'children': [class_spec],
@@ -114,12 +117,11 @@ class TestXMLReport(object):
                            }]
              })
         spec = {'tag': 'coverage',
-                'condition-rate': '0.500000',
-                'branch-rate': '0.600000',
+                'condition-rate': '0.400000',
+                'branch-rate': '0.666667',
                 'line-rate': ONE,
                 'children': [root_children_spec]
                 }
-        print ElementTree.tostring(root)
         self._verify_element(root, spec)
         os.remove(xml_filename)
     
@@ -128,8 +130,7 @@ class TestXMLReport(object):
         
         recorder = self._run_test(True, False, False, True, False, 0)
         
-        options = DummyOptions()
-        report = ExecutionReport(os.getcwd(), recorder.metadata, options)
+        report = ExecutionReport(os.getcwd(), recorder.metadata, self.config)
         xml_filename = 'test-xml-report.xml'
         report.write_xml_coverage_report(xml_filename)
         
@@ -181,7 +182,7 @@ class TestXMLReport(object):
         class_spec = {'tag': 'class',
                       'name': 'instrumental.test.samples.robust',
                       'filename': 'instrumental/test/samples/robust.py',
-                      'condition-rate': '0.416667',
+                      'condition-rate': '0.400000',
                       'branch-rate': '0.500000',
                       'line-rate': '0.700000',
                       'children': [{'tag': 'methods'}, lines_spec],
@@ -190,7 +191,7 @@ class TestXMLReport(object):
             {'tag': 'packages',
              'children': [{'tag': 'package',
                            'name': 'instrumental.test.samples',
-                           'condition-rate': '0.416667',
+                           'condition-rate': '0.400000',
                            'branch-rate': '0.500000',
                            'line-rate': '0.700000',
                            'children': [{'tag': 'classes',
@@ -199,7 +200,7 @@ class TestXMLReport(object):
                            }]
              })
         spec = {'tag': 'coverage',
-                'condition-rate': '0.416667',
+                'condition-rate': '0.400000',
                 'branch-rate': '0.500000',
                 'line-rate': '0.700000',
                 'children': [root_children_spec]
