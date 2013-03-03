@@ -72,6 +72,10 @@ parser.add_option('--use-metadata-cache',
                   action='store_true', default=False,
                   help=('Use a metadata cache to (possibly) speed up'
                         ' execution of the target program'))
+parser.add_option('--ignore-comparisons',
+                  dest='instrument_comparisons',
+                  action='store_false', default=True,
+                  help=('Do not instrument comparison expressions'))
 
 def main(argv=None):
     if argv is None:

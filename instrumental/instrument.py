@@ -123,10 +123,13 @@ class CoverageAnnotator(ast.NodeTransformer):
         return result
     
     def visit_Compare(self, compare):
-        pragmas = self.pragmas.get(compare.lineno, [])
-        label = self._next_label(compare.lineno)
-        compare = self.generic_visit(compare)
-        result = self.node_factory.instrument_test(self.modulename, label, compare)
+        if self.config.instrument_comparisons:
+            pragmas = self.pragmas.get(compare.lineno, [])
+            label = self._next_label(compare.lineno)
+            compare = self.generic_visit(compare)
+            result = self.node_factory.instrument_test(self.modulename, label, compare)
+        else:
+            result = self.generic_visit(compare)
         return result
     
     def visit_IfExp(self, ifexp):
@@ -152,6 +155,9 @@ class CoverageAnnotator(ast.NodeTransformer):
     
     def visit_Assert(self, assert_):
         if self.config.instrument_assertions:
+            if isinstance(assert_.test, ast.BoolOp):
+                label = self._next_label(assert_.lineno)
+                assert_.test = self.node_factory.instrument_test(self.modulename, label, assert_.test)
             result = self._visit_stmt(assert_)
         else:
             result = assert_

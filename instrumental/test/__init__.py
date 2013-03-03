@@ -24,6 +24,7 @@ def load_module(func):
 
 class DummyConfig(object):
     instrument_assertions = True
+    instrument_comparisons = True
     use_metadata_cache = False
 
 class InstrumentationTestCase(object):

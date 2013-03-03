@@ -8,6 +8,7 @@ ONE = '1.000000'
 
 class DummyConfig(object):
     instrument_assertions = True
+    instrument_comparisons = True
     use_metadata_cache = False
     report_conditions_with_literals = False
 
