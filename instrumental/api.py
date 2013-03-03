@@ -9,7 +9,8 @@ from instrumental.recorder import ExecutionRecorder
 
 class Coverage(object):
     
-    def __init__(self):
+    def __init__(self, config):
+        self._config = config
         self._import_hooks = []
     
     @property
@@ -17,8 +18,8 @@ class Coverage(object):
         return ExecutionRecorder.get()
     
     def start(self, targets, ignores):
-        gather_metadata(self.recorder, targets, ignores)
-        annotator_factory = AnnotatorFactory(self.recorder)
+        gather_metadata(self._config, self.recorder, targets, ignores)
+        annotator_factory = AnnotatorFactory(self._config, self.recorder)
         monkeypatch_imp(targets, ignores, annotator_factory)
         for target in targets:
             hook = ImportHook(target, ignores, annotator_factory)

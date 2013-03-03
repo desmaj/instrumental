@@ -4,6 +4,7 @@ from instrumental.constructs import LogicalAnd
 from instrumental.constructs import LogicalBoolean
 from instrumental.constructs import LogicalOr
 from instrumental.recorder import ExecutionRecorder
+from instrumental.test import DummyConfig
 
 class ThreePinTestCase(object):
     
@@ -309,11 +310,15 @@ class TestLiteralInConstruct(object):
 
 
 x = a or None"""
-        self.label = '6.1'
+        self.label = '6.2'
     
     def _makeOne(self):
         from instrumental.metadata import MetadataGatheringVisitor
-        metadata = MetadataGatheringVisitor.analyze(self.modulename, 'somefile.py', self.source, {6: set()})
+        metadata = MetadataGatheringVisitor.analyze(DummyConfig(),
+                                                    self.modulename,
+                                                    'somefile.py',
+                                                    self.source, 
+                                                    {6: set()})
         return metadata.constructs[self.label]
         
     def test_presence_of_a_literal(self):

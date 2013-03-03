@@ -22,23 +22,31 @@ def load_module(func):
     module = ast.parse(normal_source)
     return module, normal_source
 
+class DummyConfig(object):
+    instrument_assertions = True
+    instrument_comparisons = True
+    use_metadata_cache = False
+
 class InstrumentationTestCase(object):
     
     def setup(self):
         # First clear out the recorder so that we'll create a new one
         ExecutionRecorder.reset()
         self.recorder = ExecutionRecorder.get()
+        self.config = DummyConfig()
     
     def _instrument_module(self, module_func):
         from instrumental.metadata import MetadataGatheringVisitor
         from instrumental.pragmas import PragmaFinder
         module, source = load_module(module_func)
         pragmas = PragmaFinder().find_pragmas(source)
-        metadata = MetadataGatheringVisitor.analyze(module_func.__name__, 
+        metadata = MetadataGatheringVisitor.analyze(self.config,
+                                                    module_func.__name__, 
                                                     'somemodule.py',
                                                     source, pragmas)
         self.recorder.add_metadata(metadata)
-        transformer = CoverageAnnotator(module_func.__name__,
+        transformer = CoverageAnnotator(self.config,
+                                        module_func.__name__,
                                         self.recorder)
         inst_module = transformer.visit(module)
         # print renderer.render(inst_module)

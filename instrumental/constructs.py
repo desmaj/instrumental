@@ -66,7 +66,7 @@ class LogicalBoolean(object):
         return self.node.lineno
     
     def is_decision(self):
-        return self.label.endswith('.1')
+        return False
     
     def number_of_conditions(self, report_conditions_with_literals):
         if report_conditions_with_literals:
@@ -301,8 +301,7 @@ class BooleanDecision(object):
         return self.conditions[True]
     
     def was_false(self):
-        return (self.conditions[False] 
-                and isinstance(list(self.conditions[False])[0], UnreachableCondition))
+        return self.conditions[False] 
     
     def number_of_conditions(self, report_conditions_with_literals):
         return len(self.conditions)
@@ -322,6 +321,64 @@ class BooleanDecision(object):
     def result(self):
         lines = []
         name = "Decision -> %s:%s < %s >" % (self.modulename, self.label, self.source)
+        lines.append("%s" % (name,))
+        lines.append("")
+        lines.append("T ==> %s" % self._format_condition_result(self.conditions[True]))
+        lines.append("F ==> %s" % self._format_condition_result(self.conditions[False]))
+        return "\n".join(lines)
+
+class Comparison(object):
+    
+    def __init__(self, modulename, label, node, pragmas):
+        self.modulename = modulename
+        self.label = label
+        self.node = deepcopy(node)
+        self.pragmas = pragmas
+        self.lineno = node.lineno
+        self.source = SourceCodeRenderer.render(node)
+        self.conditions = {True: set(),
+                           False: set()}
+        for pragma in pragmas:
+            if hasattr(pragma, 'selector'):
+                pragma_label = '%s.%s' % (node.lineno, pragma.selector)
+                if label == pragma_label:
+                    pragma.apply(self)
+    
+    def is_decision(self):
+        return True
+    
+    def record(self, expression, tag):
+        result = bool(expression)
+        self.conditions[result].add(tag)
+        return result
+    
+    def description(self, condition):
+        return str(bool(condition))[0]
+    
+    def was_true(self):
+        return self.conditions[True]
+    
+    def was_false(self):
+        return self.conditions[False] 
+    
+    def number_of_conditions(self, report_conditions_with_literals):
+        return len(self.conditions)
+    
+    def number_of_conditions_hit(self):
+        return len([value 
+                    for value in self.conditions.values()
+                    if value and not isinstance(value, UnreachableCondition)])
+    
+    def conditions_missed(self, report_conditions_With_literals):
+        return self.number_of_conditions(report_conditions_With_literals) - self.number_of_conditions_hit()
+    
+    def _format_condition_result(self, result, length=6):
+        padding = '\n' + (' ' * length)
+        return padding.join(tag for tag in sorted(result))
+    
+    def result(self):
+        lines = []
+        name = "Compare -> %s:%s < %s >" % (self.modulename, self.label, self.source)
         lines.append("%s" % (name,))
         lines.append("")
         lines.append("T ==> %s" % self._format_condition_result(self.conditions[True]))

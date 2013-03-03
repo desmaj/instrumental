@@ -109,6 +109,16 @@ class ExecutionRecorder(object):
         ast.fix_missing_locations(base_call)
         return base_call
     
+    def add_comparison(self, modulename, label, node):
+        base_call = ast.copy_location(self.get_recorder_call(),
+                                      node)
+        base_call.args = \
+            [node,
+             ast.Str(s=modulename, lineno=node.lineno, col_offset=node.col_offset),
+             ast.Str(s=label, lineno=node.lineno, col_offset=node.col_offset)]
+        ast.fix_missing_locations(base_call)
+        return base_call
+    
     @staticmethod
     def get_statement_recorder_call(modulename, lineno):
         kall = ast.Call()
