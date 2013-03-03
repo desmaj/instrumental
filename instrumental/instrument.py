@@ -61,6 +61,9 @@ class InstrumentedNodeFactory(object):
     def instrument_test(self, modulename, label, node):
         return self._recorder.add_test(modulename, label, node)
     
+    def instrument_comparison(self, modulename, label, node):
+        return self._recorder.add_comparison(modulename, label, node)
+    
     def instrument_statement(self, modulename, node):
         return self._recorder.add_statement(modulename, node)
 
@@ -127,7 +130,7 @@ class CoverageAnnotator(ast.NodeTransformer):
             pragmas = self.pragmas.get(compare.lineno, [])
             label = self._next_label(compare.lineno)
             compare = self.generic_visit(compare)
-            result = self.node_factory.instrument_test(self.modulename, label, compare)
+            result = self.node_factory.instrument_comparison(self.modulename, label, compare)
         else:
             result = self.generic_visit(compare)
         return result

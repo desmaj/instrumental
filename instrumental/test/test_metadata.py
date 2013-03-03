@@ -75,12 +75,18 @@ class TestMetadataGatheringVisitor(object):
         
         metadata = self._make_one().analyze(DummyConfig(), 'modname', 'modname.py', module, pragmas)
         assert 6 == len(metadata.constructs), metadata.constructs
-        assert "2.2" in metadata.constructs, metadata.constructs
-        decision = metadata.constructs["2.2"]
+        decision = metadata.constructs["2.1"]
         assert isinstance(decision, constructs.BooleanDecision)
-        assert "2.4" in metadata.constructs, metadata.constructs
+        comparison = metadata.constructs["2.2"]
+        assert isinstance(comparison, constructs.Comparison)
+        decision = metadata.constructs["2.3"]
+        assert isinstance(decision, constructs.BooleanDecision)
         decision = metadata.constructs["2.4"]
         assert isinstance(decision, constructs.LogicalOr)
+        comparison = metadata.constructs["2.5"]
+        assert isinstance(comparison, constructs.Comparison)
+        comparison = metadata.constructs["2.6"]
+        assert isinstance(comparison, constructs.Comparison)
             
     def test_gather_constructs__while_simple_decision(self):
         def test_module():

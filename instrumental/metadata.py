@@ -139,7 +139,7 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
         if self.config.instrument_comparisons:
             label = self.metadata.next_label(compare.lineno)
             pragmas = self.metadata.pragmas.get(compare.lineno, [])
-            construct = constructs.BooleanDecision(self.metadata.modulename, label, compare, pragmas)
+            construct = constructs.Comparison(self.metadata.modulename, label, compare, pragmas)
             self.metadata.constructs[label] = construct
         self.generic_visit(compare)
     
