@@ -36,6 +36,7 @@ class ExecutionReport(object):
         lines.append("Instrumental Condition/Decision Coverage Report")
         lines.append("===============================================")
         lines.append("")
+        no_missed_conditions = True
         def _key_func(pair):
             label, _ = pair
             lineno, index = label.split('.')
@@ -44,8 +45,12 @@ class ExecutionReport(object):
             for label, construct in sorted(metadata.constructs.items(),
                                            key=_key_func):
                 if showall or construct.conditions_missed(self.options.report_conditions_with_literals):
+                    no_missed_conditions = False
                     lines.append(construct.result())
                     lines.append("")
+        if no_missed_conditions:
+            lines.append(" Full coverage. Good job!")
+            lines.append("")
         return "\n".join(lines)
     
     def summary(self):
