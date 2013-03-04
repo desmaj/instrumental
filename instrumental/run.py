@@ -68,7 +68,7 @@ parser.add_option('--ignore-assertions',
                   help=('Do not instrument and report on the expressions'
                         ' present in assertions'))
 parser.add_option('--use-metadata-cache',
-                  dest='user_metadata_cache',
+                  dest='use_metadata_cache',
                   action='store_true', default=False,
                   help=('Use a metadata cache to (possibly) speed up'
                         ' execution of the target program'))
