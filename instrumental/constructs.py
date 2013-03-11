@@ -404,7 +404,7 @@ class Comparison(object):
                 condition = _left in _right
             return condition
         except ValueError as exc:
-            print exc
+            pass
     
     def is_decision(self):
         return False
@@ -430,7 +430,6 @@ class Comparison(object):
         if report_conditions_with_literals:
             return len(self.conditions)
         
-        print self.conditions
         unreachable_conditions = 0
         for condition in self.conditions:
             for result in self.conditions[condition]:
