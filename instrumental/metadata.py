@@ -206,11 +206,6 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
         pragmas = self.metadata.pragmas.get(node.lineno, [])
         construct = constructs.Comparison(self.metadata.modulename, 
                                           label, node, pragmas)
-        possible_results = BooleanEvaluator.evaluate(node)
-        if True not in possible_results:
-            construct.set_unreachable(True)
-        if False not in possible_results:
-            construct.set_unreachable(False)
         return construct
     
     def visit_Module(self, module):
