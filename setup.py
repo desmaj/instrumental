@@ -7,7 +7,7 @@ setup(name='instrumental',
       description="A condition/decision coverage tool for Python",
       long_description="""\
 Instrumental automatically instruments your code to add function calls that
-reveal execution characteristics of your code. Instrumental can then monitor
+reveal execution characteristics. Instrumental can then monitor
 execution of your code and report back to you on how your source was executed.
 
 When you run a script with Instrumental, it will tell you which decisions and
