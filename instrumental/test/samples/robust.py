@@ -14,3 +14,4 @@ def test_func(a, b, c, d, e, i=5):
     x = 4 if d else 7
     
     y = e and True or 16
+    

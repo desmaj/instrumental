@@ -193,13 +193,25 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
     
     def _make_decision(self, label, node):
         pragmas = self.metadata.pragmas.get(node.lineno, [])
-        return constructs.BooleanDecision(self.metadata.modulename, 
-                                          label, node, pragmas)
+        construct = constructs.BooleanDecision(self.metadata.modulename,
+                                               label, node, pragmas)
+        possible_results = BooleanEvaluator.evaluate(node)
+        if True not in possible_results:
+            construct.set_unreachable(True)
+        if False not in possible_results:
+            construct.set_unreachable(False)
+        return construct
     
     def _make_comparison(self, label, node):
         pragmas = self.metadata.pragmas.get(node.lineno, [])
-        return constructs.Comparison(self.metadata.modulename, 
-                                     label, node, pragmas)
+        construct = constructs.Comparison(self.metadata.modulename, 
+                                          label, node, pragmas)
+        possible_results = BooleanEvaluator.evaluate(node)
+        if True not in possible_results:
+            construct.set_unreachable(True)
+        if False not in possible_results:
+            construct.set_unreachable(False)
+        return construct
     
     def visit_Module(self, module):
         if has_docstring(module):

@@ -41,11 +41,12 @@ class CoverageObject(object):
     def branch_rate(self):
         decisions = self.decisions
         if decisions:
-            total_conditions = 2 * len(self.decisions)
+            total_conditions = 0
+            for decision in self.decisions:
+                total_conditions += decision.number_of_conditions(self.options.report_conditions_with_literals)
             total_conditions_hit = 0
             for decision in self.decisions:
-                total_conditions_hit += sum([bool(decision.was_true()),
-                                             bool(decision.was_false())])
+                total_conditions_hit += decision.number_of_conditions_hit()
             return float(total_conditions_hit) / total_conditions
         else:
             return 1.0

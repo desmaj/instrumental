@@ -310,7 +310,7 @@ class BooleanDecision(object):
         return self.conditions[False] 
     
     def set_unreachable(self, condition):
-        self.conditions[condition] = UnreachableCondition()
+        self.conditions[condition].add(UnreachableCondition())
     
     def number_of_conditions(self, report_conditions_with_literals):
         if report_conditions_with_literals:
@@ -342,7 +342,7 @@ class BooleanDecision(object):
     
     def _format_condition_result(self, result, length=6):
         padding = '\n' + (' ' * length)
-        return padding.join(tag for tag in sorted(result))
+        return padding.join(str(tag) for tag in sorted(result))
     
     def result(self):
         lines = []
@@ -371,7 +371,7 @@ class Comparison(object):
                     pragma.apply(self)
     
     def is_decision(self):
-        return True
+        return False
     
     def record(self, expression, tag):
         result = bool(expression)
@@ -388,7 +388,7 @@ class Comparison(object):
         return self.conditions[False] 
     
     def set_unreachable(self, condition):
-        self.conditions[condition] = UnreachableCondition()
+        self.conditions[condition].add(UnreachableCondition())
     
     def number_of_conditions(self, report_conditions_with_literals):
         if report_conditions_with_literals:
@@ -420,7 +420,7 @@ class Comparison(object):
     
     def _format_condition_result(self, result, length=6):
         padding = '\n' + (' ' * length)
-        return padding.join(tag for tag in sorted(result))
+        return padding.join(str(tag) for tag in sorted(result))
     
     def result(self):
         lines = []

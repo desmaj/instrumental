@@ -302,4 +302,3 @@ class TestInstrumentation(object):
         exec_f(code, globals())
         
         self._verify_conditions(test_module, '2.2', [False, False, True])
-        
