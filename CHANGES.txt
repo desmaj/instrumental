@@ -1,8 +1,28 @@
 Next Release
 ============
 
+0.4b1
+=====
+
+Features
+--------
+
+- The pragma: no cond system. See the documentation for more information
+- We now instrumenta and report on comparisons (unless told not to)
+- We now ignore cases unreachable because of literals (unless told not to)
+- The inspection and instrumentation phases are no separated. Now non-imported
+  modules are represented as missed coverage.
+
+0.3.3
+=====
+
+Bug Fixes
+--------
+
+- pragma: no cover now works again for statement coverage
+
 0.3.2
-============
+=====
 
 Bug Fixes
 ---------
@@ -10,7 +30,7 @@ Bug Fixes
 - The IfExp node (a if bool else b) is now instrumented and coverage is reported.
 
 0.3.1
-===
+=====
 
 Features
 --------
