@@ -44,6 +44,65 @@ class TestXMLReport(object):
         for child, child_spec in zip(children, child_specs):
             self._verify_element(child, child_spec)
     
+    def test_full_coverage_constructs(self):
+        from instrumental import constructs
+        from instrumental.reporting import ExecutionReport
+        
+        recorder = self._run_test(True, True, False, True, False)
+        metadata = recorder.metadata['instrumental.test.samples.robust']
+        
+        assert 10 == len(metadata.constructs), metadata.constructs.keys()
+        
+        decision = metadata.constructs['5.1']
+        assert isinstance(decision, constructs.BooleanDecision)
+        assert 2 == decision.number_of_conditions(False)
+        assert 1 == decision.conditions_missed(False)
+        
+        boolop = metadata.constructs['5.2']
+        assert isinstance(boolop, constructs.LogicalAnd)
+        assert 3 == boolop.number_of_conditions(False)
+        assert 2 == len(boolop.conditions_missed(False))
+        
+        decision = metadata.constructs['8.1']
+        assert isinstance(decision, constructs.BooleanDecision)
+        assert 2 == decision.number_of_conditions(False)
+        assert 1 == decision.conditions_missed(False)
+        
+        boolop = metadata.constructs['8.2']
+        assert isinstance(boolop, constructs.LogicalOr)
+        assert 3 == boolop.number_of_conditions(False)
+        assert 2 == len(boolop.conditions_missed(False))
+        
+        decision = metadata.constructs['11.1']
+        assert isinstance(decision, constructs.BooleanDecision)
+        assert 2 == decision.number_of_conditions(False)
+        assert 0 == decision.conditions_missed(False)
+        
+        compare = metadata.constructs['11.2']
+        assert isinstance(compare, constructs.Comparison)
+        assert 2 == compare.number_of_conditions(False)
+        assert 0 == compare.conditions_missed(False)
+        
+        decision = metadata.constructs['14.1']
+        assert isinstance(decision, constructs.BooleanDecision)
+        assert 2 == decision.number_of_conditions(False)
+        assert 1 == decision.conditions_missed(False)
+        
+        decision = metadata.constructs['16.1']
+        assert isinstance(decision, constructs.BooleanDecision)
+        assert 1 == decision.number_of_conditions(False)
+        assert 0 == decision.conditions_missed(False)
+        
+        boolop = metadata.constructs['16.2']
+        assert isinstance(boolop, constructs.LogicalOr)
+        assert 2 == boolop.number_of_conditions(False)
+        assert 1 == len(boolop.conditions_missed(False))
+        
+        boolop = metadata.constructs['16.3']
+        assert isinstance(boolop, constructs.LogicalAnd)
+        assert 2 == boolop.number_of_conditions(False)
+        assert 1 == len(boolop.conditions_missed(False))
+
     def test_full_coverage_report(self):
         from instrumental.reporting import ExecutionReport
         
@@ -100,7 +159,7 @@ class TestXMLReport(object):
         class_spec = {'tag': 'class',
                       'name': 'instrumental.test.samples.robust',
                       'filename': 'instrumental/test/samples/robust.py',
-                      'condition-rate': '0.400000',
+                      'condition-rate': '0.500000',
                       'branch-rate': '0.666667',
                       'line-rate': ONE,
                       'children': [{'tag': 'methods'}, lines_spec],
@@ -109,7 +168,7 @@ class TestXMLReport(object):
             {'tag': 'packages',
              'children': [{'tag': 'package',
                            'name': 'instrumental.test.samples',
-                           'condition-rate': '0.400000',
+                           'condition-rate': '0.500000',
                            'branch-rate': '0.666667',
                            'line-rate': ONE,
                            'children': [{'tag': 'classes',
@@ -118,7 +177,7 @@ class TestXMLReport(object):
                            }]
              })
         spec = {'tag': 'coverage',
-                'condition-rate': '0.400000',
+                'condition-rate': '0.500000',
                 'branch-rate': '0.666667',
                 'line-rate': ONE,
                 'children': [root_children_spec]
@@ -126,6 +185,65 @@ class TestXMLReport(object):
         self._verify_element(root, spec)
         os.remove(xml_filename)
     
+    def test_partial_coverage_constructs(self):
+        from instrumental import constructs
+        from instrumental.reporting import ExecutionReport
+        
+        recorder = self._run_test(True, False, False, True, False, 0)
+        metadata = recorder.metadata['instrumental.test.samples.robust']
+        
+        assert 10 == len(metadata.constructs), metadata.constructs.keys()
+        
+        decision = metadata.constructs['5.1']
+        assert isinstance(decision, constructs.BooleanDecision)
+        assert 2 == decision.number_of_conditions(False)
+        assert 1 == decision.conditions_missed(False)
+        
+        boolop = metadata.constructs['5.2']
+        assert isinstance(boolop, constructs.LogicalAnd)
+        assert 3 == boolop.number_of_conditions(False)
+        assert 2 == len(boolop.conditions_missed(False))
+        
+        decision = metadata.constructs['8.1']
+        assert isinstance(decision, constructs.BooleanDecision)
+        assert 2 == decision.number_of_conditions(False)
+        assert 1 == decision.conditions_missed(False)
+        
+        boolop = metadata.constructs['8.2']
+        assert isinstance(boolop, constructs.LogicalOr)
+        assert 3 == boolop.number_of_conditions(False)
+        assert 2 == len(boolop.conditions_missed(False))
+        
+        decision = metadata.constructs['11.1']
+        assert isinstance(decision, constructs.BooleanDecision)
+        assert 2 == decision.number_of_conditions(False)
+        assert 1 == decision.conditions_missed(False)
+        
+        compare = metadata.constructs['11.2']
+        assert isinstance(compare, constructs.Comparison)
+        assert 2 == compare.number_of_conditions(False)
+        assert 1 == compare.conditions_missed(False)
+        
+        decision = metadata.constructs['14.1']
+        assert isinstance(decision, constructs.BooleanDecision)
+        assert 2 == decision.number_of_conditions(False)
+        assert 1 == decision.conditions_missed(False)
+        
+        decision = metadata.constructs['16.1']
+        assert isinstance(decision, constructs.BooleanDecision)
+        assert 1 == decision.number_of_conditions(False)
+        assert 0 == decision.conditions_missed(False)
+        
+        boolop = metadata.constructs['16.2']
+        assert isinstance(boolop, constructs.LogicalOr)
+        assert 2 == boolop.number_of_conditions(False)
+        assert 1 == len(boolop.conditions_missed(False))
+        
+        boolop = metadata.constructs['16.3']
+        assert isinstance(boolop, constructs.LogicalAnd)
+        assert 2 == boolop.number_of_conditions(False)
+        assert 1 == len(boolop.conditions_missed(False))
+
     def test_partial_coverage_report(self):
         from instrumental.reporting import ExecutionReport
         
@@ -183,8 +301,8 @@ class TestXMLReport(object):
         class_spec = {'tag': 'class',
                       'name': 'instrumental.test.samples.robust',
                       'filename': 'instrumental/test/samples/robust.py',
-                      'condition-rate': '0.400000',
-                      'branch-rate': '0.500000',
+                      'condition-rate': '0.416667',
+                      'branch-rate': '0.555556',
                       'line-rate': '0.700000',
                       'children': [{'tag': 'methods'}, lines_spec],
                       }
@@ -192,8 +310,8 @@ class TestXMLReport(object):
             {'tag': 'packages',
              'children': [{'tag': 'package',
                            'name': 'instrumental.test.samples',
-                           'condition-rate': '0.400000',
-                           'branch-rate': '0.500000',
+                           'condition-rate': '0.416667',
+                           'branch-rate': '0.555556',
                            'line-rate': '0.700000',
                            'children': [{'tag': 'classes',
                                          'children': [class_spec],
@@ -201,8 +319,8 @@ class TestXMLReport(object):
                            }]
              })
         spec = {'tag': 'coverage',
-                'condition-rate': '0.400000',
-                'branch-rate': '0.500000',
+                'condition-rate': '0.416667',
+                'branch-rate': '0.555556',
                 'line-rate': '0.700000',
                 'children': [root_children_spec]
                 }

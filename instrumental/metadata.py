@@ -57,6 +57,93 @@ class ModuleMetadata(object):
             i += 1
         return '%s.%s' % (lineno, i)
 
+class BooleanEvaluator(ast.NodeVisitor):
+    
+    @classmethod
+    def evaluate(cls, node):
+        evaluator = cls()
+        evaluator.visit(node)
+        return evaluator._results
+    
+    def __init__(self):
+        self._results = set([True, False])
+    
+    def _and(self, left, right):
+        return left and right
+    
+    def _or(self, left, right):
+        return left or right
+    
+    def _booleval(self, op, left, right):
+        if isinstance(op, ast.And):
+            return self._and(left, right)
+        elif isinstance(op, ast.Or):
+            return self._or(left, right)
+        else: # pragma: no cover
+            raise TypeError('Invalid operation: %s', op)
+    
+    def visit_BoolOp(self, node):
+        for subexpr in node.values:
+            subresults = BooleanEvaluator.evaluate(subexpr)
+            pairs = itertools.product(self._results, subresults)
+            self._results = set(self._booleval(node.op, result, subresult)
+                                for result, subresult in pairs)
+    
+    def visit_IfExp(self, node):
+        test_results = BooleanEvaluator.evaluate(node.test)
+        body_results = BooleanEvaluator.evaluate(node.body)
+        orelse_results = BooleanEvaluator.evaluate(node.orelse)
+        
+        if len(test_results) == 1:
+            test_result = list(test_results)[0]
+            if test_result:
+                self._results = body_results
+            else:
+                self._results = orelse_results
+        else:
+            self._results = body_results | orelse_results
+    
+    def visit_Name(self, node):
+        try:
+            self._results = set([bool(ast.literal_eval(node))])
+        except ValueError:
+            pass
+    
+    def visit_UnaryOp(self, node):
+        if isinstance(node.op, ast.Not):
+            results = BooleanEvaluator.evaluate(node.operand)
+            self._results = set(not result for result in results)
+        else:
+            self.visit_indeterminate(node)
+    
+    def visit_literal(self, node):
+        self._results = set([bool(ast.literal_eval(node))])
+    visit_Num = visit_literal
+    visit_Str = visit_literal
+    
+    visit_Dict = visit_literal
+    visit_List = visit_literal
+    visit_Set = visit_literal
+    visit_Tuple = visit_literal
+
+    def visit_True(self, node):
+        self._results = set([True])
+    visit_GeneratorExp = visit_True
+    visit_Lambda = visit_True
+    
+    def visit_indeterminate(self, node):
+        pass
+    visit_Attribute = visit_indeterminate
+    visit_BinOp = visit_indeterminate
+    visit_Call = visit_indeterminate
+    visit_Compare = visit_indeterminate
+    visit_DictComp = visit_indeterminate
+    visit_ListComp = visit_indeterminate
+    visit_Repr = visit_indeterminate
+    visit_SetComp = visit_indeterminate
+    visit_Subscript = visit_indeterminate
+    visit_Yield = visit_indeterminate
+    
 class MetadataGatheringVisitor(ast.NodeVisitor):
     
     @classmethod
@@ -72,6 +159,7 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
         self.metadata = metadata
         self.modifiers = []
         self.gather = True
+        self._context = []
     
     def _has_pragma(self, pragma, lineno):
         return any(isinstance(p, pragma) for p in self.metadata.pragmas[lineno])
@@ -105,8 +193,25 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
     
     def _make_decision(self, label, node):
         pragmas = self.metadata.pragmas.get(node.lineno, [])
-        return constructs.BooleanDecision(self.metadata.modulename, 
+        construct = constructs.BooleanDecision(self.metadata.modulename,
+                                               label, node, pragmas)
+        possible_results = BooleanEvaluator.evaluate(node)
+        if True not in possible_results:
+            construct.set_unreachable(True)
+        if False not in possible_results:
+            construct.set_unreachable(False)
+        return construct
+    
+    def _make_comparison(self, label, node):
+        pragmas = self.metadata.pragmas.get(node.lineno, [])
+        construct = constructs.Comparison(self.metadata.modulename, 
                                           label, node, pragmas)
+        possible_results = BooleanEvaluator.evaluate(node)
+        if True not in possible_results:
+            construct.set_unreachable(True)
+        if False not in possible_results:
+            construct.set_unreachable(False)
+        return construct
     
     def visit_Module(self, module):
         if has_docstring(module):
@@ -117,31 +222,41 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
         if self.config.instrument_assertions:
             if isinstance(assert_.test, ast.BoolOp):
                 label = self.metadata.next_label(assert_.lineno)
-                assert_.test = self._make_decision(label, assert_.test)
-                self.metadata.constructs[label] = assert_.test
+                construct = self._make_decision(label, assert_.test)
+                self.metadata.constructs[label] = construct
+                self._context.append(construct)
             self.generic_visit(assert_)
+            if isinstance(assert_.test, ast.BoolOp):
+                self._context.pop()
     
     def visit_assignment(self, assign):
         if isinstance(assign.value, ast.BoolOp):
             label = self.metadata.next_label(assign.lineno)
             construct = self._make_decision(label, assign.value)
             self.metadata.constructs[label] = construct
+            self._context.append(construct)
         self.generic_visit(assign)
+        if isinstance(assign.value, ast.BoolOp):
+            self._context.pop()
     visit_Assign = visit_AugAssign = visit_assignment
     
     def visit_BoolOp(self, boolop):
         label = self.metadata.next_label(boolop.lineno)
         construct = self._make_boolop_construct(label, boolop)
         self.metadata.constructs[label] = construct
+        self._context.append(construct)
         self.generic_visit(boolop)
+        self._context.pop()
     
     def visit_Compare(self, compare):
         if self.config.instrument_comparisons:
             label = self.metadata.next_label(compare.lineno)
-            pragmas = self.metadata.pragmas.get(compare.lineno, [])
-            construct = constructs.Comparison(self.metadata.modulename, label, compare, pragmas)
+            construct = self._make_comparison(label, compare)
             self.metadata.constructs[label] = construct
+            self._context.append(construct)
         self.generic_visit(compare)
+        if self.config.instrument_comparisons:
+            self._context.pop()
     
     def visit_If(self, if_):
         if self._has_pragma(PragmaNoCover, if_.lineno):
@@ -151,7 +266,9 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
             label = self.metadata.next_label(if_.lineno)
             construct = self._make_decision(label, if_.test)
             self.metadata.constructs[str(label)] = construct
+            self._context.append(construct)
             self.generic_visit(if_)
+            self._context.pop()
         if self._has_pragma(PragmaNoCover, if_.lineno):
             self.modifiers.pop(-1)
     
@@ -160,7 +277,10 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
             label = self.metadata.next_label(ifexp.lineno)
             construct = self._make_decision(label, ifexp.test)
             self.metadata.constructs[str(label)] = construct
+            self._context.append(construct)
         self.generic_visit(ifexp)
+        if self.gather:
+            self._context.pop()
     
     def visit_While(self, while_):
         if self._has_pragma(PragmaNoCover, while_.lineno):
@@ -170,7 +290,9 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
             label = self.metadata.next_label(while_.lineno)
             construct = self._make_decision(label, while_.test)
             self.metadata.constructs[str(label)] = construct
+            self._context.append(construct)
             self.generic_visit(while_)
+            self._context.pop()
         if self._has_pragma(PragmaNoCover, while_.lineno):
             self.modifiers.pop(-1)
 

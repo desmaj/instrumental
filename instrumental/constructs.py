@@ -20,6 +20,12 @@ from copy import deepcopy
 from astkit import ast
 from astkit.render import SourceCodeRenderer
 
+class PragmaCondition(object):
+    TAG = 'P'
+    
+    def __str__(self):
+        return self.TAG
+
 class UnreachableCondition(object):
     TAG = 'U'
     
@@ -303,20 +309,40 @@ class BooleanDecision(object):
     def was_false(self):
         return self.conditions[False] 
     
+    def set_unreachable(self, condition):
+        self.conditions[condition].add(UnreachableCondition())
+    
     def number_of_conditions(self, report_conditions_with_literals):
-        return len(self.conditions)
+        if report_conditions_with_literals:
+            return len(self.conditions)
+        
+        unreachable_conditions = 0
+        for condition in self.conditions:
+            for result in self.conditions[condition]:
+                if (isinstance(result, UnreachableCondition)
+                    or result == PragmaCondition.TAG):
+                    unreachable_conditions += 1
+                    break
+        return len(self.conditions) - unreachable_conditions
     
     def number_of_conditions_hit(self):
+        def is_hit(results):
+            if results:
+                return any(not (isinstance(result, UnreachableCondition)
+                                or result == PragmaCondition.TAG)
+                           for result in results)
+            return False
+        
         return len([value 
-                    for value in self.conditions.values()
-                    if value and not isinstance(value, UnreachableCondition)])
+                    for value in self.conditions.values() 
+                    if is_hit(value)])
     
-    def conditions_missed(self, report_conditions_With_literals):
-        return self.number_of_conditions(report_conditions_With_literals) - self.number_of_conditions_hit()
+    def conditions_missed(self, report_conditions_with_literals):
+        return self.number_of_conditions(report_conditions_with_literals) - self.number_of_conditions_hit()
     
     def _format_condition_result(self, result, length=6):
         padding = '\n' + (' ' * length)
-        return padding.join(tag for tag in sorted(result))
+        return padding.join(str(tag) for tag in sorted(result))
     
     def result(self):
         lines = []
@@ -345,7 +371,7 @@ class Comparison(object):
                     pragma.apply(self)
     
     def is_decision(self):
-        return True
+        return False
     
     def record(self, expression, tag):
         result = bool(expression)
@@ -361,20 +387,40 @@ class Comparison(object):
     def was_false(self):
         return self.conditions[False] 
     
+    def set_unreachable(self, condition):
+        self.conditions[condition].add(UnreachableCondition())
+    
     def number_of_conditions(self, report_conditions_with_literals):
-        return len(self.conditions)
+        if report_conditions_with_literals:
+            return len(self.conditions)
+        
+        unreachable_conditions = 0
+        for condition in self.conditions:
+            for result in self.conditions[condition]:
+                if (isinstance(result, UnreachableCondition)
+                    or result == PragmaCondition.TAG):
+                    unreachable_conditions += 1
+                    break
+        return len(self.conditions) - unreachable_conditions
     
     def number_of_conditions_hit(self):
+        def is_hit(results):
+            if results:
+                return any(not (isinstance(result, UnreachableCondition)
+                                or result == PragmaCondition.TAG)
+                           for result in results)
+            return False
+        
         return len([value 
-                    for value in self.conditions.values()
-                    if value and not isinstance(value, UnreachableCondition)])
+                    for value in self.conditions.values() 
+                    if is_hit(value)])
     
     def conditions_missed(self, report_conditions_With_literals):
         return self.number_of_conditions(report_conditions_With_literals) - self.number_of_conditions_hit()
     
     def _format_condition_result(self, result, length=6):
         padding = '\n' + (' ' * length)
-        return padding.join(tag for tag in sorted(result))
+        return padding.join(str(tag) for tag in sorted(result))
     
     def result(self):
         lines = []
