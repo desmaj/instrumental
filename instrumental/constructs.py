@@ -364,11 +364,47 @@ class Comparison(object):
         self.source = SourceCodeRenderer.render(node)
         self.conditions = {True: set(),
                            False: set()}
+        self._set_unreachable_condition()
+        
         for pragma in pragmas:
             if hasattr(pragma, 'selector'):
                 pragma_label = '%s.%s' % (node.lineno, pragma.selector)
                 if label == pragma_label:
                     pragma.apply(self)
+    
+    def _set_unreachable_condition(self):
+        self._unreachable_condition = self.unreachable_condition()
+        if self._unreachable_condition is not None:
+            self.conditions[self._unreachable_condition].add(
+                UnreachableCondition())
+    
+    def unreachable_condition(self):
+        try:
+            _left = ast.literal_eval(self.node.left)
+            _right = ast.literal_eval(self.node.comparators[0])
+            if isinstance(self.node.ops[0], ast.Eq):
+                condition = _left != _right
+            elif isinstance(self.node.ops[0], ast.NotEq):
+                condition = _left == _right
+            elif isinstance(self.node.ops[0], ast.Lt):
+                condition = _left >= _right
+            elif isinstance(self.node.ops[0], ast.LtE):
+                condition = _left > _right
+            elif isinstance(self.node.ops[0], ast.Gt):
+                condition = _left <= _right
+            elif isinstance(self.node.ops[0], ast.GtE):
+                condition = _left < _right
+            elif isinstance(self.node.ops[0], ast.Is):
+                condition = _left is not _right
+            elif isinstance(self.node.ops[0], ast.IsNot):
+                condition = _left is _right
+            elif isinstance(self.node.ops[0], ast.In):
+                condition = _left not in _right
+            elif isinstance(self.node.ops[0], ast.NotIn):
+                condition = _left in _right
+            return condition
+        except ValueError as exc:
+            print exc
     
     def is_decision(self):
         return False
@@ -394,6 +430,7 @@ class Comparison(object):
         if report_conditions_with_literals:
             return len(self.conditions)
         
+        print self.conditions
         unreachable_conditions = 0
         for condition in self.conditions:
             for result in self.conditions[condition]:
