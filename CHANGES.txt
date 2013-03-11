@@ -1,6 +1,14 @@
 Next Release
 ============
 
+0.4b2
+=====
+
+Bug Fixes
+---------
+
+- Removed some extraneous print statements
+
 0.4b1
 =====
 
