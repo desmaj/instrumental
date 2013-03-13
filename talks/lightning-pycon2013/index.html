@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>More coverage with Instrumental</title>
+
+		<meta name="description" content="A code coverage / dynamic analysis tool for Python">
+		<meta name="author" content="Matthew J. Desmarais">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="css/reveal.min.css">
+		<link rel="stylesheet" href="css/theme/default.css" id="theme">
+
+		<!-- For syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- If the query includes 'print-pdf', use the PDF print sheet -->
+		<script>
+			document.write( '<link rel="stylesheet" href="css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+
+				<section>
+					<h1>More coverage with Instrumental</h1>
+					<h3>Coverage beyond statements and branches</h3>
+					<p>
+						<small><a href="http://bacondispenser.org">Matthew J Desmarais</a></small>
+					</p>
+				</section>
+
+				<section>
+					<h2>coverage.py</h2>
+					<p>
+						<a href="http://nedbatchelder.com/code/coverage/">coverage.py</a> reports on statement and branch coverage.
+					</p>
+				</section>
+
+				<section>
+					<h2>Structural coverage is good</h2>
+					<p>
+						Structural coverage tells what we have and haven't executed. This, in turn, tells us something about how good our tests are.
+					</p>
+				</section>
+
+				<section>
+					<h2>Programs are complex</h2>
+					<p>
+						Programs are more than just statements and branches.
+					</p>
+				</section>
+
+				<section>
+					<h2>Definitions</h2>
+					<p>
+						<ul>
+						  <li>Condition: a leaf-level Boolean expression (it cannot be broken down).</li>
+						  <li>Decision: A Boolean expression composed of conditions and zero or more Boolean operators.</li>
+						</ul>
+						<br>
+						<small><a href="http://en.wikipedia.org/wiki/Modified_condition/decision_coverage">http://en.wikipedia.org/wiki/Modified_condition/decision_coverage</a></small>
+					</p>
+				</section>
+
+				<section>
+					<h2>Decisions represent more complex logic</h2>
+					<p>
+						A decision can be:
+						<ul>
+						  <li>a</li>
+						  <li>a and b or c</li>
+						</ul>
+					</p>
+				</section>
+
+				<section>
+					<h2>Example:</h2>
+					<p>
+						<p>
+						  Consider: a and b or c
+						</p>
+						<p>
+						  5 significant cases
+						  <ul>
+						    <li>(T T) F</li>
+						    <li>(T F) F</li>
+						    <li>(F T) F</li>
+						    <li>(F F) T</li>
+						    <li>(F F) F</li>
+						  </ul>
+						</p>
+					</p>
+				</section>
+
+				<section>
+					<h2>Branch coverage isn't enough</h2>
+					<p>
+						<p>
+						  You can achieve branch coverage with two cases. What about the other three?
+						</p>
+					</p>
+				</section>
+
+				<section>
+					<h2>Enter Instrumental</h2>
+					<p>
+						<p>
+						  Instrumental measures the execution of conditions and decisions.
+						</p>
+					</p>
+				</section>
+
+				<section>
+					<h2>Running Instrumental</h2>
+					<pre><code contenteditable>
+$ instrumental -t pyramid -i pyramid.tests -r `which nosetests`
+					</code></pre>
+					<ul style="list-style-type: none">
+					<li>
+					  -t: Target the pyramid package
+					</li>
+					<li>
+					  -i: Ignore the pyramid.tests package
+					</li>
+					<li>
+					  -r: Produce a report detailing missed coverage
+					</li>
+					<li>
+					  `which nosetests`: Run the nosetests python script
+					</li>
+					</ul>
+				</section>
+
+				<section>
+					<h2>Results</h2>
+					<pre><code contenteditable>
+===============================================
+Instrumental Condition/Decision Coverage Report
+===============================================
+
+Decision -> pyramid.view:31.1 < (package_name is None) >
+
+T ==> X
+F ==>
+
+LogicalOr -> pyramid.view:281.1 < (getattr(request, 'exception', None) or context) >
+
+T * ==> X
+F T ==>
+F F ==>
+					</code></pre>
+				</section>
+
+				<section>
+					<h2>More than control flow</h2>
+					<p>
+						<p>
+						  Instrumental covers conditions and decisions in assignments as well as conditional execution statements.
+						</p>
+						<p>
+						  (Think 'debug and self._log("Note this")')
+						</p>
+					</p>
+				</section>
+
+				<section>
+					<h2>Neat stuff</h2>
+					<p>
+						<p>
+						  Instrumental doesn't expect you to hit cases that are impossible because of literals in decisions.
+						</p>
+						<pre><code>
+foo = bar or {}
+						</code></pre>
+						<p>
+						  You can mark infeasible conditions as unexecutable.
+						</p>
+						<pre><code>
+foo = bar or baz # pragma: no cond)(T F)
+						</code></pre>
+						<p>
+						  With an included node plugin, Instrumental can tell you which case hit each condition.
+						</p>
+					</p>
+				</section>
+
+				<section>
+					<h2>There's more!</h2>
+					<p>
+						<p>
+						  Instrumental supports and is committed to supporting:
+						  <ul>
+						    <li>Statement coverage</li>
+						    <li>XML output (Cobertura compatible)</li>
+						    <li>HTML output (for better visualization)</li>
+						  </ul>
+						</p>
+					</p>
+				</section>
+
+				<section>
+					<h2>More information</h2>
+					<p>
+						  <ul>
+						    <li>Full documentation at <a href="https://instrumental.readthedocs.org/en/latest/">Read the Docs</a></li>
+						    <li>Code and issue tracker on <a href="http://bitbucket.org/desmaj/instrumental">Bitbucket</a></li>
+						    <li>I'm desmaj on freenode and I'm often found in #python-testing</li>
+						  </ul>
+					</p>
+				</section>
+
+				<section>
+					<h2>Thanks!</h2>
+					<p>
+						  <ul>
+						    <li>General Digital for exposing me to this kind of coverage</li>
+						    <li>Ned Batchelder for coverage.py</li>
+						  </ul>
+					</p>
+				</section>
+
+				<section>
+					<h1>THE END</h1>
+				</section>
+
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.min.js"></script>
+
+		<script>
+
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+				transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/showdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+					{ src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+					// { src: 'plugin/search/search.js', async: true, condition: function() { return !!document.body.classList; } }
+					// { src: 'plugin/remotes/remotes.js', async: true, condition: function() { return !!document.body.classList; } }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>

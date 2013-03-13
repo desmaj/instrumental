@@ -1,0 +1,61 @@
+* More coverage with Instrumental
+
+* Agenda:
+  - coverage.py
+  - structural coverage basics
+  - intrumental - what and how
+
+* How many people know about / have used coverage.py?
+  - Great!
+  - You know that coverage.py provides statement coverage and branch coverage
+    - Statement coverage tells you which statements are and aren't executed
+    - Branch coverage tells you which branches you have and haven't taken
+    - Basic structural coverage
+    - Gives you a good sense for what you have and haven't tested.
+      - Particularly for Python code
+      - If it isn't executed it may explode
+
+* Programs are more than statements and branches
+  - They also contain conditions and decisions
+    - condition: atomic boolean expression (cannot be broken down)
+    - decision: bool expression of conditions w/zero or more bool operators
+  - Decisions often represent more complex logic
+    - Not just "if this: do that"
+    - Could be "if this and that or it: do some other thing"
+
+* Consider "a and b or c"
+  - 5 significant cases - reasons why it was T or F
+    - (T T) F
+    - (F *) F
+    - (T F) F
+    - ( F ) T
+    - ( F ) F
+  - Significant because they isolate the effects of certain inputs' truthiness
+  - Achieve full branch coverage by executing 2
+  - Miss 3 cases
+
+* Enter Instrumental
+  - Instrumental measures these things
+  - Let's look at an example:
+  - Running Instrumental against pyramid code (for example) looks like this:
+    - "-t" target the package "pyramid"
+    - "-i" ignore the pyramid.tests package
+    - "-r" show me a report containing constructs with missed coverage
+    - `<stuff>` path to a python script to run
+  - Report looks like this:
+    ...
+
+* More than just tests in control flow
+  - Measures coverage in assignments
+  
+* Neat stuff
+  - Doesn't expect you to execute cases that are obviously unreachable
+    - "foo or {}" obviously can't be (F T)
+  - pragmas allow you to specify unreachable cases
+    - pragma: no cond(T F)
+
+* Also:
+  - supports / committed to supporting:
+    - Statement coverage
+    - Cobertura compatible XML output
+    - HTML output with missed coverage highlighted
