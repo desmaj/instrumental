@@ -32,7 +32,6 @@ def gather_metadata(config, recorder, targets, ignores):
                 pragmas = PragmaFinder().find_pragmas(source)
                 metadata = MetadataGatheringVisitor.analyze(config,
                                                             modulename,
-                                                            filepath,
                                                             source,
                                                             pragmas)
                 metadata_cache.store(filepath, metadata)
@@ -40,16 +39,12 @@ def gather_metadata(config, recorder, targets, ignores):
 
 class ModuleMetadata(object):
     
-    def __init__(self, modulename, filepath, source, pragmas):
+    def __init__(self, modulename, source, pragmas):
         self.modulename = modulename
-        self.filepath = filepath
         self.source = source
         self.lines = {}
         self.constructs = {}
         self.pragmas = pragmas
-    
-    def is_package(self):
-        return self.filepath.endswith('__init__.py')
     
     def next_label(self, lineno):
         i = 1
@@ -147,9 +142,9 @@ class BooleanEvaluator(ast.NodeVisitor):
 class MetadataGatheringVisitor(ast.NodeVisitor):
     
     @classmethod
-    def analyze(cls, config, modulename, filepath, source, pragmas):
+    def analyze(cls, config, modulename, source, pragmas):
         module_ast = ast.parse(source)
-        metadata = ModuleMetadata(modulename, filepath, source, pragmas)
+        metadata = ModuleMetadata(modulename, source, pragmas)
         visitor = cls(config, metadata, pragmas)
         visitor.visit(module_ast)
         return visitor.metadata
@@ -320,7 +315,7 @@ class SourceFinder(object):
                 break
     
     def _is_python_source(self, filename):
-        return filename == '__init__.py' or filename.endswith('.py')
+        return filename.endswith('.py')
     
     def _is_package_directory(self, dirname):
         return (os.path.isdir(dirname) and

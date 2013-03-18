@@ -23,7 +23,7 @@ class TestMetadataGatheringVisitor(object):
         module, source = load_module(test_module)
         pragmas = self._get_pragmas(source)
         
-        metadata = self._make_one().analyze(DummyConfig(), 'modname', 'modname.py', module, pragmas)
+        metadata = self._make_one().analyze(DummyConfig(), 'modname', module, pragmas)
         assert set([1, 2, 3, 5]) == set(metadata.lines), set(metadata.lines)
     
     def test_gather_lines__with_pragmas(self):
@@ -36,7 +36,7 @@ class TestMetadataGatheringVisitor(object):
         module, source = load_module(test_module)
         pragmas = self._get_pragmas(source)
         
-        metadata = self._make_one().analyze(DummyConfig(), 'modname', 'modname.py', module, pragmas)
+        metadata = self._make_one().analyze(DummyConfig(), 'modname', module, pragmas)
         assert set([1, 2, 5]) == set(metadata.lines), set(metadata.lines)
         
     def test_gather_constructs__if_simple_decision(self):
@@ -49,7 +49,7 @@ class TestMetadataGatheringVisitor(object):
         module, source = load_module(test_module)
         pragmas = self._get_pragmas(source)
         
-        metadata = self._make_one().analyze(DummyConfig(), 'modname', 'modname.py', module, pragmas)
+        metadata = self._make_one().analyze(DummyConfig(), 'modname', module, pragmas)
         assert "2.1" in metadata.constructs, metadata.constructs
         decision = metadata.constructs["2.1"]
         assert isinstance(decision, constructs.BooleanDecision)
@@ -61,7 +61,7 @@ class TestMetadataGatheringVisitor(object):
         module, source = load_module(test_module)
         pragmas = self._get_pragmas(source)
         
-        metadata = self._make_one().analyze(DummyConfig(), 'modname', 'modname.py', module, pragmas)
+        metadata = self._make_one().analyze(DummyConfig(), 'modname', module, pragmas)
         assert "2.1" in metadata.constructs, metadata.constructs
         decision = metadata.constructs["2.1"]
         assert isinstance(decision, constructs.BooleanDecision)
@@ -73,7 +73,7 @@ class TestMetadataGatheringVisitor(object):
         module, source = load_module(test_module)
         pragmas = self._get_pragmas(source)
         
-        metadata = self._make_one().analyze(DummyConfig(), 'modname', 'modname.py', module, pragmas)
+        metadata = self._make_one().analyze(DummyConfig(), 'modname', module, pragmas)
         assert 6 == len(metadata.constructs), metadata.constructs
         decision = metadata.constructs["2.1"]
         assert isinstance(decision, constructs.BooleanDecision)
@@ -98,7 +98,7 @@ class TestMetadataGatheringVisitor(object):
         module, source = load_module(test_module)
         pragmas = self._get_pragmas(source)
         
-        metadata = self._make_one().analyze(DummyConfig(), 'modname', 'modname.py', module, pragmas)
+        metadata = self._make_one().analyze(DummyConfig(), 'modname', module, pragmas)
         assert "3.1" in metadata.constructs, metadata.constructs
         decision = metadata.constructs["3.1"]
         assert isinstance(decision, constructs.BooleanDecision)
@@ -109,7 +109,7 @@ class TestMetadataGatheringVisitor(object):
         module, source = load_module(test_module)
         pragmas = self._get_pragmas(source)
         
-        metadata = self._make_one().analyze(DummyConfig(), 'modname', 'modname.py', module, pragmas)
+        metadata = self._make_one().analyze(DummyConfig(), 'modname', module, pragmas)
         assert 2 == len(metadata.constructs)
         decision = metadata.constructs["1.1"]
         assert isinstance(decision, constructs.BooleanDecision)
@@ -122,7 +122,7 @@ class TestMetadataGatheringVisitor(object):
         module, source = load_module(test_module)
         pragmas = self._get_pragmas(source)
         
-        metadata = self._make_one().analyze(DummyConfig(), 'modname', 'modname.py', module, pragmas)
+        metadata = self._make_one().analyze(DummyConfig(), 'modname', module, pragmas)
         assert 2 == len(metadata.constructs), len(metadata.constructs)
         decision = metadata.constructs["1.1"]
         assert isinstance(decision, constructs.BooleanDecision)
@@ -136,7 +136,7 @@ class TestMetadataGatheringVisitor(object):
         module, source = load_module(test_module)
         pragmas = self._get_pragmas(source)
         
-        metadata = self._make_one().analyze(DummyConfig(), 'modname', 'modname.py', module, pragmas)
+        metadata = self._make_one().analyze(DummyConfig(), 'modname', module, pragmas)
         assert 2 == len(metadata.constructs), len(metadata.constructs)
         decision = metadata.constructs["1.1"]
         assert isinstance(list(decision.conditions[False])[0], constructs.UnreachableCondition)

@@ -2,7 +2,6 @@ import logging
 
 # REMIND: Can't import instrumental here or it'll throw off coverage results
 #         when using the nose coverage plugin since coverage isn't setup yet.
-# from instrumental.recorder import ExecutionRecorder
 
 from nose.plugins import Plugin
 

@@ -72,7 +72,6 @@ class TestLoadModule(object):
         pragmas = PragmaFinder().find_pragmas(source)
         metadata = MetadataGatheringVisitor.analyze(self.config,
                                                     simple_name, 
-                                                    'simple_name.py', 
                                                     source, 
                                                     pragmas)
         
@@ -107,7 +106,6 @@ class TestLoadModule(object):
         pragmas = PragmaFinder().find_pragmas(source)
         metadata = MetadataGatheringVisitor.analyze(self.config, 
                                                     simple_name, 
-                                                    '__init__.py',
                                                     source, 
                                                     pragmas)
         

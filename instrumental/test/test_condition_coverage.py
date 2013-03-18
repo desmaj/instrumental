@@ -27,7 +27,6 @@ class TestInstrumentation(object):
         config = DummyConfig()
         self.recorder.add_metadata(MetadataGatheringVisitor.analyze(config,
                                                                     module_func.__name__,
-                                                                    'somemodule.py',
                                                                     source, 
                                                                     pragmas))
         # self.recorder.add_source(module_func.__name__, source)

@@ -316,7 +316,6 @@ x = a or None"""
         from instrumental.metadata import MetadataGatheringVisitor
         metadata = MetadataGatheringVisitor.analyze(DummyConfig(),
                                                     self.modulename,
-                                                    'somefile.py',
                                                     self.source, 
                                                     {6: set()})
         return metadata.constructs[self.label]
