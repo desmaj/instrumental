@@ -36,13 +36,16 @@ def unmonkeypatch_imp():
 
 def load_module_factory(targets, ignores, visitor_factory):
     def load_module(name, fh, pathname, description):
-        log.debug("load_module name=%s fh=%s, pathname=%s description=%s",
+        log.debug("load_module name=%r fh=%r, pathname=%r description=%r",
                   name, fh, pathname, description)
-        if ((not any([re.match(target, name) for target in targets]))
-            or
-            (any([re.match(ignore, name) for ignore in ignores]))):
+        if not any([re.match(target, name) for target in targets]):
+            log.debug('load_module: not a target: %r', name)
+            return _imp_load_module(name, fh, pathname, description)
+        elif any([re.match(ignore, name) for ignore in ignores]):
+            log.debug('load_module: ignored: %r', name)
             return _imp_load_module(name, fh, pathname, description)
         else:
+            log.debug('load_module: instrumenting %r', name)
             suffix, mode, type = description
             ispkg = type == imp.PKG_DIRECTORY
             if ispkg:

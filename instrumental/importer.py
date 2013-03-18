@@ -58,8 +58,6 @@ class ModuleLoader(object):
     
     def load_module(self, fullname):
         log.debug("load_module(%r, path=%r)", fullname, self.fullpath)
-        if fullname in sys.modules:
-            return sys.modules[fullname]
         ispkg, code = self._get_code(fullname)
         mod = sys.modules.setdefault(fullname, imp.new_module(fullname))
         mod.__file__ = self.fullpath
