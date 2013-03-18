@@ -57,6 +57,9 @@ class ModuleLoader(object):
         return (ispkg, code)
     
     def load_module(self, fullname):
+        log.debug("load_module(%r, path=%r)", fullname, self.fullpath)
+        if fullname in sys.modules:
+            return sys.modules[fullname]
         ispkg, code = self._get_code(fullname)
         mod = sys.modules.setdefault(fullname, imp.new_module(fullname))
         mod.__file__ = self.fullpath
@@ -76,10 +79,14 @@ class ImportHook(object):
         self.visitor_factory = visitor_factory
     
     def find_module(self, fullname, path=[]):
-        log.debug("find_module(%s, path=%r)",fullname, path)
-        if ((not re.match(self.target, fullname)) 
-            or
-            any([re.match(ignore, fullname) for ignore in self.ignores])):
+        log.debug("find_module(%r, path=%r)",fullname, path)
+        
+        if not re.match(self.target, fullname):
+            log.debug('%r is not a target', fullname)
+            return None
+        
+        if any([re.match(ignore, fullname) for ignore in self.ignores]):
+            log.debug('%r is ignored', fullname)
             return None
         
         if not path:
@@ -91,16 +98,17 @@ class ImportHook(object):
                 return loader
     
     def _loader_for_path(self, directory, fullname):
-        log.debug("[loader for path] directory: %s; fullname: %s",
+        log.debug("[loader for path] directory: %r; fullname: %r",
                   directory, fullname)
         module_path = os.path.join(directory, fullname.split('.')[-1]) + ".py"
         if os.path.exists(module_path):
-            log.debug("loading module from %s", module_path)
+            log.debug("loading module from %r", module_path)
             loader = ModuleLoader(module_path, self.visitor_factory)
             return loader
         
         package_path = os.path.join(directory, fullname.split('.')[-1], '__init__.py')
         if os.path.exists(package_path):
+            log.debug("loading module from %r", package_path)
             loader = ModuleLoader(package_path, self.visitor_factory)
             return loader
         

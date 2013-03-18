@@ -460,7 +460,6 @@ else:
         config = DummyConfig()
         metadata = MetadataGatheringVisitor.analyze(config,
                                                     'somemodule', 
-                                                    'somemodule.py',
                                                     source, pragmas)
         self.recorder.add_metadata(metadata)
         transformer = CoverageAnnotator(config,
@@ -491,7 +490,6 @@ else:
         config = DummyConfig()
         metadata = MetadataGatheringVisitor.analyze(config,
                                                     'somemodule', 
-                                                    'somemodule.py',
                                                     source, pragmas)
         self.recorder.add_metadata(metadata)
         transformer = CoverageAnnotator(config,

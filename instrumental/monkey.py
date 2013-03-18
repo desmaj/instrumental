@@ -16,9 +16,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import imp
+import logging
 import os
 import re
 import sys
+
+log = logging.getLogger(__name__)
 
 from astkit import ast
 
@@ -33,6 +36,8 @@ def unmonkeypatch_imp():
 
 def load_module_factory(targets, ignores, visitor_factory):
     def load_module(name, fh, pathname, description):
+        log.debug("load_module name=%s fh=%s, pathname=%s description=%s",
+                  name, fh, pathname, description)
         if ((not any([re.match(target, name) for target in targets]))
             or
             (any([re.match(ignore, name) for ignore in ignores]))):
