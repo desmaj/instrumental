@@ -104,8 +104,14 @@ class Coverage(CoverageObject):
                 for construct in self._metadata[modulename].constructs.values()]
                 
     def _package_for_module(self, modulename):
-        package_path = os.path.join(modulename.replace('.', os.path.sep),
-                                    '__init__.py')
+        # REMIND:
+        # This funny business with 'os.path.sep.join'. Let me tell you: if you
+        # replace it with the much more sensible 'os.path.join' form you get a
+        # weird exception, "AttributeError: version". I have no idea what this
+        # is all aboot, but it was blocking the 0.5.2 release (and python 3.3
+        # compatibility) so I worked around it. Gotta figure this out later :)
+        package_path = os.path.sep.join([modulename.replace('.', os.path.sep), 
+                                         '__init__.py'])
         if os.path.exists(package_path):
             return modulename
         else:
@@ -235,10 +241,11 @@ class XMLCoverageReport(object):
                 "  SYSTEM 'http://cobertura.sourceforge.net/xml/coverage-03.dtd'>",
                 tree,
                 ])
-        file(filename, 'w').write(document)
+        with open(filename, 'w') as f:
+            f.write(document)
     
     def __str__(self):
-        return ElementTree.tostring(self.tree.getroot())
+        return ElementTree.tostring(self.tree.getroot()).decode()
     
     @property
     def tree(self):

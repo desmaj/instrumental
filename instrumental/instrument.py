@@ -33,6 +33,8 @@ from astkit import ast
 from astkit.render import SourceCodeRenderer
 
 from instrumental import recorder
+from instrumental.metadata import MetadataGatheringVisitor
+from instrumental.pragmas import PragmaFinder
 from instrumental.pragmas import PragmaNoCover
 
 def force_location(tree, lineno, col_offset=0):
@@ -74,6 +76,13 @@ class AnnotatorFactory(object):
         self.recorder = recorder
     
     def create(self, modulename, module_source):
+        if modulename not in self.recorder.metadata:
+            pragmas = PragmaFinder().find_pragmas(module_source)
+            self.recorder.metadata[modulename] = (
+                MetadataGatheringVisitor.analyze(self.config,
+                                                 modulename,
+                                                 module_source,
+                                                 pragmas))
         return CoverageAnnotator(self.config, modulename, self.recorder)
 
 class CoverageAnnotator(ast.NodeTransformer):
