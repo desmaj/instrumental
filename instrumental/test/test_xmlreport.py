@@ -6,6 +6,9 @@ from xml.etree import ElementTree
 ZERO = '0.000000'
 ONE = '1.000000'
 
+if sys.version_info.major == 3:
+    from imp import reload
+
 class DummyConfig(object):
     instrument_assertions = True
     instrument_comparisons = True

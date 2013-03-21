@@ -24,7 +24,7 @@ class Coverage(object):
         for target in targets:
             hook = ImportHook(target, ignores, annotator_factory)
             self._import_hooks.append(hook)
-            sys.meta_path.append(hook)
+            sys.meta_path.insert(0, hook)
         self.recorder.start()
         
     def stop(self):

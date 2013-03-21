@@ -504,35 +504,36 @@ else:
         assert module.body[1].names[0].name == 'with_statement'
         self._assert_recorder_setup(inst_module, 2)
     
-    def test_ExceptHandler(self):
-        def test_module():
-            try:
-                return u
-            except Exception, exc:
-                return 'other'
-        inst_module = self._instrument_module(test_module)
-        self._assert_recorder_setup(inst_module, 0)
-        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
-        assert isinstance(inst_module.body[3], ast.TryExcept)
-        self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
-        assert isinstance(inst_module.body[3].body[1], ast.Return)
-        self._assert_record_statement(inst_module.body[3].handlers[0].body[0], 'test_module', 4)
-        assert isinstance(inst_module.body[3].handlers[0].body[1], ast.Return)
+    if sys.version_info.major < 3:
+        def test_ExceptHandler(self):
+            def test_module():
+                try:
+                    return u
+                except Exception as exc:
+                    return 'other'
+            inst_module = self._instrument_module(test_module)
+            self._assert_recorder_setup(inst_module, 0)
+            self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+            assert isinstance(inst_module.body[3], ast.TryExcept)
+            self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
+            assert isinstance(inst_module.body[3].body[1], ast.Return)
+            self._assert_record_statement(inst_module.body[3].handlers[0].body[0], 'test_module', 4)
+            assert isinstance(inst_module.body[3].handlers[0].body[1], ast.Return)
         
-    def test_ExceptHandler_with_no_cover(self):
-        def test_module():
-            try:
-                return u
-            except Exception, exc: # pragma: no cover
-                return 'other'
-        inst_module = self._instrument_module(test_module)
-        self._assert_recorder_setup(inst_module, 0)
-        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
-        assert isinstance(inst_module.body[3], ast.TryExcept)
-        self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
-        assert isinstance(inst_module.body[3].body[1], ast.Return)
-        assert isinstance(inst_module.body[3].handlers[0].body[0], ast.Return)
-        
+        def test_ExceptHandler_with_no_cover(self):
+            def test_module():
+                try:
+                    return u
+                except Exception as exc: # pragma: no cover
+                    return 'other'
+            inst_module = self._instrument_module(test_module)
+            self._assert_recorder_setup(inst_module, 0)
+            self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+            assert isinstance(inst_module.body[3], ast.TryExcept)
+            self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
+            assert isinstance(inst_module.body[3].body[1], ast.Return)
+            assert isinstance(inst_module.body[3].handlers[0].body[0], ast.Return)
+    
     def test_Pass(self):
         def test_module():
             pass
@@ -551,19 +552,20 @@ else:
         self._assert_record_statement(inst_module.body[2], 'test_module', 1)
         assert isinstance(inst_module.body[3], ast.Raise)
     
-    def test_TryFinally(self):
-        def test_module():
-            try:
-                return u
-            finally:
-                foo()
-        inst_module = self._instrument_module(test_module)
-        self._assert_recorder_setup(inst_module, 0)
-        self._assert_record_statement(inst_module.body[2], 'test_module', 1)
-        assert isinstance(inst_module.body[3], ast.TryFinally)
-        self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
-        assert isinstance(inst_module.body[3].body[1], ast.Return)
-        self._assert_record_statement(inst_module.body[3].finalbody[0], 'test_module', 4)
-        assert isinstance(inst_module.body[3].finalbody[1], ast.Expr)
-        assert isinstance(inst_module.body[3].finalbody[1].value, ast.Call)
-        
+    if sys.version_info.major < 3:
+        def test_TryFinally(self):
+            def test_module():
+                try:
+                    return u
+                finally:
+                    foo()
+            inst_module = self._instrument_module(test_module)
+            self._assert_recorder_setup(inst_module, 0)
+            self._assert_record_statement(inst_module.body[2], 'test_module', 1)
+            assert isinstance(inst_module.body[3], ast.TryFinally)
+            self._assert_record_statement(inst_module.body[3].body[0], 'test_module', 2)
+            assert isinstance(inst_module.body[3].body[1], ast.Return)
+            self._assert_record_statement(inst_module.body[3].finalbody[0], 'test_module', 4)
+            assert isinstance(inst_module.body[3].finalbody[1], ast.Expr)
+            assert isinstance(inst_module.body[3].finalbody[1].value, ast.Call)
+

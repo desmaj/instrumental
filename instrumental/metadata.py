@@ -405,4 +405,4 @@ if __name__ == '__main__': # pragma: no cover
     finder = SourceFinder(sys.path)
     for source_spec in finder.find(target, ignores):
         filepath, modulename = source_spec
-        print filepath, modulename
+        sys.stdout.write(filepath + ', ' + modulename + '\n')
