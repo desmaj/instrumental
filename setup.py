@@ -53,6 +53,7 @@ Please file bug reports and enhancement requests `on bitbucket <http://bitbucket
       entry_points="""
       [console_scripts]
       instrumental = instrumental.run:main
+      instrumental-tools = instrumental.tools:main
       [nose.plugins]
       instrumental-tag = instrumental.plugins.nose.tag_test_cases:InstrumentalTagPlugin
       """,

@@ -1,3 +1,4 @@
+import os
 import sys
 
 from instrumental.importer import ImportHook
@@ -10,10 +11,20 @@ from instrumental.recorder import ExecutionRecorder
 
 class Coverage(object):
     
-    def __init__(self, config):
+    def __init__(self, config, basedir):
         self._config = config
         self._import_hooks = []
+        self._store = self._get_store(config, basedir)
     
+    def _maybe_label(self, should_label):
+        if should_label:
+            return ('p%s' % os.getpid())
+    
+    def _get_store(self, config, basedir):
+        filename = config.file
+        label = self._maybe_label(config.label)
+        return ResultStore(basedir, label, filename)
+
     @property
     def recorder(self):
         return ExecutionRecorder.get()
@@ -45,9 +56,7 @@ class Coverage(object):
         self.recorder.tag = None
     
     def save(self):
-        store = ResultStore()
-        store.save(self.recorder)
+        self._store.save(self.recorder)
     
     def load(self):
-        store = ResultStore()
-        return store.load()
+        return self._store.load()

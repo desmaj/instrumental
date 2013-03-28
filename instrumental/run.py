@@ -32,6 +32,12 @@ parser.disable_interspersed_args()
 parser.add_option('-r', '--report', dest='report',
                   action='store_true',
                   help='Print a detailed coverage report')
+parser.add_option('-l', '--label', dest='label',
+                  action='store_true', default=False,
+                  help='Label result file uniquely')
+parser.add_option('-f', '--file', dest='file',
+                  action='store', default=None,
+                  help='The filename to use as the coverage database')
 parser.add_option('-s', '--summary', dest='summary',
                   action='store_true',
                   help='Print a summary coverage report')
@@ -83,19 +89,21 @@ def main(argv=None):
     
     opts, args = parser.parse_args(argv)
     
-    # if opts.help:
-    #     parser.print_help()
-    #     sys.exit()
-    
     if args and not opts.targets:
-        sys.stdout.write("No targets specified. Use the '-t' option to specify packages to cover")
+        sys.stdout.write("No targets specified. Use the '-t' option to specify"
+                         " packages to cover\n")
+        sys.exit()
+    
+    if opts.label and opts.file:
+        sys.stdout.write("Specify either a coverage database filename (-f) or"
+                         " that the file should be labeled (-l)\n")
         sys.exit()
     
     xml_filename = os.path.abspath('instrumental.xml')
     
-    coverage = Coverage(opts)
-    
     cwd = os.getcwd()
+    
+    coverage = Coverage(opts, cwd)
     try:
         if args:
             coverage.start(opts.targets, opts.ignores)
