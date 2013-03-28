@@ -83,37 +83,41 @@ def main(argv=None):
     
     opts, args = parser.parse_args(argv)
     
-    if len(args) < 1:
-        parser.print_help()
-        sys.exit()
+    # if opts.help:
+    #     parser.print_help()
+    #     sys.exit()
     
-    if not opts.targets:
+    if args and not opts.targets:
         sys.stdout.write("No targets specified. Use the '-t' option to specify packages to cover")
         sys.exit()
     
-    coverage = Coverage(opts)
-    coverage.start(opts.targets, opts.ignores)
-    
     xml_filename = os.path.abspath('instrumental.xml')
     
-    sourcefile = args[0]
-    environment = {'__name__': '__main__',
-                   '__file__': sourcefile,
-                   }
-    sys.argv = args[:]
+    coverage = Coverage(opts)
+    
+    cwd = os.getcwd()
     try:
-        here = os.getcwd()
-        execfile(sourcefile, environment)
+        if args:
+            coverage.start(opts.targets, opts.ignores)
+            sourcefile = args[0]
+            environment = {'__name__': '__main__',
+                           '__file__': sourcefile,
+                           }
+            sys.argv = args[:]
+            execfile(sourcefile, environment)
     finally:
+        os.chdir(cwd)
+        if coverage.started:
+            coverage.stop()
+            coverage.save()
         if any([opts.summary,
                 opts.report,
                 opts.statements,
                 opts.xml,
                 opts.html]):
-            coverage.stop()
             sys.stdout.write("\n")
-            recorder = coverage.recorder
-            report = ExecutionReport(here, recorder.metadata, opts)
+            recorder = coverage.load()
+            report = ExecutionReport(cwd, recorder.metadata, opts)
             if opts.summary:
                 sys.stdout.write(report.summary() + "\n")
             if opts.report:

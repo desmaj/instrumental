@@ -5,6 +5,7 @@ from instrumental.instrument import AnnotatorFactory
 from instrumental.metadata import gather_metadata
 from instrumental.monkey import monkeypatch_imp
 from instrumental.monkey import unmonkeypatch_imp
+from instrumental.storage import ResultStore
 from instrumental.recorder import ExecutionRecorder
 
 class Coverage(object):
@@ -26,7 +27,11 @@ class Coverage(object):
             self._import_hooks.append(hook)
             sys.meta_path.insert(0, hook)
         self.recorder.start()
-        
+    
+    @property
+    def started(self):
+        return self.recorder.recording
+    
     def stop(self):
         self.recorder.stop()
         for hook in self._import_hooks:
@@ -38,3 +43,11 @@ class Coverage(object):
     
     def stop_context(self):
         self.recorder.tag = None
+    
+    def save(self):
+        store = ResultStore()
+        store.save(self.recorder)
+    
+    def load(self):
+        store = ResultStore()
+        return store.load()
