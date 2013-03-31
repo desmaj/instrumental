@@ -17,10 +17,10 @@ class InstrumentalTagPlugin(Plugin):
             tag = ':'.join(test.address()[1:])
         else:
             tag = test.id()
-        cov = Coverage(None)
+        cov = Coverage(None, '.')
         cov.start_context(tag)
     
     def stopTest(self, test):
         from instrumental.api import Coverage
-        cov = Coverage(None)
+        cov = Coverage(None, '.')
         cov.stop_context()

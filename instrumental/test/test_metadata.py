@@ -126,7 +126,7 @@ class TestMetadataGatheringVisitor(object):
         assert 2 == len(metadata.constructs), len(metadata.constructs)
         decision = metadata.constructs["1.1"]
         assert isinstance(decision, constructs.BooleanDecision)
-        assert isinstance(list(decision.conditions[True])[0], constructs.UnreachableCondition)
+        assert list(decision.conditions[True])[0] == constructs.UnreachableCondition
         boolop = metadata.constructs["1.2"]
         assert isinstance(boolop, constructs.LogicalAnd)
 
@@ -139,7 +139,7 @@ class TestMetadataGatheringVisitor(object):
         metadata = self._make_one().analyze(DummyConfig(), 'modname', module, pragmas)
         assert 2 == len(metadata.constructs), len(metadata.constructs)
         decision = metadata.constructs["1.1"]
-        assert isinstance(list(decision.conditions[False])[0], constructs.UnreachableCondition)
+        assert list(decision.conditions[False])[0] == constructs.UnreachableCondition
         assert isinstance(decision, constructs.BooleanDecision)
         boolop = metadata.constructs["1.2"]
         assert isinstance(boolop, constructs.LogicalOr)

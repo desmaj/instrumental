@@ -14,7 +14,6 @@ class Coverage(object):
     def __init__(self, config, basedir):
         self._config = config
         self._import_hooks = []
-        self._store = self._get_store(config, basedir)
     
     def _maybe_label(self, should_label):
         if should_label:
@@ -56,7 +55,9 @@ class Coverage(object):
         self.recorder.tag = None
     
     def save(self):
-        self._store.save(self.recorder)
+        store = self._get_store(config, basedir)
+        store.save(self.recorder)
     
     def load(self):
-        return self._store.load()
+        store = self._get_store(config, basedir)
+        return store.load()

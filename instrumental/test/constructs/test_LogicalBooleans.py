@@ -329,7 +329,7 @@ x = a or None"""
         construct = self._makeOne()
         assert 2 == construct.number_of_conditions(False)
         assert not construct.conditions[0]
-        assert isinstance(construct.conditions[1], UnreachableCondition)
+        assert construct.conditions[1] == set([UnreachableCondition])
         assert not construct.conditions[2]
         assert set(['T *', 'F F']) == set(construct.conditions_missed(False))
     
@@ -338,6 +338,6 @@ x = a or None"""
         construct = self._makeOne()
         assert 3 == construct.number_of_conditions(True)
         assert not construct.conditions[0]
-        assert isinstance(construct.conditions[1], UnreachableCondition)
+        assert construct.conditions[1] == set([UnreachableCondition])
         assert not construct.conditions[2]
         assert set(['T *', 'F T', 'F F']) == set(construct.conditions_missed(True))

@@ -161,7 +161,7 @@ F ==> """
         construct = self._makeOne()
         construct.set_unreachable(True)
         condition = list(construct.conditions[True])[0]
-        assert isinstance(condition, UnreachableCondition)
+        assert condition == UnreachableCondition
 
 
 class TestComparison(object):
@@ -240,57 +240,57 @@ F ==> """
         construct = self._makeOne()
         construct.set_unreachable(True)
         condition = list(construct.conditions[True])[0]
-        assert isinstance(condition, UnreachableCondition)
+        assert condition == UnreachableCondition
     
     def test_unreachable_Eq(self):
         construct = self._makeOneWithLiteral(ast.Eq())
         condition = list(construct.conditions[False])[0]
-        assert isinstance(condition, UnreachableCondition)
+        assert condition == UnreachableCondition
     
     def test_unreachable_NotEq(self):
         construct = self._makeOneWithLiteral(ast.NotEq())
         condition = list(construct.conditions[True])[0]
-        assert isinstance(condition, UnreachableCondition)
+        assert condition == UnreachableCondition
     
     def test_unreachable_Lt(self):
         construct = self._makeOneWithLiteral(ast.Lt())
         condition = list(construct.conditions[True])[0]
-        assert isinstance(condition, UnreachableCondition)
+        assert condition == UnreachableCondition
     
     def test_unreachable_LtE(self):
         construct = self._makeOneWithLiteral(ast.LtE())
         condition = list(construct.conditions[False])[0]
-        assert isinstance(condition, UnreachableCondition)
+        assert condition == UnreachableCondition
     
     def test_unreachable_Gt(self):
         construct = self._makeOneWithLiteral(ast.Gt())
         condition = list(construct.conditions[True])[0]
-        assert isinstance(condition, UnreachableCondition)
+        assert condition == UnreachableCondition
     
     def test_unreachable_GtE(self):
         construct = self._makeOneWithLiteral(ast.GtE())
         condition = list(construct.conditions[False])[0]
-        assert isinstance(condition, UnreachableCondition)
+        assert condition == UnreachableCondition
     
     def test_unreachable_Is(self):
         construct = self._makeOneWithLiteral(ast.Is())
         condition = list(construct.conditions[False])[0]
-        assert isinstance(condition, UnreachableCondition)
+        assert condition == UnreachableCondition
     
     def test_unreachable_IsNot(self):
         construct = self._makeOneWithLiteral(ast.IsNot())
         condition = list(construct.conditions[True])[0]
-        assert isinstance(condition, UnreachableCondition)
+        assert condition == UnreachableCondition
     
     def test_unreachable_In(self):
         construct = self._makeOneWithLiteral(ast.In(), right=ast.List(elts=[]))
         condition = list(construct.conditions[True])[0]
-        assert isinstance(condition, UnreachableCondition)
+        assert condition == UnreachableCondition
     
     def test_unreachable_NotIn(self):
         construct = self._makeOneWithLiteral(ast.NotIn(), right=ast.List(elts=[]))
         condition = list(construct.conditions[False])[0]
-        assert isinstance(condition, UnreachableCondition)
+        assert condition == UnreachableCondition
     
 
 class TestUnreachableConditions(object):

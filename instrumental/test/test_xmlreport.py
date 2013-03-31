@@ -24,7 +24,7 @@ class TestXMLReport(object):
         from instrumental import api
         from instrumental.recorder import ExecutionRecorder
         ExecutionRecorder.reset()
-        c = api.Coverage(self.config)
+        c = api.Coverage(self.config, '.')
         modname = 'instrumental.test.samples.robust'
         c.start([modname], [])
         if modname in sys.modules:

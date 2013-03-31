@@ -22,7 +22,7 @@ class TestPluginInstrumentalTag(object):
         plugin.startTest(test)
             
         from instrumental.api import Coverage
-        cov = Coverage(None)
+        cov = Coverage(None, '.')
         assert cov.recorder.tag == 'some_fake_test'
     
     def test_startTest_with_address(self):
@@ -33,5 +33,5 @@ class TestPluginInstrumentalTag(object):
         plugin.startTest(test)
             
         from instrumental.api import Coverage
-        cov = Coverage(None)
+        cov = Coverage(None, '.')
         assert cov.recorder.tag == 'SomeTestClass:some_fake_test', cov.recorder.tag
