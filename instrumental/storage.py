@@ -1,5 +1,18 @@
+import json
 import os
 import pickle
+
+from astkit import ast
+
+from instrumental.constructs import (
+    BooleanDecision,
+    Comparison,
+    LogicalAnd,
+    LogicalOr,
+    UnreachableCondition,
+    )
+from instrumental.metadata import ModuleMetadata
+from instrumental.recorder import ExecutionRecorder
 
 class ResultStore(object):
     """ Storage for an instrumental run, including metadata and results
@@ -20,11 +33,13 @@ class ResultStore(object):
     
     def save(self, recorder):
         with open(self.filename, 'w') as f:
-            pickle.dump(recorder, f)
+            JSONSerializer.dump(recorder, f)
+            # pickle.dump(recorder, f)
     
     def load(self):
         with open(self.filename, 'r') as f:
-            return pickle.load(f)
+            # return pickle.load(f)
+            return JSONSerializer.load(f)
 
 class TextSerializer(object):
 
@@ -111,7 +126,174 @@ class TextSerializer(object):
     def visit_Str(self, node):
         return 'Str{%s}'  % node.s.encode('base64')
 
-class TextLoader(object):
+class JSONSerializer(object):
     
-    def load(self, string):
-        pass
+    @classmethod
+    def dump(self, obj, f):
+        f.write(JSONSerializer.dumps(obj))
+    
+    @classmethod
+    def dumps(self, obj):
+        encoded = ObjectEncoder().encode(obj)
+        return json.dumps(encoded)
+    
+    @classmethod
+    def load(self, f):
+        return JSONSerializer.loads(f.read())
+    
+    @classmethod
+    def loads(self, string):
+        return ObjectDecoder().decode(json.loads(string))
+
+class ObjectEncoder(object):
+    
+    @classmethod
+    def encode(cls, obj):
+        encoder = cls()
+        method = getattr(encoder, 'encode_%s' % obj.__class__.__name__)
+        return method(obj)
+    
+    def encode_ExecutionRecorder(self, recorder):
+        result = {'__python_class__': 'ExecutionRecorder',
+                  'metadata': {}}
+        for modulename in recorder.metadata:
+            result['metadata'][modulename] = (
+                self.encode_ModuleMetadata(recorder.metadata[modulename]))
+        return result
+    
+    def encode_ModuleMetadata(self, md):
+        return {'__python_class__': 'ModuleMetadata',
+                'modulename': md.modulename,
+                'source': md.source,
+                'lines': md.lines,
+                'constructs': dict((label, self.encode(construct))
+                                   for label, construct
+                                   in md.constructs.items())}
+    
+    def encode_conditions(self, conditions):
+        encoded = {}
+        for condition, results in conditions.items():
+            encoded_results = []
+            for result in results:
+                if result == UnreachableCondition:
+                    result = '__unreachable__'
+                encoded_results.append(result)
+            encoded[int(condition)] = encoded_results
+        return encoded
+    
+    def encode_LogicalOr(self, or_):
+        return {'__python_class__': 'LogicalOr',
+                'modulename': or_.modulename,
+                'label': or_.label,
+                'node': self.encode_Node(or_.node),
+                'conditions': self.encode_conditions(or_.conditions)}
+    
+    def encode_LogicalAnd(self, and_):
+        return {'__python_class__': 'LogicalAnd',
+                'modulename': and_.modulename,
+                'label': and_.label,
+                'node': self.encode_Node(and_.node),
+                'conditions': self.encode_conditions(and_.conditions)}
+    
+    def encode_BooleanDecision(self, decision):
+        return {'__python_class__': 'BooleanDecision',
+                'modulename': decision.modulename,
+                'label': decision.label,
+                'node': self.encode_Node(decision.node),
+                'conditions': self.encode_conditions(decision.conditions)}
+    
+    def encode_Comparison(self, comparison):
+        return {'__python_class__': 'Comparison',
+                'modulename': comparison.modulename,
+                'label': comparison.label,
+                'node': self.encode_Node(comparison.node),
+                'conditions': self.encode_conditions(comparison.conditions)}
+    
+    def encode_Node(self, node):
+        result = {'__python_class__': node.__class__.__name__}
+        for key, value in node.__dict__.items():
+            if isinstance(value, list):
+                result[key] = [self.encode_Node(elt) for elt in value]
+            elif value.__class__.__name__ in dir(ast):
+                result[key] = self.encode_Node(value)
+            else:
+                result[key] = value
+        return result
+
+class ObjectDecoder(object):
+    
+    @classmethod
+    def decode(cls, d):
+        decoder = cls()
+        method = getattr(decoder, 'decode_%s' % d['__python_class__'])
+        return method(d)
+    
+    def decode_ExecutionRecorder(self, d):
+        recorder = ExecutionRecorder()
+        for modulename in d['metadata']:
+            md = self.decode_ModuleMetadata(d['metadata'][modulename])
+            recorder.add_metadata(md)
+        return recorder
+    
+    def decode_ModuleMetadata(self, d):
+        md = ModuleMetadata(d['modulename'],
+                            d['source'],
+                            [])
+        md.lines = d['lines']
+        md.constructs = {}
+        for key, value in d['constructs'].items():
+            md.constructs[key] = ObjectDecoder.decode(value)
+        return md
+    
+    def decode_conditions(self, conditions):
+        decoded = {}
+        for condition, results in conditions.items():
+            decoded_results = set()
+            for result in results:
+                if result == '__unreachable__':
+                    result = UnreachableCondition
+                decoded_results.add(result)
+            decoded[int(condition)] = decoded_results
+        return decoded
+    
+    def decode_LogicalOr(self, d):
+        or_ = LogicalOr(d['modulename'],
+                        d['label'],
+                        self.decode_Node(d['node']),
+                        [])
+        or_.conditions = self.decode_conditions(d['conditions'])
+        return or_
+    
+    def decode_LogicalAnd(self, d):
+        and_ = LogicalAnd(d['modulename'],
+                        d['label'],
+                        self.decode_Node(d['node']),
+                        [])
+        and_.conditions = self.decode_conditions(d['conditions'])
+        return and_
+    
+    def decode_BooleanDecision(self, d):
+        decision = BooleanDecision(d['modulename'],
+                                   d['label'],
+                                   self.decode_Node(d['node']),
+                                   [])
+        decision.conditions = self.decode_conditions(d['conditions'])
+        return decision
+    
+    def decode_Comparison(self, d):
+        comparison = Comparison(d['modulename'],
+                                d['label'],
+                                self.decode_Node(d['node']),
+                                [])
+        comparison.conditions = self.decode_conditions(d['conditions'])
+        return comparison
+    
+    def decode_Node(self, d):
+        node = getattr(ast, d['__python_class__'])()
+        for key, value in d.items():
+            if isinstance(value, list):
+                value = [self.decode_Node(elt) for elt in value]
+            elif isinstance(value, dict):
+                value = self.decode_Node(value)
+            setattr(node, key, value)
+        return node
