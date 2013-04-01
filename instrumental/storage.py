@@ -109,7 +109,7 @@ class TextSerializer(object):
         return 'Or'
 
     def visit_Str(self, node):
-        return 'Str{%s}' % node.s
+        return 'Str{%s}' % node.s.encode('base64')
 
 class TextLoader(object):
     
