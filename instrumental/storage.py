@@ -50,24 +50,28 @@ class TextSerializer(object):
         out = ['LogicalAnd', or_.modulename, or_.label]
         out.append(self.visit(or_.node))
         out.append(','.join([self.visit(pragma) for pragma in or_.pragmas]))
+        out.append(';'.join("%r:%s" % (condition, ','.join(results))))
         return '|'.join(out)
     
     def visit_LogicalOr(self, or_):
         out = ['LogicalOr', or_.modulename, or_.label]
         out.append(self.visit(or_.node))
         out.append(','.join([self.visit(pragma) for pragma in or_.pragmas]))
+        out.append(';'.join("%r:%s" % (condition, ','.join(results))))
         return '|'.join(out)
     
     def visit_BooleanDecision(self, decision):
         out = ['BooleanDecision', decision.modulename, decision.label]
         out.append(self.visit(decision.node))
         out.append(','.join([self.visit(pragma) for pragma in decision.pragmas]))
+        out.append(';'.join("%r:%s" % (condition, ','.join(results))))
         return '|'.join(out)
     
     def visit_Comparison(self, comparison):
         out = ['Comparison', comparison.modulename, comparison.label]
         out.append(self.visit(comparison.node))
         out.append(','.join([self.visit(pragma) for pragma in comparison.pragmas]))
+        out.append(';'.join("%r:%s" % (condition, ','.join(results))))
         return '|'.join(out)
     
     # ast nodes
