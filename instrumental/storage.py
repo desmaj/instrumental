@@ -20,7 +20,7 @@ class ResultStore(object):
         
     """
     
-    def __init__(self, base, label, filename):
+    def __init__(self, base, label=None, filename=None):
         if label:
             filename = ''.join(['.instrumental.', str(label), '.cov'])
         elif not filename:
@@ -41,6 +41,9 @@ class ResultStore(object):
             # return pickle.load(f)
             return JSONSerializer.load(f)
 
+# NOTE: If JSON serialization becomes unusable for some reason, we can always
+#       continure down the path this silly TextSerializer lays out. But we
+#       would have to be desperate.
 class TextSerializer(object):
 
     def dump(self, obj):
