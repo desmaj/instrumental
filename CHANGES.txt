@@ -1,6 +1,14 @@
 Next Release
 ============
 
+0.4.0
+=====
+
+Features
+--------
+
+- A stable release!
+
 0.4b4
 =====
 
