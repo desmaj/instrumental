@@ -83,4 +83,3 @@ LogicalOr|somemodule|4.2|BoolOp'4'Or'Name{a}'Name{b}||0:;1:;2:
         actual = serializer.dump(construct)
         expected = "Comparison|somemodule|4.2|Compare'4'Name{a};NotEq;Str{Zm9vYmFy\n}||False:;True:"
         assert actual == expected, (actual, expected)
-        

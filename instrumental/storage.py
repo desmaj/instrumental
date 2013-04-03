@@ -239,7 +239,8 @@ class ObjectDecoder(object):
         md = ModuleMetadata(d['modulename'],
                             d['source'],
                             [])
-        md.lines = d['lines']
+        md.lines = dict((int(lineno), result)
+                        for lineno, result in d['lines'].items())
         md.constructs = {}
         for key, value in d['constructs'].items():
             md.constructs[key] = ObjectDecoder.decode(value)
