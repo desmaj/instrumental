@@ -51,6 +51,16 @@ class ModuleMetadata(object):
         while ('%s.%s' % (lineno, i)) in self.constructs:
             i += 1
         return '%s.%s' % (lineno, i)
+    
+    def merge(self, other):
+        if self.modulename != other.modulename:
+            raise ValueError('Cannot merge metadata for different modules')
+        
+        for lineno in self.lines:
+            self.lines[lineno] = self.lines[lineno] or other.lines[lineno]
+        
+        for label, construct in self.constructs.items():
+            self.constructs[label].merge(other.constructs[label])
 
 class BooleanEvaluator(ast.NodeVisitor):
     

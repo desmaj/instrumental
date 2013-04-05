@@ -32,6 +32,12 @@ parser.disable_interspersed_args()
 parser.add_option('-r', '--report', dest='report',
                   action='store_true',
                   help='Print a detailed coverage report')
+parser.add_option('-l', '--label', dest='label',
+                  action='store_true', default=False,
+                  help='Label result file uniquely')
+parser.add_option('-f', '--file', dest='file',
+                  action='store', default=None,
+                  help='The filename to use as the coverage database')
 parser.add_option('-s', '--summary', dest='summary',
                   action='store_true',
                   help='Print a summary coverage report')
@@ -83,37 +89,43 @@ def main(argv=None):
     
     opts, args = parser.parse_args(argv)
     
-    if len(args) < 1:
-        parser.print_help()
+    if args and not opts.targets:
+        sys.stdout.write("No targets specified. Use the '-t' option to specify"
+                         " packages to cover\n")
         sys.exit()
     
-    if not opts.targets:
-        sys.stdout.write("No targets specified. Use the '-t' option to specify packages to cover")
+    if opts.label and opts.file:
+        sys.stdout.write("Specify either a coverage database filename (-f) or"
+                         " that the file should be labeled (-l)\n")
         sys.exit()
-    
-    coverage = Coverage(opts)
-    coverage.start(opts.targets, opts.ignores)
     
     xml_filename = os.path.abspath('instrumental.xml')
     
-    sourcefile = args[0]
-    environment = {'__name__': '__main__',
-                   '__file__': sourcefile,
-                   }
-    sys.argv = args[:]
+    cwd = os.getcwd()
+    
+    coverage = Coverage(opts, cwd)
     try:
-        here = os.getcwd()
-        execfile(sourcefile, environment)
+        if args:
+            coverage.start(opts.targets, opts.ignores)
+            sourcefile = args[0]
+            environment = {'__name__': '__main__',
+                           '__file__': sourcefile,
+                           }
+            sys.argv = args[:]
+            execfile(sourcefile, environment)
     finally:
+        os.chdir(cwd)
+        if coverage.started:
+            coverage.stop()
+            coverage.save()
         if any([opts.summary,
                 opts.report,
                 opts.statements,
                 opts.xml,
                 opts.html]):
-            coverage.stop()
             sys.stdout.write("\n")
-            recorder = coverage.recorder
-            report = ExecutionReport(here, recorder.metadata, opts)
+            recorder = coverage.load()
+            report = ExecutionReport(cwd, recorder.metadata, opts)
             if opts.summary:
                 sys.stdout.write(report.summary() + "\n")
             if opts.report:
