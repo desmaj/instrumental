@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.5dev'
+version = '0.5.0'
 
 setup(name='instrumental',
       version=version,
@@ -44,7 +44,7 @@ Please file bug reports and enhancement requests `on bitbucket <http://bitbucket
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-        'astkit>=0.5.1',
+        'astkit>=0.5.4',
         'mako',
         ],
       tests_require=[

@@ -16,6 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import atexit
+import imp
 from optparse import OptionParser
 import os
 from subprocess import PIPE
@@ -107,13 +108,34 @@ def main(argv=None):
     try:
         if args:
             coverage.start(opts.targets, opts.ignores)
+            
+            
             sourcefile = args[0]
-            environment = {'__name__': '__main__',
-                           '__file__': sourcefile,
-                           }
+            # our initial attempt at providing an execution environment under
+            # which the target script can run was a flop. We need to create
+            # a false __main__ module or we'll run into problems like those
+            # reported in Bitbucket Issue #9.
+            
+            # environment = {'__name__': '__main__',
+            #                '__file__': sourcefile,
+            #                }
+            
+            # This stanza is taken mostly from coverage.py:coverage/execfile.py
+            old_main = sys.modules['__main__']
+            new_main = imp.new_module('__main__')
+            sys.modules['__main__'] = new_main
+            new_main.__file__ = sourcefile
+            if sys.version_info[0] < 3:
+                new_main.__builtins__ = sys.modules['__builtin__']
+            else:
+                new_main.__builtins__ = sys.modules['builtin']
+            environment = new_main.__dict__
+            
             sys.argv = args[:]
             execfile(sourcefile, environment)
     finally:
+        sys.modules['__main__'] = old_main
+        
         os.chdir(cwd)
         if coverage.started:
             coverage.stop()
