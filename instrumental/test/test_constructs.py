@@ -12,6 +12,29 @@ from instrumental.constructs import PragmaCondition
 from instrumental.constructs import UnreachableCondition
 
 
+class TestLogicalBoolean(object):
+    
+    def _makeOne(self, selector='3.1', pragmas=[]):
+        node = ast.BoolOp(values=[ast.Name(id='a'),
+                                  ast.Name(id='False')],
+                          op=ast.And(),
+                          col_offset=12,
+                          lineno=3)
+        construct = LogicalAnd('somemodule', selector, node, pragmas)
+        return construct
+    
+    def test_unreachable_condition_renders_as_U(self):
+        construct = self._makeOne()
+        expected = """LogicalAnd -> somemodule:3.1 < (a and False) >
+
+** One or more condition combinations may not be reachable due to the presence of a literal in the decision
+
+T T ==> U
+F * ==> 
+T F ==> """
+        assert expected == construct.result(), (expected, construct.result())
+        
+    
 class TestLogicalAnd(object):
     
     def _makeOne(self, selector='3.1', pragmas=[]):

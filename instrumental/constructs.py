@@ -107,7 +107,7 @@ class LogicalBoolean(object):
     
     def _format_condition_result(self, result, length=6):
         if result == set([UnreachableCondition]):
-            return str(result)
+            return UnreachableCondition.TAG
         else:
             padding = '\n' + (' ' * length)
             return padding.join(tag for tag in sorted(result))
