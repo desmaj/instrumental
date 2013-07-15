@@ -1,6 +1,8 @@
+import base64
 import json
 import os
 import pickle
+import sys
 
 from astkit import ast
 
@@ -44,90 +46,94 @@ class ResultStore(object):
 # NOTE: If JSON serialization becomes unusable for some reason, we can always
 #       continure down the path this silly TextSerializer lays out. But we
 #       would have to be desperate.
-class TextSerializer(object):
+# class TextSerializer(object):
 
-    def dump(self, obj):
-        return self.visit(obj)
+#     def dump(self, obj):
+#         return self.visit(obj)
     
-    def visit(self, obj):
-        klass = obj.__class__.__name__
-        visitor = getattr(self, 'visit_%s' % klass)
-        return visitor(obj)
+#     def visit(self, obj):
+#         klass = obj.__class__.__name__
+#         visitor = getattr(self, 'visit_%s' % klass)
+#         return visitor(obj)
     
-    # metadata
-    def visit_ModuleMetadata(self, md):
-        out = ['ModuleMetadata', 
-               ','.join('%s:%r' % (lineno, int(md.lines[lineno]))
-                        for lineno in sorted(md.lines))]
-        for label in sorted(md.constructs):
-            out.append(self.visit(md.constructs[label]))
-        return "\n".join(out) + '\n'
+#     # metadata
+#     def visit_ModuleMetadata(self, md):
+#         out = ['ModuleMetadata', 
+#                ','.join('%s:%r' % (lineno, int(md.lines[lineno]))
+#                         for lineno in sorted(md.lines))]
+#         for label in sorted(md.constructs):
+#             out.append(self.visit(md.constructs[label]))
+#         return "\n".join(out) + '\n'
     
-    # instrumental-specific constructs
-    def visit_LogicalAnd(self, and_):
-        out = ['LogicalAnd', and_.modulename, and_.label]
-        out.append(self.visit(and_.node))
-        out.append(','.join([self.visit(pragma) for pragma in and_.pragmas]))
-        out.append(';'.join("%r:%s" % (condition, ','.join(results))
-                            for condition, results in and_.conditions.items()))
-        return '|'.join(out)
+#     # instrumental-specific constructs
+#     def visit_LogicalAnd(self, and_):
+#         out = ['LogicalAnd', and_.modulename, and_.label]
+#         out.append(self.visit(and_.node))
+#         out.append(','.join([self.visit(pragma) for pragma in and_.pragmas]))
+#         out.append(';'.join("%r:%s" % (condition, ','.join(results))
+#                             for condition, results in and_.conditions.items()))
+#         return '|'.join(out)
     
-    def visit_LogicalOr(self, or_):
-        out = ['LogicalOr', or_.modulename, or_.label]
-        out.append(self.visit(or_.node))
-        out.append(','.join([self.visit(pragma) for pragma in or_.pragmas]))
-        out.append(';'.join("%r:%s" % (condition, ','.join(results))
-                            for condition, results in or_.conditions.items()))
-        return '|'.join(out)
+#     def visit_LogicalOr(self, or_):
+#         out = ['LogicalOr', or_.modulename, or_.label]
+#         out.append(self.visit(or_.node))
+#         out.append(','.join([self.visit(pragma) for pragma in or_.pragmas]))
+#         out.append(';'.join("%r:%s" % (condition, ','.join(results))
+#                             for condition, results in or_.conditions.items()))
+#         return '|'.join(out)
     
-    def visit_BooleanDecision(self, decision):
-        out = ['BooleanDecision', decision.modulename, decision.label]
-        out.append(self.visit(decision.node))
-        out.append(','.join([self.visit(pragma) for pragma in decision.pragmas]))
-        out.append(';'.join("%r:%s" % (condition, ','.join(results))
-                            for condition, results
-                            in decision.conditions.items()))
-        return '|'.join(out)
+#     def visit_BooleanDecision(self, decision):
+#         out = ['BooleanDecision', decision.modulename, decision.label]
+#         out.append(self.visit(decision.node))
+#         out.append(','.join([self.visit(pragma) for pragma in decision.pragmas]))
+#         out.append(';'.join("%r:%s" % (condition, ','.join(results))
+#                             for condition, results
+#                             in decision.conditions.items()))
+#         return '|'.join(out)
     
-    def visit_Comparison(self, comparison):
-        out = ['Comparison', comparison.modulename, comparison.label]
-        out.append(self.visit(comparison.node))
-        out.append(','.join([self.visit(pragma) 
-                             for pragma in comparison.pragmas]))
-        out.append(';'.join("%r:%s" % (condition, ','.join(results))
-                            for condition, results
-                            in comparison.conditions.items()))
-        return '|'.join(out)
+#     def visit_Comparison(self, comparison):
+#         out = ['Comparison', comparison.modulename, comparison.label]
+#         out.append(self.visit(comparison.node))
+#         out.append(','.join([self.visit(pragma) 
+#                              for pragma in comparison.pragmas]))
+#         out.append(';'.join("%r:%s" % (condition, ','.join(results))
+#                             for condition, results
+#                             in comparison.conditions.items()))
+#         return '|'.join(out)
     
-    # ast nodes
-    def visit_And(self, node):
-        return 'And'
+#     # ast nodes
+#     def visit_And(self, node):
+#         return 'And'
     
-    def visit_BoolOp(self, node):
-        out = ['BoolOp', repr(node.lineno), self.visit(node.op)]
-        out += [self.visit(value) for value in node.values]
-        return "'".join(out)
+#     def visit_BoolOp(self, node):
+#         out = ['BoolOp', repr(node.lineno), self.visit(node.op)]
+#         out += [self.visit(value) for value in node.values]
+#         return "'".join(out)
     
-    def visit_Compare(self, node):
-        out = ['Compare', repr(node.lineno)]
-        nodeargs = [self.visit(node.left)]
-        nodeargs.append(','.join(self.visit(op) for op in node.ops))
-        nodeargs.append(','.join(self.visit(comparator) 
-                                 for comparator in node.comparators))
-        out.append(';'.join(nodeargs))
-        return "'".join(out)
+#     def visit_Compare(self, node):
+#         out = ['Compare', repr(node.lineno)]
+#         nodeargs = [self.visit(node.left)]
+#         nodeargs.append(','.join(self.visit(op) for op in node.ops))
+#         nodeargs.append(','.join(self.visit(comparator) 
+#                                  for comparator in node.comparators))
+#         out.append(';'.join(nodeargs))
+#         return "'".join(out)
     
-    def visit_Name(self, node):
-        return 'Name{%s}' % str(node.id)
+#     def visit_Name(self, node):
+#         return 'Name{%s}' % str(node.id)
     
-    def visit_NotEq(self, node):
-        return 'NotEq'
+#     def visit_NotEq(self, node):
+#         return 'NotEq'
     
-    def visit_Or(self, node):
-        return 'Or'
+#     def visit_Or(self, node):
+#         return 'Or'
 
-    def visit_Str(self, node):
-        return 'Str{%s}'  % node.s.encode('base64')
+#     def visit_Str(self, node):
+#         if sys.version_info[0] < 3:
+#             string = base64.b64encode(node.s)
+#         else:
+#             string = base64.b64encode(bytes(node.s, 'utf8'))
+#         return 'Str{%s}'  % string
 
 class JSONSerializer(object):
     

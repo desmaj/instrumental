@@ -1,6 +1,8 @@
 from astkit import ast
 
 class TestTextStorage(object):
+    # Turn off these tests because we turned off the TestSerializer
+    __test__ = False
     
     def _makeOne(self):
         from instrumental.storage import TextSerializer
@@ -81,5 +83,5 @@ LogicalOr|somemodule|4.2|BoolOp'4'Or'Name{a}'Name{b}||0:;1:;2:
         
         serializer = self._makeOne()
         actual = serializer.dump(construct)
-        expected = "Comparison|somemodule|4.2|Compare'4'Name{a};NotEq;Str{Zm9vYmFy\n}||False:;True:"
+        expected = "Comparison|somemodule|4.2|Compare'4'Name{a};NotEq;Str{Zm9vYmFy}||False:;True:"
         assert actual == expected, (actual, expected)
