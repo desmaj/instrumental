@@ -1,6 +1,22 @@
 Next Release
 ============
 
+0.5.0
+=====
+
+Features
+--------
+
+- We now serialize the coverage data to file and report on that
+- Using the --label or --file optiions allow you to specify the name of the coverage file
+- The `instrumental-tools` script can combine multiple coverage files into one
+
+Bug Fixes
+---------
+
+- Fixed run.py to more properly provide a __main__ to executed scripts
+
+
 0.4.0
 =====
 

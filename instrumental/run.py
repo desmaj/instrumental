@@ -105,6 +105,7 @@ def main(argv=None):
     cwd = os.getcwd()
     
     coverage = Coverage(opts, cwd)
+    old_main = sys.modules['__main__']
     try:
         if args:
             coverage.start(opts.targets, opts.ignores)
@@ -121,7 +122,6 @@ def main(argv=None):
             #                }
             
             # This stanza is taken mostly from coverage.py:coverage/execfile.py
-            old_main = sys.modules['__main__']
             new_main = imp.new_module('__main__')
             sys.modules['__main__'] = new_main
             new_main.__file__ = sourcefile

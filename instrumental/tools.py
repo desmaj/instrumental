@@ -22,9 +22,21 @@ import sys
 from instrumental.recorder import ExecutionRecorder
 from instrumental.storage import ResultStore
 
-parser = OptionParser(usage="instrumental-tools [options] COMMAND ARG1 ARG2 ...")
+usage = """instrumental-tools [options] COMMAND ARG1 ARG2 ...
+
+Commands:
+- combine: combine coverage files args: outfile infiles+
+- list: list available commands args:
+"""
+parser = OptionParser(usage=usage)
 
 class Commands(object):
+    
+    @staticmethod
+    def list():
+        commands = [attr for attr in dir(Commands)
+                    if not attr.startswith('__')]
+        sys.stdout.write("\n".join(commands) + "\n")
     
     @staticmethod
     def combine(outfile, *infiles):
@@ -40,6 +52,10 @@ class Commands(object):
 
 def main():
     opts, args = parser.parse_args(sys.argv[1:])
+    if not args:
+        parser.print_help()
+        return
+    
     command, args = args[0], args[1:]
     
     if hasattr(Commands, command):
