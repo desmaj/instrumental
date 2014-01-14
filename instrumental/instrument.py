@@ -90,6 +90,7 @@ class CoverageAnnotator(ast.NodeTransformer):
     def __init__(self, config, modulename, recorder):
         self.config = config
         self.modulename = modulename
+        self.recorder = recorder
         self.pragmas = recorder.metadata[modulename].pragmas
         self.node_factory = InstrumentedNodeFactory(recorder)
         self.modifiers = []
@@ -109,7 +110,7 @@ class CoverageAnnotator(ast.NodeTransformer):
                    for pragma in self.pragmas[lineno])
     
     def visit_Module(self, module):
-        recorder_setup = recorder.get_setup()
+        recorder_setup = recorder.get_setup(self.recorder.uuid)
         docstring = None
         if has_docstring(module):
             docstring = module.body.pop(0)

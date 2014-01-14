@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 
 from instrumental.importer import ImportHook
 from instrumental.instrument import AnnotatorFactory
@@ -11,10 +12,14 @@ from instrumental.recorder import ExecutionRecorder
 
 class Coverage(object):
     
-    def __init__(self, config, basedir):
+    def __init__(self, config, basedir, store_factory=None):
+        self.uuid = str(uuid.uuid4())
         self._config = config
         self._basedir = basedir
         self._import_hooks = []
+        if store_factory is None:
+            store_factory = self._get_store
+        self._store_factory = store_factory
     
     def _maybe_label(self, should_label):
         if should_label:
@@ -24,10 +29,10 @@ class Coverage(object):
         filename = config.file
         label = self._maybe_label(config.label)
         return ResultStore(basedir, label, filename)
-
+    
     @property
     def recorder(self):
-        return ExecutionRecorder.get()
+        return ExecutionRecorder.get(self.uuid)
     
     def start(self, targets, ignores):
         gather_metadata(self._config, self.recorder, targets, ignores)
@@ -56,9 +61,9 @@ class Coverage(object):
         self.recorder.tag = None
     
     def save(self):
-        store = self._get_store(self._config, self._basedir)
+        store = self._store_factory(self._config, self._basedir)
         store.save(self.recorder)
     
     def load(self):
-        store = self._get_store(self._config, self._basedir)
+        store = self._store_factory(self._config, self._basedir)
         return store.load()

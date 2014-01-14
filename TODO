@@ -1,4 +1,2 @@
 * ~100% test coverage
-* move coverage gathering out of process - maybe to disk?
-* serialize coverage results to enable coverage over multiple runs
-* pragma: no cover (for conditions)
+* Get rid of global recorder instance and keep a recorder registry

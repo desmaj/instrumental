@@ -28,30 +28,33 @@ def __setup_recorder(): # pragma: no cover
     from instrumental.recorder import ExecutionRecorder
     _xxx_recorder_xxx_ = ExecutionRecorder.get()
 
-def get_setup():
+def get_setup(uuid):
     source = inspect.getsource(__setup_recorder)
     mod = ast.parse(source)
     defn = mod.body[0]
     setup = defn.body[:]
     for stmt in setup:
         stmt.lineno -= 1
+    setup[1].expr.args.args.append(ast.Str(s=uuid))
     return setup
 
 class ExecutionRecorder(object):
     DEFAULT_TAG = 'X'
+    _instances = {}
     
     @classmethod
-    def reset(cls):
-        cls._instance = None
+    def reset(cls, uuid):
+        if uuid in cls._instances:
+            del cls._instances[uuid]
     
-    _instance = None
     @classmethod
-    def get(cls):
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
+    def get(cls, uuid):
+        if uuid not in cls._instances:
+            cls._instances[uuid] = cls(uuid)
+        return cls._instances[uuid]
     
-    def __init__(self):
+    def __init__(self, uuid):
+        self.uuid = uuid
         self.metadata = {}
         self.recording = False
         self.tag = None
@@ -67,7 +70,7 @@ class ExecutionRecorder(object):
         self.metadata[metadata.modulename] = metadata
     
     @staticmethod
-    def get_recorder_call():
+    def get_recorder_call(uuid):
         kall = ast.Call()
         kall.func = ast.Attribute(value=ast.Name(id="_xxx_recorder_xxx_",
                                                  ctx=ast.Load()),

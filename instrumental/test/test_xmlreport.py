@@ -22,8 +22,6 @@ class TestXMLReport(object):
     
     def _run_test(self, *args, **kwargs):
         from instrumental import api
-        from instrumental.recorder import ExecutionRecorder
-        ExecutionRecorder.reset()
         c = api.Coverage(self.config, '.')
         modname = 'instrumental.test.samples.robust'
         c.start([modname], [])
