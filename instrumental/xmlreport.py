@@ -44,10 +44,13 @@ class CoverageObject(object):
             total_conditions = 0
             for decision in self.decisions:
                 total_conditions += decision.number_of_conditions(self.options.report_conditions_with_literals)
-            total_conditions_hit = 0
-            for decision in self.decisions:
-                total_conditions_hit += decision.number_of_conditions_hit()
-            return float(total_conditions_hit) / total_conditions
+            if total_conditions:
+                total_conditions_hit = 0
+                for decision in self.decisions:
+                    total_conditions_hit += decision.number_of_conditions_hit()
+                return float(total_conditions_hit) / total_conditions
+            else:
+                return 1.0
         else:
             return 1.0
     
@@ -56,9 +59,12 @@ class CoverageObject(object):
         if self.constructs:
             total_conditions = sum(construct.number_of_conditions(self.options.report_conditions_with_literals)
                                    for construct in self.conditions)
-            total_conditions_hit = sum(construct.number_of_conditions_hit()
-                                       for construct in self.conditions)
-            return float(total_conditions_hit) / total_conditions            
+            if total_conditions:
+                total_conditions_hit = sum(construct.number_of_conditions_hit()
+                                           for construct in self.conditions)
+                return float(total_conditions_hit) / total_conditions
+            else:
+                return 1.0
         else:
             return 1.0
     

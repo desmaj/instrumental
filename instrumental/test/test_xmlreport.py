@@ -25,14 +25,15 @@ class TestXMLReport(object):
         from instrumental.recorder import ExecutionRecorder
         ExecutionRecorder.reset()
         c = api.Coverage(self.config, '.')
-        modname = 'instrumental.test.samples.robust'
+        modname = kwargs.pop('modname',
+                             'instrumental.test.samples.robust')
         c.start([modname], [])
         if modname in sys.modules:
-            robust = sys.modules[modname]
-            reload(robust)
+            testmod = sys.modules[modname]
+            reload(testmod)
         else:
-            from instrumental.test.samples import robust
-        robust.test_func(*args, **kwargs)
+            testmod = __import__(modname, fromlist=modname.split('.')[:-1])
+        testmod.test_func(*args, **kwargs)
         c.stop()
         return c.recorder
     
@@ -325,6 +326,68 @@ class TestXMLReport(object):
                 'condition-rate': '0.416667',
                 'branch-rate': '0.555556',
                 'line-rate': '0.700000',
+                'children': [root_children_spec]
+                }
+                
+        self._verify_element(root, spec)
+        os.remove(xml_filename)
+    
+    def test_zero_conditions(self):
+        from instrumental import constructs
+        from instrumental.reporting import ExecutionReport
+        
+        modname = 'instrumental.test.samples.zeroconditions'
+        recorder = self._run_test(modname=modname)
+        report = ExecutionReport(os.getcwd(), recorder.metadata, self.config)
+        xml_filename = 'test-xml-report.xml'
+        report.write_xml_coverage_report(xml_filename)
+        
+        tree = ElementTree.parse(xml_filename)
+        print ElementTree.tostring(tree.getroot())
+        root = tree.getroot()
+        
+        lines_spec = {'tag': 'lines',
+                      'children': [{'tag': 'line',
+                                    'hits': '1',
+                                    'line': '1',
+                                    },
+                                   {'tag': 'line',
+                                    'hits': '1',
+                                    'line': '3',
+                                    },
+                                   {'tag': 'line',
+                                    'hits': '1',
+                                    'line': '5',
+                                    },
+                                   {'tag': 'line',
+                                    'hits': '1',
+                                    'line': '6',
+                                    },
+                                   ]}
+        class_spec = {'tag': 'class',
+                      'name': 'instrumental.test.samples.zeroconditions',
+                      'filename': 'instrumental/test/samples/zeroconditions.py',
+                      'condition-rate': '1.000000',
+                      'branch-rate': '1.000000',
+                      'line-rate': '1.000000',
+                      'children': [{'tag': 'methods'}, lines_spec],
+                      }
+        root_children_spec = (
+            {'tag': 'packages',
+             'children': [{'tag': 'package',
+                           'name': 'instrumental.test.samples',
+                           'condition-rate': '1.000000',
+                           'branch-rate': '1.000000',
+                           'line-rate': '1.000000',
+                           'children': [{'tag': 'classes',
+                                         'children': [class_spec],
+                                         }]
+                           }]
+             })
+        spec = {'tag': 'coverage',
+                'condition-rate': '1.000000',
+                'branch-rate': '1.000000',
+                'line-rate': '1.000000',
                 'children': [root_children_spec]
                 }
                 
