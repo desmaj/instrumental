@@ -35,7 +35,7 @@ def get_setup(uuid):
     setup = defn.body[:]
     for stmt in setup:
         stmt.lineno -= 1
-    setup[1].expr.args.args.append(ast.Str(s=uuid))
+    setup[1].value.args.append(ast.Str(s=uuid, lineno=1))
     return setup
 
 class ExecutionRecorder(object):
@@ -70,7 +70,7 @@ class ExecutionRecorder(object):
         self.metadata[metadata.modulename] = metadata
     
     @staticmethod
-    def get_recorder_call(uuid):
+    def get_recorder_call():
         kall = ast.Call()
         kall.func = ast.Attribute(value=ast.Name(id="_xxx_recorder_xxx_",
                                                  ctx=ast.Load()),

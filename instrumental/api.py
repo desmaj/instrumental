@@ -11,15 +11,26 @@ from instrumental.storage import ResultStore
 from instrumental.recorder import ExecutionRecorder
 
 class Coverage(object):
+    uuid_environ_key = 'COVERAGE_UUID'
     
-    def __init__(self, config, basedir, store_factory=None):
-        self.uuid = str(uuid.uuid4())
+    def __init__(self, config, basedir, store_factory=None, coverage_uuid=None):
+        if coverage_uuid is not None:
+            self.uuid = coverage_uuid
+        else:
+            self.uuid = self._establish_uuid()
         self._config = config
         self._basedir = basedir
         self._import_hooks = []
         if store_factory is None:
             store_factory = self._get_store
         self._store_factory = store_factory
+    
+    def _establish_uuid(self):
+        if self.uuid_environ_key in os.environ:
+            return os.environ[self.uuid_environ_key]
+        else:
+            os.environ[self.uuid_environ_key] = str(uuid.uuid4())
+            return os.environ[self.uuid_environ_key]
     
     def _maybe_label(self, should_label):
         if should_label:

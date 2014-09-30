@@ -164,7 +164,8 @@ class ObjectEncoder(object):
     
     def encode_ExecutionRecorder(self, recorder):
         result = {'__python_class__': 'ExecutionRecorder',
-                  'metadata': {}}
+                  'metadata': {},
+                  'uuid': recorder.uuid}
         for modulename in recorder.metadata:
             result['metadata'][modulename] = (
                 self.encode_ModuleMetadata(recorder.metadata[modulename]))
@@ -238,7 +239,7 @@ class ObjectDecoder(object):
         return method(d)
     
     def decode_ExecutionRecorder(self, d):
-        recorder = ExecutionRecorder()
+        recorder = ExecutionRecorder(d['uuid'])
         for modulename in d['metadata']:
             md = self.decode_ModuleMetadata(d['metadata'][modulename])
             recorder.add_metadata(md)

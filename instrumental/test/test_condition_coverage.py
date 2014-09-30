@@ -12,8 +12,9 @@ class TestInstrumentation(object):
     
     def setup(self):
         # First clear out the recorder so that we'll create a new one
-        ExecutionRecorder.reset()
-        self.recorder = ExecutionRecorder.get()
+        self.uuid = 'xxxx-xxxx'
+        ExecutionRecorder.reset(self.uuid)
+        self.recorder = ExecutionRecorder.get(self.uuid)
         self.recorder.start()
     
     def teardown(self):

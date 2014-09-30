@@ -31,7 +31,6 @@ class TestAPI(object):
     def test_save(self):
         config = object()
         basedir = 'xxx__basedir__xxx'
-        recorder = 'xxx__recorder__xxx'
         
         store_factory = FakeResultStoreFactory(config, basedir)
         api = self._makeOne(config, basedir, store_factory)
@@ -39,4 +38,4 @@ class TestAPI(object):
         api.save()
         
         assert len(store_factory.calls) == 1
-        assert store_factory.calls[0] == ('save', recorder), store_factory.calls[0]
+        assert store_factory.calls[0] == ('save', api.recorder), store_factory.calls[0]

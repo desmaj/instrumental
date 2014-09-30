@@ -20,7 +20,8 @@ class TestLoadModule(object):
     
     def setup(self):
         from instrumental.recorder import ExecutionRecorder
-        ExecutionRecorder.reset()
+        self.uuid = 'xxxx-xxxx'
+        ExecutionRecorder.reset(self.uuid)
         self._pre_test_modules = sys.modules.keys()
         self.config = DummyConfig()
     
@@ -31,12 +32,15 @@ class TestLoadModule(object):
                 if modname.startswith('instrumental.test.samples'):
                     del sys.modules[modname]
     
+    def _make_execution_recorder(self):
+        from instrumental.recorder import ExecutionRecorder
+        return ExecutionRecorder.get(self.uuid)
+    
     def test_load_non_target_module(self):
         from instrumental.instrument import AnnotatorFactory
         from instrumental.monkey import load_module_factory
-        from instrumental.recorder import ExecutionRecorder
         
-        recorder = ExecutionRecorder.get()
+        recorder = self._make_execution_recorder()
         visitor_factory = AnnotatorFactory(self.config, recorder)
         load_module = load_module_factory([], 
                                           [],
@@ -60,7 +64,6 @@ class TestLoadModule(object):
         from instrumental.metadata import MetadataGatheringVisitor
         from instrumental.monkey import load_module_factory
         from instrumental.pragmas import PragmaFinder
-        from instrumental.recorder import ExecutionRecorder
         
         import instrumental.test.samples
         samples_directory = os.path.dirname(instrumental.test.samples.__file__)
@@ -75,7 +78,7 @@ class TestLoadModule(object):
                                                     source, 
                                                     pragmas)
         
-        recorder = ExecutionRecorder.get()
+        recorder = self._make_execution_recorder()
         recorder.add_metadata(metadata)
         visitor_factory = AnnotatorFactory(self.config, recorder)
         load_module = load_module_factory(['instrumental.test.samples.simple'], 
@@ -95,7 +98,6 @@ class TestLoadModule(object):
         from instrumental.metadata import MetadataGatheringVisitor
         from instrumental.monkey import load_module_factory
         from instrumental.pragmas import PragmaFinder
-        from instrumental.recorder import ExecutionRecorder
         
         import instrumental.test.samples
         samples_directory = os.path.dirname(instrumental.test.samples.__file__)
@@ -109,7 +111,7 @@ class TestLoadModule(object):
                                                     source, 
                                                     pragmas)
         
-        recorder = ExecutionRecorder.get()
+        recorder = self._make_execution_recorder()
         recorder.add_metadata(metadata)
         visitor_factory = AnnotatorFactory(self.config, recorder)
         load_module = load_module_factory(['instrumental.test.samples.package'], 

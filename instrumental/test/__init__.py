@@ -31,8 +31,9 @@ class InstrumentationTestCase(object):
     
     def setup(self):
         # First clear out the recorder so that we'll create a new one
-        ExecutionRecorder.reset()
-        self.recorder = ExecutionRecorder.get()
+        self.uuid = 'xxxx-xxxx'
+        ExecutionRecorder.reset(self.uuid)
+        self.recorder = ExecutionRecorder.get(self.uuid)
         self.config = DummyConfig()
     
     def _instrument_module(self, module_func):
@@ -67,7 +68,7 @@ class InstrumentationTestCase(object):
         assert isinstance(module.body[starting_lineno+1].value.func.value, ast.Name)
         assert module.body[starting_lineno+1].value.func.value.id == 'ExecutionRecorder'
         assert module.body[starting_lineno+1].value.func.attr == 'get'
-        assert not module.body[starting_lineno+1].value.args
+        assert isinstance(module.body[starting_lineno+1].value.args[0], ast.Str)
         assert not module.body[starting_lineno+1].value.keywords
         assert not module.body[starting_lineno+1].value.starargs
         assert not module.body[starting_lineno+1].value.kwargs

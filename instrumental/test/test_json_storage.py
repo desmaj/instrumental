@@ -206,7 +206,7 @@ class TestObjectEncoder(object):
         metadata = ModuleMetadata('somemodule', 'somesource', [])
         metadata.lines = {1: False, 2: False, 4: True}
         metadata.constructs = {'4.2': construct}
-        recorder = ExecutionRecorder()
+        recorder = ExecutionRecorder('xxxx-xxxx')
         recorder.add_metadata(metadata)
         
         result = OE().encode(recorder)
@@ -232,6 +232,7 @@ class TestObjectEncoder(object):
                              }
         expected = {'__python_class__': 'ExecutionRecorder',
                     'metadata': {'somemodule': expected_metadata},
+                    'uuid': 'xxxx-xxxx',
                     }
         
         assert result == expected, (result, expected)
@@ -250,7 +251,7 @@ class TestJSONSerializer(object):
         metadata = ModuleMetadata('somemodule', 'somesource', [])
         metadata.lines = {1: False, 2: False, 4: True}
         metadata.constructs = {'4.2': construct}
-        recorder = ExecutionRecorder()
+        recorder = ExecutionRecorder('xxxx-xxxx')
         recorder.add_metadata(metadata)
         
         f = StringIO()
@@ -491,7 +492,7 @@ class TestResultStore(object):
         metadata = ModuleMetadata('somemodule', 'somesource', [])
         metadata.lines = {1: False, 2: False, 4: True}
         metadata.constructs = {'4.2': construct}
-        recorder = ExecutionRecorder()
+        recorder = ExecutionRecorder('xxxx-xxxx')
         recorder.add_metadata(metadata)
         
         store = self._makeOne('.', 'testing', None)
