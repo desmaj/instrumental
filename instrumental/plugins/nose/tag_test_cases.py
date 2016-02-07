@@ -2,7 +2,6 @@ import logging
 
 # REMIND: Can't import instrumental here or it'll throw off coverage results
 #         when using the nose coverage plugin since coverage isn't setup yet.
-# from instrumental.recorder import ExecutionRecorder
 
 from nose.plugins import Plugin
 
@@ -18,10 +17,10 @@ class InstrumentalTagPlugin(Plugin):
             tag = ':'.join(test.address()[1:])
         else:
             tag = test.id()
-        cov = Coverage()
+        cov = Coverage(None, '.')
         cov.start_context(tag)
     
     def stopTest(self, test):
         from instrumental.api import Coverage
-        cov = Coverage()
+        cov = Coverage(None, '.')
         cov.stop_context()

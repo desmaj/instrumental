@@ -42,7 +42,6 @@ class InstrumentationTestCase(object):
         pragmas = PragmaFinder().find_pragmas(source)
         metadata = MetadataGatheringVisitor.analyze(self.config,
                                                     module_func.__name__, 
-                                                    'somemodule.py',
                                                     source, pragmas)
         self.recorder.add_metadata(metadata)
         transformer = CoverageAnnotator(self.config,

@@ -32,7 +32,6 @@ def gather_metadata(config, recorder, targets, ignores):
                 pragmas = PragmaFinder().find_pragmas(source)
                 metadata = MetadataGatheringVisitor.analyze(config,
                                                             modulename,
-                                                            filepath,
                                                             source,
                                                             pragmas)
                 metadata_cache.store(filepath, metadata)
@@ -40,22 +39,28 @@ def gather_metadata(config, recorder, targets, ignores):
 
 class ModuleMetadata(object):
     
-    def __init__(self, modulename, filepath, source, pragmas):
+    def __init__(self, modulename, source, pragmas):
         self.modulename = modulename
-        self.filepath = filepath
         self.source = source
         self.lines = {}
         self.constructs = {}
         self.pragmas = pragmas
-    
-    def is_package(self):
-        return self.filepath.endswith('__init__.py')
     
     def next_label(self, lineno):
         i = 1
         while ('%s.%s' % (lineno, i)) in self.constructs:
             i += 1
         return '%s.%s' % (lineno, i)
+    
+    def merge(self, other):
+        if self.modulename != other.modulename:
+            raise ValueError('Cannot merge metadata for different modules')
+        
+        for lineno in self.lines:
+            self.lines[lineno] = self.lines[lineno] or other.lines[lineno]
+        
+        for label, construct in self.constructs.items():
+            self.constructs[label].merge(other.constructs[label])
 
 class BooleanEvaluator(ast.NodeVisitor):
     
@@ -147,9 +152,9 @@ class BooleanEvaluator(ast.NodeVisitor):
 class MetadataGatheringVisitor(ast.NodeVisitor):
     
     @classmethod
-    def analyze(cls, config, modulename, filepath, source, pragmas):
+    def analyze(cls, config, modulename, source, pragmas):
         module_ast = ast.parse(source)
-        metadata = ModuleMetadata(modulename, filepath, source, pragmas)
+        metadata = ModuleMetadata(modulename, source, pragmas)
         visitor = cls(config, metadata, pragmas)
         visitor.visit(module_ast)
         return visitor.metadata
@@ -206,11 +211,6 @@ class MetadataGatheringVisitor(ast.NodeVisitor):
         pragmas = self.metadata.pragmas.get(node.lineno, [])
         construct = constructs.Comparison(self.metadata.modulename, 
                                           label, node, pragmas)
-        possible_results = BooleanEvaluator.evaluate(node)
-        if True not in possible_results:
-            construct.set_unreachable(True)
-        if False not in possible_results:
-            construct.set_unreachable(False)
         return construct
     
     def visit_Module(self, module):
@@ -325,7 +325,7 @@ class SourceFinder(object):
                 break
     
     def _is_python_source(self, filename):
-        return filename == '__init__.py' or filename.endswith('.py')
+        return filename.endswith('.py')
     
     def _is_package_directory(self, dirname):
         return (os.path.isdir(dirname) and
@@ -415,4 +415,4 @@ if __name__ == '__main__': # pragma: no cover
     finder = SourceFinder(sys.path)
     for source_spec in finder.find(target, ignores):
         filepath, modulename = source_spec
-        print filepath, modulename
+        sys.stdout.write(filepath + ', ' + modulename + '\n')

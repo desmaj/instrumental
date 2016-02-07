@@ -33,7 +33,6 @@ class TestFileBackedMetadataCache(object):
     
     def _make_metadata(self, filepath):
         return ModuleMetadata(filepath,
-                              filepath.replace(os.path.sep, '.') + '.py',
                               source = "",
                               pragmas = {})
 

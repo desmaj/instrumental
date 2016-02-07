@@ -65,7 +65,7 @@ class LogicalBoolean(object):
     
     def _set_unreachable_conditions(self):
         for condition in self.unreachable_conditions():
-            self.conditions[condition] = UnreachableCondition()
+            self.conditions[condition].add(UnreachableCondition)
     
     @property
     def lineno(self):
@@ -83,17 +83,22 @@ class LogicalBoolean(object):
     def number_of_conditions_hit(self):
         return len([value 
                     for value in self.conditions.values()
-                    if value and not isinstance(value, UnreachableCondition)])
+                    if value and not value == set([UnreachableCondition])])
+    
+    def _is_unreachable(self, condition):
+        return UnreachableCondition in self.conditions[condition]
     
     def conditions_missed(self, report_conditions_with_literals):
         if report_conditions_with_literals:
+            # Return the descriptions of all of the conditions either unhit
+            # or marked as unreachable
             missed = [self.description(n) for n in self.conditions
-                      if (not self.conditions[n] 
-                          or isinstance(self.conditions[n], UnreachableCondition))]
+                      if (not self.conditions[n]) or self._is_unreachable(n)]
         else:
+            # Return the descriptions off all conditions if neither hit nor
+            # marked as unreachable
             missed = [self.description(n) for n in self.conditions
-                      if not (isinstance(self.conditions[n], UnreachableCondition)
-                              or self.conditions[n])]
+                      if not (self._is_unreachable(n) or self.conditions[n])]
         return missed
     
     def _literal_warning(self):
@@ -101,8 +106,8 @@ class LogicalBoolean(object):
                 " to the presence of a literal in the decision")
     
     def _format_condition_result(self, result, length=6):
-        if isinstance(result, UnreachableCondition):
-            return str(result)
+        if result == set([UnreachableCondition]):
+            return UnreachableCondition.TAG
         else:
             padding = '\n' + (' ' * length)
             return padding.join(tag for tag in sorted(result))
@@ -132,7 +137,10 @@ class LogicalBoolean(object):
         lines.append("F ==> %s" % self._format_condition_result(self.was_false()))
         return "\n".join(lines)
     
-
+    def merge(self, other):
+        for condition, results in self.conditions.items():
+            results.update(other.conditions[condition])
+    
 class LogicalAnd(LogicalBoolean):
     """ Stores the execution information for a Logical And
         
@@ -310,7 +318,7 @@ class BooleanDecision(object):
         return self.conditions[False] 
     
     def set_unreachable(self, condition):
-        self.conditions[condition].add(UnreachableCondition())
+        self.conditions[condition].add(UnreachableCondition)
     
     def number_of_conditions(self, report_conditions_with_literals):
         if report_conditions_with_literals:
@@ -319,7 +327,7 @@ class BooleanDecision(object):
         unreachable_conditions = 0
         for condition in self.conditions:
             for result in self.conditions[condition]:
-                if (isinstance(result, UnreachableCondition)
+                if (result == UnreachableCondition
                     or result == PragmaCondition.TAG):
                     unreachable_conditions += 1
                     break
@@ -328,7 +336,7 @@ class BooleanDecision(object):
     def number_of_conditions_hit(self):
         def is_hit(results):
             if results:
-                return any(not (isinstance(result, UnreachableCondition)
+                return any(not (result == UnreachableCondition
                                 or result == PragmaCondition.TAG)
                            for result in results)
             return False
@@ -353,6 +361,10 @@ class BooleanDecision(object):
         lines.append("F ==> %s" % self._format_condition_result(self.conditions[False]))
         return "\n".join(lines)
 
+    def merge(self, other):
+        for condition, results in self.conditions.items():
+            results.update(other.conditions[condition])
+    
 class Comparison(object):
     
     def __init__(self, modulename, label, node, pragmas):
@@ -364,11 +376,47 @@ class Comparison(object):
         self.source = SourceCodeRenderer.render(node)
         self.conditions = {True: set(),
                            False: set()}
+        self._set_unreachable_condition()
+        
         for pragma in pragmas:
             if hasattr(pragma, 'selector'):
                 pragma_label = '%s.%s' % (node.lineno, pragma.selector)
                 if label == pragma_label:
                     pragma.apply(self)
+    
+    def _set_unreachable_condition(self):
+        self._unreachable_condition = self.unreachable_condition()
+        if self._unreachable_condition is not None:
+            self.conditions[self._unreachable_condition].add(
+                UnreachableCondition)
+    
+    def unreachable_condition(self):
+        try:
+            _left = ast.literal_eval(self.node.left)
+            _right = ast.literal_eval(self.node.comparators[0])
+            if isinstance(self.node.ops[0], ast.Eq):
+                condition = _left != _right
+            elif isinstance(self.node.ops[0], ast.NotEq):
+                condition = _left == _right
+            elif isinstance(self.node.ops[0], ast.Lt):
+                condition = _left >= _right
+            elif isinstance(self.node.ops[0], ast.LtE):
+                condition = _left > _right
+            elif isinstance(self.node.ops[0], ast.Gt):
+                condition = _left <= _right
+            elif isinstance(self.node.ops[0], ast.GtE):
+                condition = _left < _right
+            elif isinstance(self.node.ops[0], ast.Is):
+                condition = _left is not _right
+            elif isinstance(self.node.ops[0], ast.IsNot):
+                condition = _left is _right
+            elif isinstance(self.node.ops[0], ast.In):
+                condition = _left not in _right
+            elif isinstance(self.node.ops[0], ast.NotIn):
+                condition = _left in _right
+            return condition
+        except ValueError as exc:
+            pass
     
     def is_decision(self):
         return False
@@ -388,7 +436,7 @@ class Comparison(object):
         return self.conditions[False] 
     
     def set_unreachable(self, condition):
-        self.conditions[condition].add(UnreachableCondition())
+        self.conditions[condition].add(UnreachableCondition)
     
     def number_of_conditions(self, report_conditions_with_literals):
         if report_conditions_with_literals:
@@ -397,7 +445,7 @@ class Comparison(object):
         unreachable_conditions = 0
         for condition in self.conditions:
             for result in self.conditions[condition]:
-                if (isinstance(result, UnreachableCondition)
+                if (result == UnreachableCondition
                     or result == PragmaCondition.TAG):
                     unreachable_conditions += 1
                     break
@@ -406,7 +454,7 @@ class Comparison(object):
     def number_of_conditions_hit(self):
         def is_hit(results):
             if results:
-                return any(not (isinstance(result, UnreachableCondition)
+                return any(not (result == UnreachableCondition
                                 or result == PragmaCondition.TAG)
                            for result in results)
             return False
@@ -430,3 +478,7 @@ class Comparison(object):
         lines.append("T ==> %s" % self._format_condition_result(self.conditions[True]))
         lines.append("F ==> %s" % self._format_condition_result(self.conditions[False]))
         return "\n".join(lines)
+    
+    def merge(self, other):
+        for condition, results in self.conditions.items():
+            results.update(other.conditions[condition])

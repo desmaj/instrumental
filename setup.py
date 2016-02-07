@@ -1,13 +1,13 @@
 from setuptools import setup, find_packages
 
-version = '0.4b'
+version = '0.5.1'
 
 setup(name='instrumental',
       version=version,
       description="A condition/decision coverage tool for Python",
       long_description="""\
 Instrumental automatically instruments your code to add function calls that
-reveal execution characteristics of your code. Instrumental can then monitor
+reveal execution characteristics. Instrumental can then monitor
 execution of your code and report back to you on how your source was executed.
 
 When you run a script with Instrumental, it will tell you which decisions and
@@ -44,7 +44,7 @@ Please file bug reports and enhancement requests `on bitbucket <http://bitbucket
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-        'astkit>=0.4',
+        'astkit>=0.5.4',
         'mako',
         ],
       tests_require=[
@@ -53,6 +53,7 @@ Please file bug reports and enhancement requests `on bitbucket <http://bitbucket
       entry_points="""
       [console_scripts]
       instrumental = instrumental.run:main
+      instrumental-tools = instrumental.tools:main
       [nose.plugins]
       instrumental-tag = instrumental.plugins.nose.tag_test_cases:InstrumentalTagPlugin
       """,

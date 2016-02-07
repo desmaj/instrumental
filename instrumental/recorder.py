@@ -156,3 +156,10 @@ class ExecutionRecorder(object):
         marker = ast.copy_location(marker, node)
         ast.fix_missing_locations(marker)
         return marker
+    
+    def merge(self, other):
+        for metadata in other.metadata.values():
+            if metadata.modulename not in self.metadata:
+                self.add_metadata(metadata)
+            else:
+                self.metadata[metadata.modulename].merge(metadata)
