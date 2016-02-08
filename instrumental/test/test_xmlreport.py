@@ -16,10 +16,10 @@ class DummyConfig(object):
     report_conditions_with_literals = False
 
 class TestXMLReport(object):
-    
+
     def setUp(self):
         self.config = DummyConfig()
-    
+
     def _run_test(self, *args, **kwargs):
         from instrumental import api
         from instrumental.recorder import ExecutionRecorder
@@ -36,7 +36,7 @@ class TestXMLReport(object):
         testmod.test_func(*args, **kwargs)
         c.stop()
         return c.recorder
-    
+
     def _verify_element(self, element, spec):
         assert element.tag == spec.pop('tag')
         child_specs = spec.pop('children', [])
@@ -47,61 +47,61 @@ class TestXMLReport(object):
         assert len(children) == len(child_specs)
         for child, child_spec in zip(children, child_specs):
             self._verify_element(child, child_spec)
-    
+
     def test_full_coverage_constructs(self):
         from instrumental import constructs
         from instrumental.reporting import ExecutionReport
-        
+
         recorder = self._run_test(True, True, False, True, False)
         metadata = recorder.metadata['instrumental.test.samples.robust']
-        
+
         assert 10 == len(metadata.constructs), metadata.constructs.keys()
-        
+
         decision = metadata.constructs['5.1']
         assert isinstance(decision, constructs.BooleanDecision)
         assert 2 == decision.number_of_conditions(False)
         assert 1 == decision.conditions_missed(False)
-        
+
         boolop = metadata.constructs['5.2']
         assert isinstance(boolop, constructs.LogicalAnd)
         assert 3 == boolop.number_of_conditions(False)
         assert 2 == len(boolop.conditions_missed(False))
-        
+
         decision = metadata.constructs['8.1']
         assert isinstance(decision, constructs.BooleanDecision)
         assert 2 == decision.number_of_conditions(False)
         assert 1 == decision.conditions_missed(False)
-        
+
         boolop = metadata.constructs['8.2']
         assert isinstance(boolop, constructs.LogicalOr)
         assert 3 == boolop.number_of_conditions(False)
         assert 2 == len(boolop.conditions_missed(False))
-        
+
         decision = metadata.constructs['11.1']
         assert isinstance(decision, constructs.BooleanDecision)
         assert 2 == decision.number_of_conditions(False)
         assert 0 == decision.conditions_missed(False)
-        
+
         compare = metadata.constructs['11.2']
         assert isinstance(compare, constructs.Comparison)
         assert 2 == compare.number_of_conditions(False)
         assert 0 == compare.conditions_missed(False)
-        
+
         decision = metadata.constructs['14.1']
         assert isinstance(decision, constructs.BooleanDecision)
         assert 2 == decision.number_of_conditions(False)
         assert 1 == decision.conditions_missed(False)
-        
+
         decision = metadata.constructs['16.1']
         assert isinstance(decision, constructs.BooleanDecision)
         assert 1 == decision.number_of_conditions(False)
         assert 0 == decision.conditions_missed(False)
-        
+
         boolop = metadata.constructs['16.2']
         assert isinstance(boolop, constructs.LogicalOr)
         assert 2 == boolop.number_of_conditions(False)
         assert 1 == len(boolop.conditions_missed(False))
-        
+
         boolop = metadata.constructs['16.3']
         assert isinstance(boolop, constructs.LogicalAnd)
         assert 2 == boolop.number_of_conditions(False)
@@ -109,15 +109,15 @@ class TestXMLReport(object):
 
     def test_full_coverage_report(self):
         from instrumental.reporting import ExecutionReport
-        
+
         recorder = self._run_test(True, True, False, True, False)
         report = ExecutionReport(os.getcwd(), recorder.metadata, self.config)
         xml_filename = 'test-xml-report.xml'
         report.write_xml_coverage_report(xml_filename)
-        
+
         tree = ElementTree.parse(xml_filename)
         root = tree.getroot()
-        
+
         lines_spec = {'tag': 'lines',
                       'children': [{'tag': 'line',
                                     'hits': '1',
@@ -188,61 +188,61 @@ class TestXMLReport(object):
                 }
         self._verify_element(root, spec)
         os.remove(xml_filename)
-    
+
     def test_partial_coverage_constructs(self):
         from instrumental import constructs
         from instrumental.reporting import ExecutionReport
-        
+
         recorder = self._run_test(True, False, False, True, False, 0)
         metadata = recorder.metadata['instrumental.test.samples.robust']
-        
+
         assert 10 == len(metadata.constructs), metadata.constructs.keys()
-        
+
         decision = metadata.constructs['5.1']
         assert isinstance(decision, constructs.BooleanDecision)
         assert 2 == decision.number_of_conditions(False)
         assert 1 == decision.conditions_missed(False)
-        
+
         boolop = metadata.constructs['5.2']
         assert isinstance(boolop, constructs.LogicalAnd)
         assert 3 == boolop.number_of_conditions(False)
         assert 2 == len(boolop.conditions_missed(False))
-        
+
         decision = metadata.constructs['8.1']
         assert isinstance(decision, constructs.BooleanDecision)
         assert 2 == decision.number_of_conditions(False)
         assert 1 == decision.conditions_missed(False)
-        
+
         boolop = metadata.constructs['8.2']
         assert isinstance(boolop, constructs.LogicalOr)
         assert 3 == boolop.number_of_conditions(False)
         assert 2 == len(boolop.conditions_missed(False))
-        
+
         decision = metadata.constructs['11.1']
         assert isinstance(decision, constructs.BooleanDecision)
         assert 2 == decision.number_of_conditions(False)
         assert 1 == decision.conditions_missed(False)
-        
+
         compare = metadata.constructs['11.2']
         assert isinstance(compare, constructs.Comparison)
         assert 2 == compare.number_of_conditions(False)
         assert 1 == compare.conditions_missed(False)
-        
+
         decision = metadata.constructs['14.1']
         assert isinstance(decision, constructs.BooleanDecision)
         assert 2 == decision.number_of_conditions(False)
         assert 1 == decision.conditions_missed(False)
-        
+
         decision = metadata.constructs['16.1']
         assert isinstance(decision, constructs.BooleanDecision)
         assert 1 == decision.number_of_conditions(False)
         assert 0 == decision.conditions_missed(False)
-        
+
         boolop = metadata.constructs['16.2']
         assert isinstance(boolop, constructs.LogicalOr)
         assert 2 == boolop.number_of_conditions(False)
         assert 1 == len(boolop.conditions_missed(False))
-        
+
         boolop = metadata.constructs['16.3']
         assert isinstance(boolop, constructs.LogicalAnd)
         assert 2 == boolop.number_of_conditions(False)
@@ -250,16 +250,16 @@ class TestXMLReport(object):
 
     def test_partial_coverage_report(self):
         from instrumental.reporting import ExecutionReport
-        
+
         recorder = self._run_test(True, False, False, True, False, 0)
-        
+
         report = ExecutionReport(os.getcwd(), recorder.metadata, self.config)
         xml_filename = 'test-xml-report.xml'
         report.write_xml_coverage_report(xml_filename)
-        
+
         tree = ElementTree.parse(xml_filename)
         root = tree.getroot()
-        
+
         lines_spec = {'tag': 'lines',
                       'children': [{'tag': 'line',
                                     'hits': '1',
@@ -328,24 +328,23 @@ class TestXMLReport(object):
                 'line-rate': '0.700000',
                 'children': [root_children_spec]
                 }
-                
+
         self._verify_element(root, spec)
         os.remove(xml_filename)
-    
+
     def test_zero_conditions(self):
         from instrumental import constructs
         from instrumental.reporting import ExecutionReport
-        
+
         modname = 'instrumental.test.samples.zeroconditions'
         recorder = self._run_test(modname=modname)
         report = ExecutionReport(os.getcwd(), recorder.metadata, self.config)
         xml_filename = 'test-xml-report.xml'
         report.write_xml_coverage_report(xml_filename)
-        
+
         tree = ElementTree.parse(xml_filename)
-        print ElementTree.tostring(tree.getroot())
         root = tree.getroot()
-        
+
         lines_spec = {'tag': 'lines',
                       'children': [{'tag': 'line',
                                     'hits': '1',
@@ -390,6 +389,6 @@ class TestXMLReport(object):
                 'line-rate': '1.000000',
                 'children': [root_children_spec]
                 }
-                
+
         self._verify_element(root, spec)
         os.remove(xml_filename)
