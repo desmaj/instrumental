@@ -131,7 +131,7 @@ It may be that there are condition combinations that aren't possible, but appear
   [6] else:
   [7]     func4()
 
-In this example we can see that the 'F T F' case will not ever be possible since b will always be True. We can communicate this to instrumental by adding a comment to the end of line 4 in the form "pragma: no code(<condition1>[,condition2, ..., conditionN])". When we do that, Instrumental will output something like the following::
+In this example we can see that the 'F T F' case will not ever be possible since b will always be False. We can communicate this to instrumental by adding a comment to the end of line 4 in the form "pragma: no cond(<condition1>[,condition2, ..., conditionN])". When we do that, Instrumental will output something like the following::
 
   LogicalOr -> somemodule:4.1 < (a or b or c) >
   

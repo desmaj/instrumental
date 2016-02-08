@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2012  Matthew J Desmarais
+# Copyright (C) 2012-2015  Matthew J Desmarais
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,11 +24,19 @@ from astkit import ast
 
 from instrumental.pragmas import PragmaFinder
 
+# It's much easier to build our recorder setup block from existing code than
+# it is to build an AST tree from scratch. This function is the template we'll
+# use to initialize the recorder in each source file.
 def __setup_recorder(): # pragma: no cover
     from instrumental.recorder import ExecutionRecorder
     _xxx_recorder_xxx_ = ExecutionRecorder.get()
 
 def get_setup():
+    """ Build the recorder setup block and return it
+        
+        The ast tree that this function returns will acquire the recorder
+        instance and assign it to the variable `_xxx_recorder_xxx_'.
+    """
     source = inspect.getsource(__setup_recorder)
     mod = ast.parse(source)
     defn = mod.body[0]
@@ -38,6 +46,12 @@ def get_setup():
     return setup
 
 class ExecutionRecorder(object):
+    """ The trace information keeper
+        
+        The ExecutionRecorder is a singleton object that can be notified when a
+        coverage event (i.e. statement execution or decision evaluation) occurs.
+        Every source file will fetch a reference to the recorder instance.
+    """
     DEFAULT_TAG = 'X'
     
     @classmethod
